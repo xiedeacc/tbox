@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package tbox.proto;
+
+import "src/proto/error.proto";
+
+message Context {
+  repeated string private_ipv4 = 1;
+  repeated string private_ipv6 = 2;
+  repeated string public_ipv4 = 3;
+  repeated string public_ipv6 = 4;
+  repeated string mac = 5;
+}
+
+enum ServerOp {
+  ServerUnused = 0;
+  ServerStatus = 1;
+  ServerRestart = 2;
+  ServerUpdateIp = 3;
+  ServerUpdateDns = 4;
+}
+
+message ServerReq {
+  string request_id = 1;
+  ServerOp op = 2;
+  Context context = 3;
+}
+
+message ServerRes {
+  ErrCode err_code = 1;
+  string err_msg = 2;
+}
+
+service OceanFile {
+  rpc ServerOp(ServerReq) returns (ServerRes);
+}
