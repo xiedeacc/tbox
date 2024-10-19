@@ -61,8 +61,8 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
 })
 
 cc_binary(
-    name = "client",
-    srcs = ["client.cc"],
+    name = "tbox_client",
+    srcs = ["tbox_client.cc"],
     copts = COPTS,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,

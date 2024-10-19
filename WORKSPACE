@@ -767,3 +767,16 @@ http_archive(
     strip_prefix = "sqlite-amalgamation-3460100",
     urls = ["https://sqlite.org/2024/sqlite-amalgamation-3460100.zip"],
 )
+
+#new_git_repository(
+#name = "aws_sdk",
+#build_file = "//bazel:aws_sdk.BUILD",
+#remote = "git@github.com:aws/aws-sdk-cpp.git",
+#tag = "1.11.430",
+#)
+
+new_local_repository(
+    name = "aws_sdk",
+    build_file = "//bazel:aws_sdk.BUILD",
+    path = "../aws-sdk-cpp",
+)

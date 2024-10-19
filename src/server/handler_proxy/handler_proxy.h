@@ -29,6 +29,47 @@ class HandlerProxy {
               << kDevIPAddrs.public_ipv6().size();
   }
 
+  void UpdateDNSRecord(const std::string& hosted_zone_id,
+                       const std::string& record_name,
+                       const std::string& record_value) {
+    Aws::SDKOptions options;
+    Aws::InitAPI(options);
+    {
+      Aws::Route53::Route53Client client;
+
+      Aws::Route53::Model::ChangeResourceRecordSetsRequest request;
+      request.SetHostedZoneId(hosted_zone_id);
+
+      Aws::Route53::Model::Change change;
+      change.SetAction(Aws::Route53::Model::ChangeAction::UPSERT);
+
+      Aws::Route53::Model::ResourceRecordSet record_set;
+      record_set.SetName(record_name);
+      record_set.SetType(Aws::Route53::Model::RRType::A);
+      record_set.SetTTL(60);
+
+      Aws::Route53::Model::ResourceRecord record;
+      record.SetValue(record_value);
+      record_set.AddResourceRecords(record);
+
+      change.SetResourceRecordSet(record_set);
+
+      Aws::Route53::Model::ChangeBatch change_batch;
+      change_batch.AddChanges(change);
+
+      request.SetChangeBatch(change_batch);
+
+      auto outcome = client.ChangeResourceRecordSets(request);
+      if (outcome.IsSuccess()) {
+        std::cout << "Record updated successfully" << std::endl;
+      } else {
+        std::cerr << "Error updating record: "
+                  << outcome.GetError().GetMessage() << std::endl;
+      }
+    }
+    Aws::ShutdownAPI(options);
+  }
+
   static void ServerOpHandle(const proto::ServerReq& req,
                              proto::ServerRes* res) {
     std::string session_user;

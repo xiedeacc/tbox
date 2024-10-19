@@ -61,8 +61,8 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
 })
 
 cc_binary(
-    name = "server",
-    srcs = ["server.cc"],
+    name = "tbox_server",
+    srcs = ["tbox_server.cc"],
     copts = COPTS + [
         "-Wno-implicit-fallthrough",
         "-Wno-unused-parameter",
