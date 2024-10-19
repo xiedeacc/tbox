@@ -11,4 +11,6 @@ external
 #src/proto/*.cc
 /.vscode/
 /data/
-conf/base_config.json
+/conf/base_config.json
+/conf/client_base_config.json
+/conf/server_base_config.json

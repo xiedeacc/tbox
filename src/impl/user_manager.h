@@ -133,6 +133,7 @@ class UserManager final {
     }
 
     if (password.size() > 64 || password.empty()) {
+      LOG(INFO) << 1;
       return Err_User_invalid_passwd;
     }
 

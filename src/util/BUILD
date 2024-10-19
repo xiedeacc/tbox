@@ -39,6 +39,65 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + select({
 })
 
 cc_library(
+    name = "util",
+    srcs = ["util.cc"],
+    hdrs = ["util.h"],
+    copts = COPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        "//src/common:defs",
+        "//src/common:error_code",
+        "//src/proto:cc_service",
+        "@blake3",
+        "@boost//:algorithm",
+        "@boost//:beast",
+        "@boost//:iostreams",
+        "@boost//:uuid",
+        "@com_github_glog_glog//:glog",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_absl//absl/time",
+        "@com_google_protobuf//:protobuf",
+        "@crc32c",
+        "@fmt",
+        "@folly",
+        "@openssl",
+        "@rapidjson",
+        "@smhasher",
+        "@xz//:lzma",
+    ] + select({
+        "@tbox//bazel:jemalloc": ["@jemalloc"],
+        "@tbox//bazel:tcmalloc": ["@tcmalloc//tcmalloc"],
+        "//conditions:default": [],
+    }),
+)
+
+cc_test(
+    name = "util_test",
+    timeout = "short",
+    srcs = ["util_test.cc"],
+    copts = COPTS,
+    data = [
+        "//test_data/config_test:base_config.json",
+        "//test_data/util_test",
+    ],
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        ":util",
+        "//src/test:test_util",
+    ],
+)
+
+cc_library(
+    name = "log_cleaner",
+    srcs = ["log_cleaner.cc"],
+    hdrs = ["log_cleaner.h"],
+    copts = COPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [":util"],
+)
+
+cc_library(
     name = "config_manager",
     srcs = ["config_manager.cc"],
     hdrs = ["config_manager.h"],
@@ -83,43 +142,9 @@ cc_test(
     name = "thread_pool_test",
     srcs = ["thread_pool_test.cc"],
     copts = COPTS,
-    data = ["//conf:base_config.json"],
+    data = ["//test_data/config_test:base_config.json"],
     local_defines = LOCAL_DEFINES,
     deps = [":thread_pool"],
-)
-
-cc_library(
-    name = "util",
-    srcs = ["util.cc"],
-    hdrs = ["util.h"],
-    copts = COPTS,
-    local_defines = LOCAL_DEFINES,
-    deps = [
-        "//src/common:defs",
-        "//src/common:error_code",
-        "//src/proto:cc_service",
-        "@blake3",
-        "@boost//:algorithm",
-        "@boost//:beast",
-        "@boost//:iostreams",
-        "@boost//:uuid",
-        "@com_github_glog_glog//:glog",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/synchronization",
-        "@com_google_absl//absl/time",
-        "@com_google_protobuf//:protobuf",
-        "@crc32c",
-        "@fmt",
-        "@folly",
-        "@openssl",
-        "@rapidjson",
-        "@smhasher",
-        "@xz//:lzma",
-    ] + select({
-        "@tbox//bazel:jemalloc": ["@jemalloc"],
-        "@tbox//bazel:tcmalloc": ["@tcmalloc//tcmalloc"],
-        "//conditions:default": [],
-    }),
 )
 
 cc_library(
@@ -129,26 +154,12 @@ cc_library(
 )
 
 cc_test(
-    name = "util_test",
-    timeout = "short",
-    srcs = ["util_test.cc"],
-    data = [
-        "//conf:base_config.json",
-        "//test_data/util_test",
-    ],
-    deps = [
-        ":util",
-        "//src/test:test_util",
-    ],
-)
-
-cc_test(
     name = "config_manager_test",
     srcs = [
         "config_manager_test.cc",
     ],
     copts = COPTS,
-    data = ["//conf:base_config.json"],
+    data = ["//test_data/config_test:base_config.json"],
     local_defines = LOCAL_DEFINES,
     deps = [":config_manager"],
 )

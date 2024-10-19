@@ -38,18 +38,14 @@ class ConfigManager {
   }
 
   std::string ServerAddr() { return base_config_.server_addr(); }
+  std::string ServerDomain() { return base_config_.server_domain(); }
   uint32_t GrpcServerPort() { return base_config_.grpc_server_port(); }
   uint32_t HttpServerPort() { return base_config_.http_server_port(); }
-  uint32_t MetricRatio() { return base_config_.metric_ratio(); }
-  uint32_t MetricIntervalSec() { return base_config_.metric_interval_sec(); }
-  uint32_t DiscardRatio() { return base_config_.discard_ratio(); }
   uint32_t GrpcThreads() { return base_config_.grpc_threads(); }
   uint32_t EventThreads() { return base_config_.event_threads(); }
-  uint32_t ReceiveQueueTimeout() { return 5 * 60 * 1000; }
-  std::string SslCa() { return base_config_.server_ssl_ca(); }
-  std::string SslCert() { return base_config_.server_ssl_cert(); }
-  std::string SslKey() { return base_config_.server_ssl_key(); }
   bool UseHttps() { return base_config_.use_https(); }
+  std::string User() { return base_config_.user(); }
+  std::string Password() { return base_config_.password(); }
 
   std::string ToString() {
     std::string json;

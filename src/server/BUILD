@@ -74,6 +74,7 @@ cc_binary(
         "//src/proto:cc_grpc_service",
         "//src/server/http_handler",
         "//src/util:thread_pool",
+        "//src/util:log_cleaner",
         "@folly",
         "@libsodium//:sodium",
         "@openssl//:crypto",

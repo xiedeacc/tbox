@@ -60,17 +60,36 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
     "//conditions:default": [],
 })
 
-#cc_binary(
-#name = "scan_status_prettier",
-#srcs = ["scan_status_prettier.cc"],
-#copts = COPTS + [
-#"-Wno-implicit-fallthrough",
-#"-Wno-unused-parameter",
-#],
-#linkopts = LINKOPTS,
-#local_defines = LOCAL_DEFINES,
-#deps = [
-#"//src/impl:scan_manager",
-#"//src/util",
-#],
-#)
+cc_binary(
+    name = "user",
+    srcs = ["user.cc"],
+    copts = COPTS + [
+        "-Wno-implicit-fallthrough",
+        "-Wno-unused-parameter",
+    ],
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        "//src/async_grpc",
+        "//src/proto:cc_grpc_service",
+        "//src/util",
+        "//src/util:config_manager",
+    ],
+)
+
+cc_binary(
+    name = "ip",
+    srcs = ["ip.cc"],
+    copts = COPTS + [
+        "-Wno-implicit-fallthrough",
+        "-Wno-unused-parameter",
+    ],
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        "//src/async_grpc",
+        "//src/proto:cc_grpc_service",
+        "//src/util",
+        "//src/util:config_manager",
+    ],
+)

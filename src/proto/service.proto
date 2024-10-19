@@ -12,18 +12,44 @@ message Context {
   repeated string mac = 5;
 }
 
+enum UserOp {
+  UserUnused = 0;
+  UserCreate = 1;
+  UserDel = 2;
+  UserLogin = 3;
+  UserLogout = 4;
+  UserChangePassword = 5;
+}
+
+message UserReq {
+  string request_id = 1;
+  UserOp op = 2;
+  string user = 3;
+  string password = 4;
+  string token = 5;
+  string to_delete_user = 6;
+}
+
+message UserRes {
+  ErrCode err_code = 1;
+  string token = 5;
+}
+
 enum ServerOp {
   ServerUnused = 0;
   ServerStatus = 1;
   ServerRestart = 2;
-  ServerUpdateIp = 3;
-  ServerUpdateDns = 4;
+  ServerUpdateDevIp = 3;
+  ServerUpdateDevDns = 4;
+  ServerGetDevIp = 5;
 }
 
 message ServerReq {
   string request_id = 1;
   ServerOp op = 2;
   Context context = 3;
+  string user = 4;
+  string token = 5;
 }
 
 message ServerRes {
@@ -31,6 +57,7 @@ message ServerRes {
   string err_msg = 2;
 }
 
-service OceanFile {
+service TboxService {
+  rpc UserOp(UserReq) returns (UserRes);
   rpc ServerOp(ServerReq) returns (ServerRes);
 }

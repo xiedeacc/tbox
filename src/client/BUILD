@@ -59,3 +59,21 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
     "@platforms//os:windows": [],
     "//conditions:default": [],
 })
+
+cc_binary(
+    name = "client",
+    srcs = ["client.cc"],
+    copts = COPTS,
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        "//src/async_grpc",
+        "//src/client/grpc_client",
+        "//src/common:blocking_queue",
+        "//src/common:defs",
+        "//src/proto:cc_grpc_service",
+        "//src/util",
+        "//src/util:thread_pool",
+        "@openssl//:ssl",
+    ],
+)

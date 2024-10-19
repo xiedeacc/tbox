@@ -61,10 +61,8 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
 })
 
 cc_library(
-    name = "grpc_clients",
-    hdrs = [
-        "grpc_server_client.h",
-    ],
+    name = "grpc_client",
+    hdrs = ["grpc_client.h"],
     copts = COPTS,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
@@ -72,6 +70,7 @@ cc_library(
         "//src/async_grpc",
         "//src/common:blocking_queue",
         "//src/common:defs",
+        "//src/impl:user_manager",
         "//src/proto:cc_grpc_service",
         "//src/util",
         "//src/util:thread_pool",

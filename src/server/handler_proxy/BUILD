@@ -62,9 +62,8 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
 
 cc_library(
     name = "handler_proxy",
-    hdrs = [
-        "handler_proxy.h",
-    ],
+    srcs = ["handler_proxy.cc"],
+    hdrs = ["handler_proxy.h"],
     copts = COPTS,
     local_defines = LOCAL_DEFINES,
     deps = [

@@ -1,0 +1,18 @@
+[Unit]
+Description=A ddns server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+DynamicUser=false
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+ExecStart=/usr/local/tbox/bin/tbox
+ExecStop=/bin/kill -HUP $MAINPID
+ExecReload=/bin/kill -HUP $MAINPID
+TimeoutStopSec=5
+KillMode=mixed
+
+[Install]
+WantedBy=multi-user.target

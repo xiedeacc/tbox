@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "boost/algorithm/string/replace.hpp"
+#include "folly/IPAddress.h"
 #include "google/protobuf/message.h"
 #include "openssl/types.h"
 
@@ -182,6 +183,8 @@ class Util final {
 
   static std::string ToHexStr(const std::string &in,
                               const bool use_upper_case = false);
+  static std::string HexToStr(const std::string &in);
+  static bool HexToStr(const std::string &in, std::string *out);
 
   static int64_t MurmurHash64A(const std::string &str);
 
@@ -191,7 +194,7 @@ class Util final {
   static void PrintProtoMessage(const google::protobuf::Message &msg);
 
   static bool MessageToJson(const google::protobuf::Message &msg,
-                            std::string *json);
+                            std::string *json, const bool format = false);
   static bool MessageToPrettyJson(const google::protobuf::Message &msg,
                                   std::string *json);
   static bool JsonToMessage(const std::string &json,
@@ -209,6 +212,10 @@ class Util final {
   static int64_t FDCount();
   static int64_t MemUsage();
   static bool IsMountPoint(const std::string &path);
+
+  static void ListAllIPAddresses(std::vector<folly::IPAddress> *ip_addrs);
+  static std::string ExecutablePath();
+  static std::string HomeDir();
 };
 
 }  // namespace util

@@ -32,9 +32,10 @@ class SqliteManager final {
   }
 
   bool Init() {
-    std::string user_db_path = "./data/user.db";
+    std::string home_dir = tbox::util::Util::HomeDir();
+    std::string user_db_path = home_dir + "/data/user.db";
     if (sqlite3_open(user_db_path.c_str(), &db_) != SQLITE_OK) {
-      LOG(ERROR) << "open database error";
+      LOG(ERROR) << "open database error: " << user_db_path;
       return false;
     }
 
@@ -74,11 +75,14 @@ class SqliteManager final {
                       SQLITE_STATIC);
 
     if (sqlite3_step(stmt) != SQLITE_DONE) {
-      LOG(ERROR) << "Init admin execute error";
-      LOG(ERROR) << sqlite3_errmsg(db_);
+      LOG(ERROR) << "Init admin execute error: " << sqlite3_errmsg(db_);
       sqlite3_finalize(stmt);
       return false;
     }
+    if (AffectRows() > 0) {
+      LOG(INFO) << "Init admin success";
+    }
+
     sqlite3_finalize(stmt);
     return true;
   }

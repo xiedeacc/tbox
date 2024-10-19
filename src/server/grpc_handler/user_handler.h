@@ -3,8 +3,8 @@
  * All rights reserved.
  *******************************************************************************/
 
-#ifndef TBOX_SERVER_GRPC_HANDLERS_SERVER_HANDLER_H
-#define TBOX_SERVER_GRPC_HANDLERS_SERVER_HANDLER_H
+#ifndef TBOX_SERVER_GRPC_HANDLERS_USER_HANDLER_H
+#define TBOX_SERVER_GRPC_HANDLERS_USER_HANDLER_H
 
 #include "src/async_grpc/rpc_handler.h"
 #include "src/proto/service.pb.h"
@@ -15,11 +15,11 @@ namespace tbox {
 namespace server {
 namespace grpc_handler {
 
-class ServerHandler : public async_grpc::RpcHandler<ServerMethod> {
+class UserHandler : public async_grpc::RpcHandler<UserMethod> {
  public:
-  void OnRequest(const proto::ServerReq& req) override {
-    auto res = std::make_unique<proto::ServerRes>();
-    handler_proxy::HandlerProxy::ServerOpHandle(req, res.get());
+  void OnRequest(const proto::UserReq& req) override {
+    auto res = std::make_unique<proto::UserRes>();
+    handler_proxy::HandlerProxy::UserOpHandle(req, res.get());
     Send(std::move(res));
   }
 
@@ -30,4 +30,4 @@ class ServerHandler : public async_grpc::RpcHandler<ServerMethod> {
 }  // namespace server
 }  // namespace tbox
 
-#endif  // TBOX_SERVER_GRPC_HANDLERS_SERVER_HANDLER_H
+#endif  // TBOX_SERVER_GRPC_HANDLERS_USER_HANDLER_H

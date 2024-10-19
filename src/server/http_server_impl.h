@@ -38,20 +38,6 @@ class HttpServer final {
         folly::SocketAddress(addr, port, true),
         proxygen::HTTPServer::Protocol::HTTP};
 
-    if (util::ConfigManager::Instance()->UseHttps()) {
-      auto ca = util::ConfigManager::Instance()->SslCa();
-      auto cert = util::ConfigManager::Instance()->SslCert();
-      auto key = util::ConfigManager::Instance()->SslKey();
-
-      wangle::SSLContextConfig ssl_config;
-      ssl_config.isDefault = true;
-      ssl_config.setCertificate(cert, key, "");
-      ssl_config.clientCAFile = ca;
-      ssl_config.clientVerification =
-          folly::SSLContext::VerifyClientCertificate::IF_PRESENTED;
-      ip_config.sslConfigs.push_back(ssl_config);
-    }
-
     std::vector<proxygen::HTTPServer::IPConfig> IPs{ip_config};
 
     server_ = std::make_shared<proxygen::HTTPServer>(std::move(options));

@@ -65,6 +65,7 @@ cc_library(
     hdrs = [
         "meta.h",
         "server_handler.h",
+        "user_handler.h",
     ],
     copts = COPTS,
     local_defines = LOCAL_DEFINES,

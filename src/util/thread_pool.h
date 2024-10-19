@@ -22,16 +22,16 @@ namespace util {
 class ThreadPool final {
  private:
   friend class folly::Singleton<ThreadPool>;
-  ThreadPool() : terminated(false) {}
+  ThreadPool() : stop_(false) {}
 
  public:
   static std::shared_ptr<ThreadPool> Instance();
 
   ~ThreadPool() {
-    if (!terminated.load()) {
+    if (!stop_.load()) {
       pool_->stop();
       pool_->join();
-      terminated.store(true);
+      stop_.store(true);
     }
   }
 
@@ -46,7 +46,7 @@ class ThreadPool final {
     if (pool_) {
       pool_->stop();
       pool_->join();
-      terminated.store(true);
+      stop_.store(true);
     }
   }
 
@@ -72,7 +72,7 @@ class ThreadPool final {
 
  private:
   std::shared_ptr<boost::asio::thread_pool> pool_;
-  std::atomic_bool terminated;
+  std::atomic_bool stop_;
 };
 
 }  // namespace util

@@ -3,28 +3,25 @@
  * All rights reserved.
  *******************************************************************************/
 
+#include <condition_variable>
+#include <mutex>
+
 #include "folly/init/Init.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
-#include "src/impl/user_manager.h"
-#include "src/server/http_server_impl.h"
-#include "src/util/log_cleaner.h"
-#include "src/util/util.h"
+#include "src/client/grpc_client/grpc_client.h"
 
 #if !defined(_WIN32)
 #include <signal.h>
 #endif
 
-#include "src/server/grpc_server_impl.h"
-#include "src/server/http_server_impl.h"
-#include "src/server/server_context.h"
 #include "src/util/config_manager.h"
 #include "src/util/thread_pool.h"
 
 #if !defined(_WIN32)
 // https://github.com/grpc/grpc/issues/24884
-tbox::server::GrpcServer *grpc_server_ptr = nullptr;
-tbox::server::HttpServer *http_server_ptr = nullptr;
+tbox::client::GrpcClient *grpc_client_ptr = nullptr;
+
 bool shutdown_required = false;
 std::mutex mutex;
 std::condition_variable cv;
@@ -38,8 +35,7 @@ void SignalHandler(int sig) {
 void ShutdownCheckingThread(void) {
   std::unique_lock<std::mutex> lock(mutex);
   cv.wait(lock, []() { return shutdown_required; });
-  grpc_server_ptr->Shutdown();
-  http_server_ptr->Shutdown();
+  grpc_client_ptr->Shutdown();
 }
 
 void RegisterSignalHandler() {
@@ -52,55 +48,39 @@ void RegisterSignalHandler() {
 #endif
 
 int main(int argc, char **argv) {
-  // ProfilerStart("tbox_profile");
-  LOG(INFO) << "Server initializing ...";
-
-  std::string home_dir = tbox::util::Util::HomeDir();
-  LOG(INFO) << "Home dir: " << home_dir;
-  FLAGS_log_dir = home_dir + "/logs";
-  FLAGS_max_log_size = 10;  // Example: 10 MB
-
+  LOG(INFO) << "Client initializing ...";
   folly::Init init(&argc, &argv, false);
   // google::InitGoogleLogging(argv[0]); // already called in folly::Init
   google::SetStderrLogging(google::GLOG_INFO);
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   LOG(INFO) << "CommandLine: " << google::GetArgv();
 
-  tbox::util::ConfigManager::Instance()->Init(home_dir +
-                                              "/conf/server_base_config.json");
+  tbox::util::ConfigManager::Instance()->Init("./conf/client_base_config.json");
   tbox::util::ThreadPool::Instance()->Init();
-  tbox::impl::UserManager::Instance()->Init();
-  tbox::util::LogCleaner::Instance()->Init(FLAGS_log_dir, 200 * 1024 * 1024);
 
 #if !defined(_WIN32)
   RegisterSignalHandler();
   std::thread shutdown_thread(ShutdownCheckingThread);
 #endif
 
-  std::shared_ptr<tbox::server::ServerContext> server_context =
-      std::make_shared<tbox::server::ServerContext>();
+  tbox::client::GrpcClient grpc_client(
+      tbox::util::ConfigManager::Instance()->ServerAddr(),
+      std::to_string(tbox::util::ConfigManager::Instance()->GrpcServerPort()));
+  ::grpc_client_ptr = &grpc_client;
+  if (!grpc_client.Init()) {
+    goto EXIT;
+  }
 
-  tbox::server::GrpcServer grpc_server(server_context);
-  ::grpc_server_ptr = &grpc_server;
+  grpc_client.Start();
+  grpc_client.Await();
+  LOG(INFO) << "Now stopped grpc client";
 
-  tbox::server::HttpServer http_server(server_context);
-  ::http_server_ptr = &http_server;
-
-  grpc_server.Start();
-  http_server.Start();
-
-  grpc_server.WaitForShutdown();
-
-  LOG(INFO) << "Now stopped grpc server";
-  LOG(INFO) << "Now stopped http server";
-
+EXIT:
 #if !defined(_WIN32)
   if (shutdown_thread.joinable()) {
     shutdown_thread.join();
   }
 #endif
   tbox::util::ThreadPool::Instance()->Stop();
-  tbox::util::LogCleaner::Instance()->Stop();
-  // ProfilerStop();
   return 0;
 }

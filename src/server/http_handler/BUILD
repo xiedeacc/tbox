@@ -36,6 +36,7 @@ cc_library(
     hdrs = [
         "http_handler_factory.h",
         "server_handler.h",
+        "user_handler.h",
         "util.h",
     ],
     copts = COPTS,

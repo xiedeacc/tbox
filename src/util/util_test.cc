@@ -267,5 +267,53 @@ TEST(Util, HashPassword) {
   EXPECT_EQ(standard_hashed_password, hashed_password);
 }
 
+TEST(Util, ListAllIPAddresses) {
+  std::vector<std::string> public_ipv4_addrs;
+  std::vector<std::string> private_ipv4_addrs;
+  std::vector<std::string> public_ipv6_addrs;
+  std::vector<std::string> private_ipv6_addrs;
+  std::vector<folly::IPAddress> ip_addrs;
+  Util::ListAllIPAddresses(&ip_addrs);
+
+  for (const auto& addr : ip_addrs) {
+    if (addr.isV4()) {
+      if (!addr.isPrivate()) {
+        public_ipv4_addrs.emplace_back(addr.str());
+      } else {
+        private_ipv4_addrs.emplace_back(addr.str());
+      }
+    } else if (addr.isV6()) {
+      if (!addr.isPrivate()) {
+        public_ipv6_addrs.emplace_back(addr.str());
+      } else {
+        private_ipv6_addrs.emplace_back(addr.str());
+      }
+    }
+  }
+
+  for (const auto& addr : public_ipv4_addrs) {
+    LOG(INFO) << "public ipv4: " << addr;
+  }
+
+  for (const auto& addr : private_ipv4_addrs) {
+    LOG(INFO) << "private ipv4: " << addr;
+  }
+
+  for (const auto& addr : public_ipv6_addrs) {
+    LOG(INFO) << "public ipv6: " << addr;
+  }
+
+  for (const auto& addr : private_ipv6_addrs) {
+    LOG(INFO) << "private ipv6: " << addr;
+  }
+}
+
+TEST(Util, HexToStr) {
+  std::string passwd = "YZLoveLi@1314";
+  std::string hash = Util::SHA256(passwd);
+  EXPECT_EQ(hash,
+            "e882beb29c57a710b60f15726e45aabaca8db51f752a4391239c8557b373f3d3");
+}
+
 }  // namespace util
 }  // namespace tbox

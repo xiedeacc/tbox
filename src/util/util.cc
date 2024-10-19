@@ -26,6 +26,8 @@
 #include "external/blake3/c/blake3.h"
 #include "external/xz/src/liblzma/api/lzma.h"
 #include "fmt/core.h"
+#include "folly/Range.h"
+#include "folly/String.h"
 #include "glog/logging.h"
 #include "google/protobuf/json/json.h"
 #include "openssl/evp.h"
@@ -38,8 +40,11 @@
 
 #if defined(_WIN32)
 #elif defined(__linux__)
+#include <arpa/inet.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <ifaddrs.h>
+#include <netinet/in.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -296,14 +301,21 @@ void Util::ToHexStr(const string &in, string *out, const bool use_upper_case) {
 
 string Util::ToHexStr(const string &in, const bool use_upper_case) {
   string out;
-  out.reserve(in.size() * 2);
-  for (std::size_t i = 0; i < in.size(); ++i) {
-    if (use_upper_case) {
-      out.append(fmt::format("{:02X}", (unsigned char)in[i]));
-    } else {
-      out.append(fmt::format("{:02x}", (unsigned char)in[i]));
-    }
+  ToHexStr(in, &out, use_upper_case);
+  return out;
+}
+
+bool Util::HexToStr(const string &in, string *out) {
+  return folly::unhexlify(in, *out);
+}
+
+string Util::HexToStr(const string &in) {
+  string out;
+  auto ret = HexToStr(in, &out);
+  if (ret) {
+    return out;
   }
+  out.clear();
   return out;
 }
 
@@ -663,8 +675,12 @@ void Util::PrintProtoMessage(const google::protobuf::Message &msg) {
   LOG(INFO) << "json_value: " << json_value;
 }
 
-bool Util::MessageToJson(const google::protobuf::Message &msg, string *json) {
-  static PrintOptions option = {false, true, true, true, true};
+bool Util::MessageToJson(const google::protobuf::Message &msg, string *json,
+                         const bool format) {
+  PrintOptions option = {false, true, true, true, true};
+  if (format) {
+    option.add_whitespace = true;
+  }
   if (!MessageToJsonString(msg, json, option).ok()) {
     return false;
   }
@@ -750,6 +766,56 @@ bool IsMountPoint(const string &path) {
     return true;
   }
   return false;
+}
+
+void Util::ListAllIPAddresses(std::vector<folly::IPAddress> *ip_addrs) {
+#if defined(__linux__) || defined(__APPLE__)
+  struct ifaddrs *ifAddrStruct = nullptr;
+  struct ifaddrs *ifa = nullptr;
+  void *addr_ptr = nullptr;
+  getifaddrs(&ifAddrStruct);
+
+  for (ifa = ifAddrStruct; ifa != nullptr; ifa = ifa->ifa_next) {
+    if (!ifa->ifa_addr) continue;
+    if (ifa->ifa_addr->sa_family == AF_INET) {  // IPv4
+      addr_ptr = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+      char addr_buf[INET_ADDRSTRLEN];
+      inet_ntop(AF_INET, addr_ptr, addr_buf, INET_ADDRSTRLEN);
+      ip_addrs->emplace_back(folly::IPAddress(addr_buf));
+    } else if (ifa->ifa_addr->sa_family == AF_INET6) {  // IPv6
+      addr_ptr = &((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_addr;
+      char addr_buf[INET6_ADDRSTRLEN];
+      inet_ntop(AF_INET6, addr_ptr, addr_buf, INET6_ADDRSTRLEN);
+      ip_addrs->emplace_back(folly::IPAddress(addr_buf));
+    }
+  }
+
+  if (ifAddrStruct != nullptr) {
+    freeifaddrs(ifAddrStruct);
+  }
+#elif defined(_WIN32)
+
+#endif
+}
+
+string Util::ExecutablePath() {
+#if defined(__linux__)
+  char result[PATH_MAX];
+  ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
+  return std::string(result, (count > 0) ? count : 0);
+#elif defined(_WIN32)
+#elif defined(__APPLE__)
+
+#endif
+}
+
+string Util::HomeDir() {
+  auto current_path = std::filesystem::current_path().string();
+  if (current_path == "/") {
+    std::filesystem::path workspace(tbox::util::Util::ExecutablePath());
+    return workspace.parent_path().parent_path().string();
+  }
+  return current_path;
 }
 
 }  // namespace util
