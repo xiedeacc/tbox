@@ -24,7 +24,7 @@ class HTTPHandlerFactory : public proxygen::RequestHandlerFactory {
   proxygen::RequestHandler* onRequest(
       proxygen::RequestHandler*,
       proxygen::HTTPMessage* message) noexcept override {
-    if (message->getPath() == "/login") {
+    if (message->getPath() == "/user") {
       return new UserHandler();
     } else if (message->getPath() == "/server") {
       return new ServerHandler();

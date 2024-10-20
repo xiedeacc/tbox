@@ -18,7 +18,7 @@ class DefaultHandler : public proxygen::RequestHandler {
  public:
   void onRequest(
       std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override {
-    const HTTPHeaders& reqHeaders = headers->getHeaders();
+    const proxygen::HTTPHeaders& reqHeaders = headers->getHeaders();
 
     std::cout << "Request Headers:" << std::endl;
     reqHeaders.forEach(
