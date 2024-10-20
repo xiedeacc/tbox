@@ -686,6 +686,19 @@ bool Util::MessageToJson(const google::protobuf::Message &msg, string *json,
   return true;
 }
 
+string Util::MessageToJson(const google::protobuf::Message &msg,
+                           const bool format) {
+  PrintOptions option = {false, true, true, true, true};
+  if (format) {
+    option.add_whitespace = true;
+  }
+  std::string json;
+  if (!MessageToJsonString(msg, &json, option).ok()) {
+    return "";
+  }
+  return json;
+}
+
 bool Util::MessageToPrettyJson(const google::protobuf::Message &msg,
                                string *json) {
   static PrintOptions option = {true, true, false, true, true};

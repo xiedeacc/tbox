@@ -5,6 +5,7 @@ package tbox.proto;
 enum ErrCode {
   Success = 0;
   Fail = 1;
+  Unsupported_op = 2;
 
   File_permission = 10000;
   File_disk_full = 10001;

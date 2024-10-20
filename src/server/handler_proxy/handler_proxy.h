@@ -40,8 +40,14 @@ class HandlerProxy {
   static int32_t UpdateDNSRecord(const proto::ServerReq& req) {
     Aws::SDKOptions options;
     Aws::InitAPI(options);
+
     {
-      Aws::Route53::Route53Client client;
+      Aws::Client::ClientConfiguration client_config;
+      client_config.connectTimeoutMs = 2000;  // 2 seconds to connect
+      client_config.requestTimeoutMs = 3000;
+      client_config.httpRequestTimeoutMs = 2000;
+
+      Aws::Route53::Route53Client client(client_config);
 
       Aws::Route53::Model::ChangeResourceRecordSetsRequest request;
       request.SetHostedZoneId(req.hosted_zone_id());
@@ -75,7 +81,7 @@ class HandlerProxy {
       }
     }
     Aws::ShutdownAPI(options);
-    return UpdateDevAddrs(req);
+    return Err_Success;
   }
 
   static void ServerOpHandle(const proto::ServerReq& req,
@@ -101,12 +107,17 @@ class HandlerProxy {
         ret = UpdateDevAddrs(req);
         break;
       case proto::ServerOp::ServerUpdateDevDns:
+        if (!req.context().outer_ipv4().empty() ||
+            !req.context().outer_ipv6().empty()) {
+          UpdateDevAddrs(req);
+        }
         ret = UpdateDNSRecord(req);
         break;
       case proto::ServerOp::ServerGetDevIp:
         util::Util::MessageToJson(kDevIPAddrs, res->mutable_err_msg(), true);
         break;
       default:
+        ret = Err_Unsupported_op;
         LOG(ERROR) << "Unsupported operation";
     }
 
@@ -135,7 +146,6 @@ class HandlerProxy {
     }
 
     int32_t ret = Err_Success;
-
     switch (req.op()) {
       case proto::UserOp::UserCreate:
         ret = impl::UserManager::Instance()->UserRegister(
@@ -157,6 +167,7 @@ class HandlerProxy {
         ret = impl::UserManager::Instance()->UserLogout(req.token());
         break;
       default:
+        ret = Err_Unsupported_op;
         LOG(ERROR) << "Unsupported operation";
     }
 

@@ -8,7 +8,9 @@
 
 #include "proxygen/httpserver/RequestHandler.h"
 #include "proxygen/httpserver/RequestHandlerFactory.h"
+#include "src/server/http_handler/default_handler.h"
 #include "src/server/http_handler/server_handler.h"
+#include "src/server/http_handler/user_handler.h"
 
 namespace tbox {
 namespace server {
@@ -22,8 +24,12 @@ class HTTPHandlerFactory : public proxygen::RequestHandlerFactory {
   proxygen::RequestHandler* onRequest(
       proxygen::RequestHandler*,
       proxygen::HTTPMessage* message) noexcept override {
-    if (message->getPath() == "/server") {
+    if (message->getPath() == "/login") {
+      return new UserHandler();
+    } else if (message->getPath() == "/server") {
       return new ServerHandler();
+    } else {
+      return new DefaultHandler();
     }
     return nullptr;
   }

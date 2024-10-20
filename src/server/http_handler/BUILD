@@ -34,6 +34,7 @@ cc_library(
     name = "http_handler",
     srcs = [],
     hdrs = [
+        "default_handler.h",
         "http_handler_factory.h",
         "server_handler.h",
         "user_handler.h",

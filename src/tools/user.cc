@@ -24,22 +24,19 @@ using tbox::util::ConfigManager;
 class GrpcClient {
  public:
   explicit GrpcClient(const std::string& addr, const std::string& port) {
-    grpc::SslCredentialsOptions ssl_opts;
-    ssl_opts.pem_root_certs = LoadCACert("/conf/xiedeacc.com.ca.cer");
-    ssl_opts.pem_cert_chain = LoadCACert("/conf/xiedeacc.com.fullchain.cer");
-    // auto channel_creds = grpc::SslCredentials(ssl_opts);
+    channel_ = grpc::CreateChannel(addr + ":" + port,
+                                   grpc::InsecureChannelCredentials());
 
-    auto channel_creds = grpc::SslCredentials(grpc::SslCredentialsOptions());
-
-    grpc::ChannelArguments args;
-    args.SetSslTargetNameOverride("xiedeacc.com");
-    args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "xiedeacc.com");
-
-    channel_ =
-        grpc::CreateChannel(addr + ":80", grpc::InsecureChannelCredentials());
-    // channel_ = grpc::CreateChannel(addr + ":" + port, channel_creds);
-    // channel_ =
-    // grpc::CreateCustomChannel(addr + ":" + port, channel_creds, args);
+    // grpc::SslCredentialsOptions ssl_opts;
+    // ssl_opts.pem_root_certs = LoadCACert("/conf/ca.root.cert.pem");
+    //// auto channel_creds = grpc::SslCredentials(ssl_opts);
+    // auto channel_creds = grpc::SslCredentials(grpc::SslCredentialsOptions());
+    // grpc::ChannelArguments args;
+    // args.SetSslTargetNameOverride("xiedeacc.com");
+    // args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "xiedeacc.com");
+    //  channel_ = grpc::CreateChannel(addr + ":" + port, channel_creds);
+    //  channel_ =
+    //  grpc::CreateCustomChannel(addr + ":" + port, channel_creds, args);
     stub_ = tbox::proto::TboxService::NewStub(channel_);
 
     auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(10);

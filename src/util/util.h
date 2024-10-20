@@ -195,6 +195,8 @@ class Util final {
 
   static bool MessageToJson(const google::protobuf::Message &msg,
                             std::string *json, const bool format = false);
+  static std::string MessageToJson(const google::protobuf::Message &msg,
+                                   const bool format = false);
   static bool MessageToPrettyJson(const google::protobuf::Message &msg,
                                   std::string *json);
   static bool JsonToMessage(const std::string &json,

@@ -14,3 +14,7 @@ external
 /conf/base_config.json
 /conf/client_base_config.json
 /conf/server_base_config.json
+/conf/ca.root.cert.pem
+/conf/xiedeacc.com.ca.cer
+/conf/xiedeacc.com.fullchain.cer
+/logs/

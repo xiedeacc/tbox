@@ -6,10 +6,7 @@
 #ifndef TBOX_SERVER_HTTP_HANDLER_UTIL_H
 #define TBOX_SERVER_HTTP_HANDLER_UTIL_H
 
-#include "MultipartReader.h"
 #include "proxygen/httpserver/ResponseBuilder.h"
-#include "src/proto/service.pb.h"
-#include "src/util/util.h"
 
 namespace tbox {
 namespace server {

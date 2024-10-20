@@ -149,7 +149,7 @@ class GrpcClient {
     return size * nmemb;
   }
 
-  void UpdateDns(proto::ServerReq& req, proto::ServerRes* res) {
+  bool GetOuterIP() {
     std::string read_buf;
     bool update_dns = false;
     curl_easy_setopt(curl_, CURLOPT_URL, "https://ip.xiedeacc.com");
@@ -188,7 +188,11 @@ class GrpcClient {
       }
       LOG(INFO) << "result: " << read_buf;
     }
+    return update_dns;
+  }
 
+  void UpdateDns(proto::ServerReq& req, proto::ServerRes* res) {
+    auto update_dns = GetOuterIP();
     if (update_dns) {
       req.set_op(proto::ServerUpdateDevDns);
       req.mutable_context()->set_outer_ipv4(ipv4_);
@@ -230,8 +234,9 @@ class GrpcClient {
     while (!stop_) {
       grpc::ClientContext context;
       FillReq(&req);
-      UpdateIp(req, &res);
       UpdateDns(req, &res);
+      req.set_request_id(util::Util::UUID());
+      UpdateIp(req, &res);
       std::unique_lock<std::mutex> locker(mu_);
       cv_.wait_for(locker, std::chrono::seconds(5), [this] { return stop_; });
     }
