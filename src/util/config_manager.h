@@ -46,6 +46,7 @@ class ConfigManager {
   bool UseHttps() { return base_config_.use_https(); }
   std::string User() { return base_config_.user(); }
   std::string Password() { return base_config_.password(); }
+  std::string HostedZoneId() { return base_config_.hosted_zone_id(); }
 
   std::string ToString() {
     std::string json;

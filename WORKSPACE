@@ -776,7 +776,7 @@ http_archive(
 #)
 
 new_local_repository(
-    name = "aws_sdk",
-    build_file = "//bazel:aws_sdk.BUILD",
+    name = "aws-cpp-sdk",
+    build_file = "//bazel:aws-cpp-sdk.BUILD",
     path = "../aws-sdk-cpp",
 )

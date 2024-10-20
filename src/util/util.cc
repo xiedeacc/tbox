@@ -247,8 +247,7 @@ void Util::Trim(string *str) {
 
 string Util::Trim(const string &str) {
   string trimmed_str = str;
-  boost::algorithm::trim_right(trimmed_str);
-  boost::algorithm::trim_left(trimmed_str);
+  Trim(&trimmed_str);
   return trimmed_str;
 }
 

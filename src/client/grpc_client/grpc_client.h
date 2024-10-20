@@ -11,6 +11,8 @@
 #include <memory>
 #include <mutex>
 
+#include "aws/route53/model/RRType.h"
+#include "curl/curl.h"
 #include "glog/logging.h"
 #include "grpcpp/client_context.h"
 #include "grpcpp/grpcpp.h"
@@ -32,6 +34,13 @@ class GrpcClient {
                                      grpc::InsecureChannelCredentials())),
         stub_(tbox::proto::TboxService::NewStub(channel_)) {}
 
+  ~GrpcClient() {
+    if (curl_) {
+      curl_easy_cleanup(curl_);
+      curl_ = nullptr;
+    }
+  }
+
   bool Init() {
     int try_times = 0;
     while (try_times < 5) {
@@ -44,6 +53,13 @@ class GrpcClient {
 
     if (try_times >= 5) {
       LOG(ERROR) << "Login too many tries";
+      return false;
+    }
+    curl_ = curl_easy_init();
+    if (curl_) {
+      LOG(INFO) << "Init curl success";
+    } else {
+      LOG(INFO) << "Init curl error";
       return false;
     }
     return true;
@@ -67,11 +83,11 @@ class GrpcClient {
     grpc::ClientContext context;
     auto status = stub_->ServerOp(&context, req, res);
     if (!status.ok()) {
-      LOG(ERROR) << "Grpc error";
+      LOG(ERROR) << req.request_id() << " Grpc error";
       return false;
     }
     if (res->err_code()) {
-      LOG(ERROR) << "Server error: " << res->err_code();
+      LOG(ERROR) << req.request_id() << " Server error: " << res->err_code();
       return false;
     }
     return true;
@@ -102,6 +118,9 @@ class GrpcClient {
     std::vector<folly::IPAddress> ip_addrs;
     util::Util::ListAllIPAddresses(&ip_addrs);
     for (const auto& addr : ip_addrs) {
+      if (addr.isLoopback()) {
+        continue;
+      }
       if (addr.isV4()) {
         if (!addr.isPrivate()) {
           req->mutable_context()->add_public_ipv4(addr.str());
@@ -109,32 +128,116 @@ class GrpcClient {
           req->mutable_context()->add_private_ipv4(addr.str());
         }
       } else if (addr.isV6()) {
-        if (!addr.isPrivate()) {
+        if (!addr.isLinkLocal()) {
           req->mutable_context()->add_public_ipv6(addr.str());
         } else {
           req->mutable_context()->add_private_ipv6(addr.str());
         }
       }
     }
+    req->mutable_context()->set_outer_ipv4(ipv4_);
+    req->mutable_context()->set_outer_ipv6(ipv6_);
+
+    // std::string json;
+    // util::Util::MessageToJson(*req, &json, true);
+    // LOG(INFO) << json;
   }
 
-  void UpdateIPAddrs() {
+  static size_t WriteCallback(void* contents, size_t size, size_t nmemb,
+                              void* userp) {
+    ((std::string*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
+  }
+
+  void UpdateDns(proto::ServerReq& req, proto::ServerRes* res) {
+    std::string read_buf;
+    bool update_dns = false;
+    curl_easy_setopt(curl_, CURLOPT_URL, "https://ip.xiedeacc.com");
+    curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, &GrpcClient::WriteCallback);
+    curl_easy_setopt(curl_, CURLOPT_WRITEDATA, &read_buf);
+    curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 1L);
+    curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 2L);
+    curl_easy_setopt(curl_, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+    auto ret = curl_easy_perform(curl_);
+    if (ret != CURLE_OK) {
+      LOG(INFO) << "failed: " << curl_easy_strerror(ret);
+    } else {
+      util::Util::Trim(&read_buf);
+      if (!read_buf.empty() && ipv4_ != read_buf) {
+        update_dns = true;
+        ipv4_ = read_buf;
+      }
+      LOG(INFO) << "result: " << read_buf;
+    }
+
+    read_buf.clear();
+    curl_easy_setopt(curl_, CURLOPT_URL, "https://ip.xiedeacc.com");
+    curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, &GrpcClient::WriteCallback);
+    curl_easy_setopt(curl_, CURLOPT_WRITEDATA, &read_buf);
+    curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 1L);
+    curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 2L);
+    curl_easy_setopt(curl_, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
+    ret = curl_easy_perform(curl_);
+    if (ret != CURLE_OK) {
+      LOG(INFO) << "failed: " << curl_easy_strerror(ret);
+    } else {
+      util::Util::Trim(&read_buf);
+      if (!read_buf.empty() && ipv6_ != read_buf) {
+        update_dns = true;
+        ipv6_ = read_buf;
+      }
+      LOG(INFO) << "result: " << read_buf;
+    }
+
+    if (update_dns) {
+      req.set_op(proto::ServerUpdateDevDns);
+      req.mutable_context()->set_outer_ipv4(ipv4_);
+      req.mutable_context()->set_outer_ipv6(ipv6_);
+      req.set_hosted_zone_id(util::ConfigManager::Instance()->HostedZoneId());
+      req.set_record_name("dev.xiedeacc.com");
+      req.set_record_value(ipv4_);
+      req.set_record_type((int32_t)Aws::Route53::Model::RRType::A);
+      if (!DoRpc(req, res)) {
+        LOG(ERROR) << req.request_id() << " Update dns type A error";
+      } else {
+        LOG(INFO) << req.request_id() << " Update dns type A success";
+      }
+
+      req.set_record_value(ipv6_);
+      req.set_record_type((int32_t)Aws::Route53::Model::RRType::AAAA);
+      if (!DoRpc(req, res)) {
+        LOG(ERROR) << req.request_id() << " UpdateDns type AAAA error";
+      } else {
+        LOG(INFO) << req.request_id() << " UpdateDns type AAAA success";
+      }
+      std::string json;
+      util::Util::MessageToJson(req, &json, true);
+      LOG(INFO) << json;
+    }
+  }
+
+  void UpdateIp(proto::ServerReq& req, proto::ServerRes* res) {
+    if (!DoRpc(req, res)) {
+      LOG(ERROR) << req.request_id() << " UpdateIp error";
+    } else {
+      LOG(INFO) << req.request_id() << " UpdateIp success";
+    }
+  }
+
+  void UpdateDev() {
     proto::ServerReq req;
     proto::ServerRes res;
     while (!stop_) {
       grpc::ClientContext context;
       FillReq(&req);
-      if (!DoRpc(req, &res)) {
-        LOG(ERROR) << "Grpc error";
-      } else {
-        LOG(INFO) << "UpdateIPAddrs success";
-      }
+      UpdateIp(req, &res);
+      UpdateDns(req, &res);
       std::unique_lock<std::mutex> locker(mu_);
       cv_.wait_for(locker, std::chrono::seconds(5), [this] { return stop_; });
     }
 
     thread_exists_ = true;
-    LOG(INFO) << "UpdateIPAddrs exist";
+    LOG(INFO) << "UpdateDev exist";
   }
 
   void Shutdown() {
@@ -143,7 +246,7 @@ class GrpcClient {
   }
 
   void Start() {
-    auto task = std::bind(&GrpcClient::UpdateIPAddrs, this);
+    auto task = std::bind(&GrpcClient::UpdateDev, this);
     util::ThreadPool::Instance()->Post(task);
   }
 
@@ -168,6 +271,10 @@ class GrpcClient {
   std::string token_;
   tbox::proto::UserReq req_;
   tbox::proto::UserRes res_;
+
+  std::string ipv4_;
+  std::string ipv6_;
+  CURL* curl_ = nullptr;
 };
 
 }  // namespace client

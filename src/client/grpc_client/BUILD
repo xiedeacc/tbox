@@ -74,6 +74,8 @@ cc_library(
         "//src/proto:cc_grpc_service",
         "//src/util",
         "//src/util:thread_pool",
+        "@aws-cpp-sdk//:aws-cpp-sdk-route53",
+        "@curl",
         "@openssl//:ssl",
     ],
 )

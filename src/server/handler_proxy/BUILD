@@ -72,5 +72,6 @@ cc_library(
         "//src/impl:user_manager",
         "//src/proto:cc_grpc_service",
         "//src/util",
+        "@aws-cpp-sdk//:aws-cpp-sdk-route53",
     ],
 )

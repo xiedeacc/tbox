@@ -12,4 +12,5 @@ message BaseConfig {
   bool use_https = 7;
   string user = 8;
   string password = 9;
+  string hosted_zone_id = 10;
 }

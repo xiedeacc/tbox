@@ -6,47 +6,8 @@ enum ErrCode {
   Success = 0;
   Fail = 1;
 
-  // 10000
-
-  File_size_set_error = 10000;
-  File_permission = 10001;
-  File_disk_full = 10002;
-  File_partition_size_error = 10003;
-  File_permission_or_not_exists = 10004;
-  File_hash_calc_error = 10005;
-  File_sha256_calc_error = 10006;
-  File_md5_calc_error = 10007;
-  File_crc32_calc_error = 10008;
-  File_blake3_calc_error = 10009;
-  File_type_mismatch = 10010;
-  File_copy_error = 10011;
-  File_not_absolute = 10012;
-  File_dst_is_src_subdir = 10013;
-  File_not_exists = 10014;
-  File_exists = 10015;
-  File_not_dir = 10016;
-  File_mkdir_error = 10017;
-  File_create_symlink_error = 10018;
-
-  // 12000
-  Scan_error = 12001;
-  Scan_busy = 12002;
-  Scan_set_running_error = 12003;
-  Scan_interrupted = 12004;
-  Scan_dump_error = 12005;
-
-  // 13000
-  Repo_not_exists = 13000;
-  Repo_uuid_error = 13001;
-
-  // 14000
-  Serialize_error = 14000;
-  Deserialize_error = 14001;
-  Decompress_error = 14002;
-  Compress_error = 14003;
-
-  // 15000
-  Sync_interrupted = 15000;
+  File_permission = 10000;
+  File_disk_full = 10001;
 
   // 16000
   Sql_prepare_error = 16000;
@@ -71,4 +32,7 @@ enum ErrCode {
   User_exists = 17015;
   User_not_exists = 17016;
   User_change_password_error = 17017;
+
+  // 18000
+  Dns_update_recored_error = 18000;
 }
