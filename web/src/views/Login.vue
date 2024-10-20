@@ -42,7 +42,7 @@ const login = async () => {
 
   try {
     // Send a POST request to the login endpoint
-    const response = await fetch('/login', {
+    const response = await fetch('https://dev.xiamu.com/proxygen/user', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -56,11 +56,8 @@ const login = async () => {
       // Assuming the response contains a token or success message
       localStorage.setItem('user', user.value);
       localStorage.setItem('token', data.token);
-      console.log("1")
-      console.log(data.token)
       router.push('/dashboard');
     } else {
-      console.log("2")
       const errorData = await response.json();
       error.value = errorData.message || 'Login failed. Please try again.';
     }

@@ -32,7 +32,7 @@ const fetchServerData = async () => {
     };
 
     // Send a POST request to the server
-    const response = await fetch('/server', {
+    const response = await fetch('https://dev.xiamu.com/proxygen/server', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -63,7 +63,6 @@ const fetchServerData = async () => {
     }
   } catch (err) {
     error.value = 'An error occurred while fetching server data.';
-    console.log(err)
   }
 };
 

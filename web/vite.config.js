@@ -4,13 +4,13 @@ import { defineConfig } from 'vite'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [vue()],
+  base: '/web',
   server: {
     host: '0.0.0.0',
     proxy: {
       '/login': {
         target: 'http://127.0.0.1:10003',
         changeOrigin: true,
-        // rewrite: (path) => path.replace(/^\/login/, '/login'),
       },
       '/server': {
         target: 'http://127.0.0.1:10003',

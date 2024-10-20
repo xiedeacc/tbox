@@ -18,3 +18,6 @@ external
 /conf/xiedeacc.com.ca.cer
 /conf/xiedeacc.com.fullchain.cer
 /logs/
+/web/dist/
+/web/dist*
+/web/node_modules/

@@ -8,6 +8,7 @@
 
 #include "proxygen/httpserver/RequestHandler.h"
 #include "proxygen/httpserver/ResponseBuilder.h"
+#include "proxygen/lib/http/HTTPMessage.h"
 
 namespace tbox {
 namespace server {
@@ -16,8 +17,14 @@ namespace http_handler {
 class DefaultHandler : public proxygen::RequestHandler {
  public:
   void onRequest(
-      std::unique_ptr<proxygen::HTTPMessage> /*headers*/) noexcept override {
-    // This method will be called when an unhandled path is requested
+      std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override {
+    const HTTPHeaders& reqHeaders = headers->getHeaders();
+
+    std::cout << "Request Headers:" << std::endl;
+    reqHeaders.forEach(
+        [&](const std::string& headerName, const std::string& headerValue) {
+          std::cout << headerName << ": " << headerValue << std::endl;
+        });
   }
 
   void onBody(std::unique_ptr<folly::IOBuf> /*body*/) noexcept override {
