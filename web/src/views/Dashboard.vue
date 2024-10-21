@@ -32,7 +32,7 @@ const fetchServerData = async () => {
     };
 
     // Send a POST request to the server
-    const response = await fetch('https://dev.xiamu.com/proxygen/server', {
+    const response = await fetch('https://ip.xiedeacc.com/proxygen/server', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -42,7 +42,7 @@ const login = async () => {
 
   try {
     // Send a POST request to the login endpoint
-    const response = await fetch('https://dev.xiamu.com/proxygen/user', {
+    const response = await fetch('https://ip.xiedeacc.com/proxygen/user', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
