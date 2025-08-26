@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package tbox.proto;
+
+// OpCode enum for WebSocket message operations
+enum OpCode {
+  // Default value, should not be used
+  OP_UNUSED = 0;
+
+  // File key operation
+  OP_FILE_KEY = 2;
+
+  // File upload operation
+  OP_FILE_UPLOAD = 3;
+
+  // EC2 instance operations
+  OP_EC2_START = 4;
+  OP_EC2_STOP = 5;
+
+  // Route53 DNS operations
+  OP_ROUTE53_UPDATE_A_RECORD = 6;
+  OP_ROUTE53_UPDATE_CNAME_RECORD = 7;
+}

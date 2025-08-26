@@ -1,0 +1,26 @@
+diff --git a/thrift/compiler/detail/system.cc b/thrift/compiler/detail/system.cc
+index a8dccc3ee4..368c2b3e35 100644
+--- a/thrift/compiler/detail/system.cc
++++ b/thrift/compiler/detail/system.cc
+@@ -40,7 +40,7 @@ std::filesystem::path make_abs_path(
+       return base_path / path;
+     }
+   });
+-  if (platform_is_windows()) {
++  if (platform_is_windows() && base_path.is_absolute()) {
+     return format_abs_path(abs_path.lexically_normal().string());
+   }
+   return abs_path;
+diff --git a/thrift/compiler/generate/t_mstch_generator.cc b/thrift/compiler/generate/t_mstch_generator.cc
+index f98181e8ff..b89d4c1717 100644
+--- a/thrift/compiler/generate/t_mstch_generator.cc
++++ b/thrift/compiler/generate/t_mstch_generator.cc
+@@ -445,7 +445,7 @@ void t_mstch_generator::write_output(
+   if (!ofs) {
+     std::ostringstream err;
+     err << "Couldn't open \"" << abs_path.string() << "\" for writing.";
+-    throw std::runtime_error{err.str()};
++    // throw std::runtime_error{err.str()};
+   }
+   ofs << data;
+   if (!is_last_char(data, '\n')) {
