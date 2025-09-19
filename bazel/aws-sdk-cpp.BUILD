@@ -355,6 +355,10 @@ cc_library(
         ],
         "@platforms//os:linux": glob([
             "crt/aws-crt-cpp/crt/aws-c-io/source/linux/**/*.c",
+            "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
+            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/encoding_avx2.c",
+            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/asm/cpuid.c",
+            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/cpuid.c",
             "crt/aws-crt-cpp/crt/aws-c-common/source/linux/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-io/source/posix/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-common/source/posix/**/*.c",
@@ -499,7 +503,7 @@ cc_library(
         ],
         exclude = [
             "src/aws-cpp-sdk-core/source/platform/**",
-            "src/aws-cpp-sdk-core/source/external/**",
+            #"src/aws-cpp-sdk-core/source/external/**",
             "src/aws-cpp-sdk-core/source/smithy/tracing/impl/opentelemetry/**",
             "src/aws-cpp-sdk-core/source/net/windows/**",
             "src/aws-cpp-sdk-core/source/http/windows/**",
@@ -513,8 +517,7 @@ cc_library(
         ]),
         "@platforms//os:linux": glob([
             "src/aws-cpp-sdk-core/source/net/linux-shared/**/*.cpp",
-            "src/aws-cpp-sdk-core/source/platform/linux/**/*.cpp",
-            "src/aws-cpp-sdk-core/source/platform/posix/**/*.cpp",
+            "src/aws-cpp-sdk-core/source/platform/linux-shared/**/*.cpp",
         ]),
         "@platforms//os:osx": glob([
             "src/aws-cpp-sdk-core/source/platform/darwin/**/*.cpp",
