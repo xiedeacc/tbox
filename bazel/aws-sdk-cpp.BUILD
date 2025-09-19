@@ -90,6 +90,7 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "INTEL_NO_ITTNOTIFY_API",
     "aws_c_common_EXPORTS",
     "AWS_S2N_INSOURCE_PATH",
+    "USE_S2N",
 ] + select({
     "@tbox//bazel:linux_x86_64": [
         "AWS_HAVE_AVX2_INTRINSICS",

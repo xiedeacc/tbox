@@ -48,6 +48,8 @@ COPTS = GLOBAL_COPTS + select({
         "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/source",
         "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/source/external/libcbor",
         "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/include",
+        "-Iexternal/aws-sdk-cpp/src/aws-cpp-sdk-core/include/aws/core",
     ],
 }) + select({
     "@platforms//os:linux": [],
