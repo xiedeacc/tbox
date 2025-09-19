@@ -65,6 +65,11 @@ COPTS = GLOBAL_COPTS + select({
     "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/source",
     "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/source/external/libcbor",
     "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/api",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/include",
+    "-include external/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/utils/s2n_prelude.h",
 ]
 
 LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
@@ -84,6 +89,7 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "ENFORCE_TLS_V1_2",
     "INTEL_NO_ITTNOTIFY_API",
     "aws_c_common_EXPORTS",
+    "AWS_S2N_INSOURCE_PATH",
 ] + select({
     "@tbox//bazel:linux_x86_64": [
         "AWS_HAVE_AVX2_INTRINSICS",
@@ -207,19 +213,6 @@ write_file(
     ],
 )
 
-write_file(
-    name = "Config_h",
-    out = "crt/aws-crt-cpp/generated/include/aws/crt/Config.h",
-    content = [
-        "#pragma once",
-        "#define AWS_CRT_CPP_VERSION \"0.32.8\"",
-        "#define AWS_CRT_CPP_VERSION_MAJOR 0",
-        "#define AWS_CRT_CPP_VERSION_MINOR 32",
-        "#define AWS_CRT_CPP_VERSION_PATCH 8",
-        "#define AWS_CRT_CPP_GIT_HASH \"05edb40f592813fab2b6f7ba141554fdcf86a7c9\"",
-    ],
-)
-
 template_rule(
     name = "config_h",
     src = ":config_h_in",
@@ -233,6 +226,69 @@ template_rule(
         "@platforms//os:osx": {},
         "@platforms//os:windows": {},
     }),
+)
+
+write_file(
+    name = "Config_h",
+    out = "crt/aws-crt-cpp/generated/include/aws/crt/Config.h",
+    content = [
+        "#pragma once",
+        "#define AWS_CRT_CPP_VERSION \"0.32.8\"",
+        "#define AWS_CRT_CPP_VERSION_MAJOR 0",
+        "#define AWS_CRT_CPP_VERSION_MINOR 32",
+        "#define AWS_CRT_CPP_VERSION_PATCH 8",
+        "#define AWS_CRT_CPP_GIT_HASH \"05edb40f592813fab2b6f7ba141554fdcf86a7c9\"",
+    ],
+)
+
+genrule(
+    name = "SDKConfig_h_in",
+    outs = ["src/aws-cpp-sdk-core/include/aws/core/SDKConfig.h.in"],
+    cmd = "\n".join([
+        "cat <<'EOF' >$@",
+        "/**",
+        " * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.",
+        " * SPDX-License-Identifier: Apache-2.0.",
+        " */",
+        "",
+        "/* #undef USE_AWS_MEMORY_MANAGEMENT */",
+        "",
+        "EOF",
+    ]),
+)
+
+template_rule(
+    name = "SDKConfig_h",
+    src = ":SDKConfig_h_in",
+    out = "src/aws-cpp-sdk-core/include/aws/core/SDKConfig.h",
+    substitutions = select({
+        "@platforms//os:linux": {
+        },
+        "@platforms//os:osx": {
+        },
+        "@platforms//os:windows": {
+        },
+        "//conditions:default": {},
+    }),
+)
+
+genrule(
+    name = "VersionConfig_h",
+    outs = ["src/aws-cpp-sdk-core/include/aws/core/VersionConfig.h"],
+    cmd = "\n".join([
+        "cat <<'EOF' >$@",
+        "/**",
+        " * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.",
+        " * SPDX-License-Identifier: Apache-2.0.",
+        " */",
+        "#pragma once",
+        "",
+        "#define AWS_SDK_VERSION_STRING \"1.11.430\"",
+        "#define AWS_SDK_VERSION_MAJOR 1",
+        "#define AWS_SDK_VERSION_MINOR 11",
+        "#define AWS_SDK_VERSION_PATCH 430",
+        "EOF",
+    ]),
 )
 
 # AWS Common Runtime C++ library (from submodule)
@@ -252,15 +308,19 @@ cc_library(
             "crt/aws-crt-cpp/crt/aws-c-s3/source/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-sdkutils/source/**/*.c",
             "crt/aws-crt-cpp/crt/aws-checksums/source/**/*.c",
+            "crt/aws-crt-cpp/crt/s2n/api/**/*.c",
+            "crt/aws-crt-cpp/crt/s2n/crypto/**/*.c",
+            "crt/aws-crt-cpp/crt/s2n/error/**/*.c",
+            "crt/aws-crt-cpp/crt/s2n/stuffer/**/*.c",
+            "crt/aws-crt-cpp/crt/s2n/tls/**/*.c",
+            "crt/aws-crt-cpp/crt/s2n/utils/**/*.c",
             #"crt/aws-crt-cpp/crt/aws-lc/crypto/**/*.c",
-            #"crt/aws-crt-cpp/crt/s2n/**/*.c",
         ],
         exclude = [
             "crt/aws-crt-cpp/crt/aws-c-io/source/windows/**",
             "crt/aws-crt-cpp/crt/aws-c-io/source/linux/**",
             "crt/aws-crt-cpp/crt/aws-c-io/source/darwin/**",
             "crt/aws-crt-cpp/crt/aws-c-io/source/posix/**",
-            "crt/aws-crt-cpp/crt/aws-c-io/source/s2n/**",
             "crt/aws-crt-cpp/crt/aws-c-common/source/windows/**",
             "crt/aws-crt-cpp/crt/aws-c-common/source/linux/**",
             "crt/aws-crt-cpp/crt/aws-c-common/source/darwin/**",
@@ -366,8 +426,12 @@ cc_library(
             "crt/aws-crt-cpp/crt/aws-checksums/include/**/*.h",
             #"crt/aws-crt-cpp/crt/aws-lc/include/**/*.h",
             #"crt/aws-crt-cpp/crt/aws-lc/crypto/**/*.h",
-            #"crt/aws-crt-cpp/crt/s2n/include/**/*.h",
-            #"crt/aws-crt-cpp/crt/s2n/**/*.h",
+            "crt/aws-crt-cpp/crt/s2n/api/**/*.h",
+            "crt/aws-crt-cpp/crt/s2n/crypto/**/*.h",
+            "crt/aws-crt-cpp/crt/s2n/error/**/*.h",
+            "crt/aws-crt-cpp/crt/s2n/stuffer/**/*.h",
+            "crt/aws-crt-cpp/crt/s2n/tls/**/*.h",
+            "crt/aws-crt-cpp/crt/s2n/utils/**/*.h",
         ],
         exclude = [
             "crt/aws-crt-cpp/crt/aws-c-io/include/windows/**",
@@ -411,8 +475,6 @@ cc_library(
     copts = COPTS + [
     ],
     includes = [
-        "crt/aws-crt-cpp/crt/aws-c-common/include",
-        "crt/aws-crt-cpp/include",
         "include",
     ],
     linkopts = LINKOPTS,
@@ -481,7 +543,11 @@ cc_library(
             "src/aws-cpp-sdk-core/include/platform/posix/**/*.h",
         ]),
         "//conditions:default": [],
-    }),
+    }) + [
+        ":SDKConfig_h",
+        ":VersionConfig_h",
+        ":config_h",
+    ],
     copts = COPTS,
     includes = [
         "include",
@@ -496,7 +562,6 @@ cc_library(
         "@zlib",
     ],
 )
-
 
 # Access Management library
 cc_library(

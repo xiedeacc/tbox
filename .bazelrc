@@ -146,5 +146,4 @@ build:ios --noenable_platform_specific_config
 
 build:tcmalloc --define='profiling_type=tcmalloc'
 build:jemalloc --define='profiling_type=jemalloc'
-
 ################# cross compiling ###############

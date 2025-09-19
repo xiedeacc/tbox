@@ -638,9 +638,10 @@ new_git_repository(
 #new_git_repository(
 #name = "aws-sdk-cpp",
 #build_file = "//bazel:aws-sdk-cpp.BUILD",
+#commit = "81be5495b3824fa877c4d820ab46315fb6b3bcd5",
+#recursive_init_submodules = True,
 #remote = "git@github.com:aws/aws-sdk-cpp.git",
-#tag = "1.11.602",
-#init_submodules = True,
+#shallow_since = "2024-01-01T00:00:00Z",
 #)
 
 new_local_repository(
