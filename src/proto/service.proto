@@ -22,6 +22,7 @@ message EC2Request {
   OpCode op = 1;
   string instance_id = 2;  // The EC2 instance ID
   string region = 3;       // AWS region (optional, defaults to configured region)
+  string token = 4;        // Authentication token
 }
 
 // Response message for EC2 instance operations
@@ -41,6 +42,7 @@ message Route53Request {
   string record_type = 5;     // Record type: "A" or "CNAME"
   int32 ttl = 6;              // TTL in seconds (optional, defaults to 300)
   string region = 7;          // AWS region (optional, defaults to configured region)
+  string token = 8;           // Authentication token
 }
 
 // Response message for Route53 DNS operations
@@ -59,6 +61,7 @@ message ReportRequest {
   repeated string client_ip = 2;  // Client's IP addresses to report (multiple interfaces)
   int64 timestamp = 3;            // Timestamp of the report (Unix timestamp)
   string client_info = 4;         // Additional client information (optional)
+  string token = 5;               // Authentication token
 }
 
 // Response message for client IP reporting

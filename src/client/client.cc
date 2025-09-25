@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
   // Start continuous IP reporting in background thread
   LOG(INFO) << "Starting background IP reporting thread with interval " 
             << report_interval << " seconds...";
-  grpc_client.StartReporting();
+  grpc_client.Start();
   
   // Connect WebSocket client
   tbox::client::WebSocketClient websocket_client(

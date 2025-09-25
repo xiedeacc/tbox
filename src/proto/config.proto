@@ -13,4 +13,12 @@ message BaseConfig {
   uint32 event_threads = 8;
   uint32 client_worker_thread_pool_size = 9;
   uint32 report_interval_seconds = 10;
+  
+  // Authentication credentials
+  string user = 11;
+  string password = 12;
+  
+  // Route53 settings for DNS update
+  string route53_hosted_zone_id = 13;
+  string domain_name = 14;
 }

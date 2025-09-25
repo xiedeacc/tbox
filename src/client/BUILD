@@ -62,7 +62,6 @@ cc_library(
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
-        "//src/client/handler:handlers",
         "//src/common:blocking_queue",
         "//src/proto:cc_enums",
         "@boost//:asio",
@@ -105,7 +104,7 @@ cc_test(
 )
 
 cc_binary(
-    name = "client",
+    name = "tbox_client",
     srcs = ["client.cc"],
     copts = COPTS,
     linkopts = LINKOPTS + select({

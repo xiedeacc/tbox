@@ -139,7 +139,7 @@ build:linux --host_copt='-O2'
 build:linux --host_copt='-Wall'
 build:linux --host_cxxopt='-std=c++17'
 build:linux --host_cxxopt=-D_GLIBCXX_USE_CXX11_ABI=1
-build:linux --workspace_status_command=bazel/workspace_status.sh
+#build:linux --workspace_status_command=bazel/workspace_status.sh
 
 build:android --noenable_platform_specific_config
 build:ios --noenable_platform_specific_config

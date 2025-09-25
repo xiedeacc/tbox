@@ -47,6 +47,14 @@ class ConfigManager {
     uint32_t interval = base_config_.report_interval_seconds();
     return interval > 0 ? interval : 30; // Default to 30 seconds if not set or zero
   }
+  
+  // Authentication credentials
+  std::string User() { return base_config_.user(); }
+  std::string Password() { return base_config_.password(); }
+  
+  // Route53 settings
+  std::string Route53HostedZoneId() { return base_config_.route53_hosted_zone_id(); }
+  std::string DomainName() { return base_config_.domain_name(); }
 
   std::string ToString() {
     std::string json;

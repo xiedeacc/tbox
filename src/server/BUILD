@@ -131,7 +131,7 @@ cc_library(
 )
 
 cc_binary(
-    name = "server",
+    name = "tbox_server",
     srcs = ["server.cc"],
     copts = COPTS,
     linkopts = LINKOPTS + select({
