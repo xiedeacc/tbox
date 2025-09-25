@@ -147,3 +147,58 @@ build:ios --noenable_platform_specific_config
 build:tcmalloc --define='profiling_type=tcmalloc'
 build:jemalloc --define='profiling_type=jemalloc'
 ################# cross compiling ###############
+build:openwrt_aarch64 --platforms='//bazel:linux_aarch64_platform'
+build:openwrt_aarch64 --toolchain_resolution_debug='@bazel_tools//tools/jdk:runtime_toolchain_type'
+build:openwrt_aarch64 --extra_toolchains='@cc_toolchain_config_aarch64_linux_openwrt_musl_gcc//:toolchain-aarch64_linux_openwrt_musl_gcc'
+build:openwrt_aarch64 --extra_toolchains='@remotejdk21_linux_aarch64_toolchain_config_repo//:toolchain'
+build:openwrt_aarch64 --cpu='aarch64'
+build:openwrt_aarch64 --compiler='gcc'
+build:openwrt_aarch64 --java_runtime_version="remotejdk_21"
+build:openwrt_aarch64 --action_env=STAGING_DIR=/root/src/software/openwrt/openwrt-aarch64_toolchain
+build:openwrt_aarch64 --copt='-g'
+build:openwrt_aarch64 --host_copt='-g'
+build:openwrt_aarch64 --define cross_compiling=true
+build:openwrt_aarch64 --build_tag_filters='-ignore'
+
+build:gcc_aarch64_linux_gnu --platforms='//bazel:linux_aarch64_platform'
+build:gcc_aarch64_linux_gnu --toolchain_resolution_debug='@bazel_tools//tools/jdk:runtime_toolchain_type'
+build:gcc_aarch64_linux_gnu --extra_toolchains='@cc_toolchain_config_gcc_aarch64_unknown_linux_gnu//:toolchain-gcc_aarch64_unknown_linux_gnu'
+build:gcc_aarch64_linux_gnu --extra_toolchains='@remotejdk21_linux_toolchain_config_repo//:toolchain'
+build:gcc_aarch64_linux_gnu --cpu='aarch64'
+build:gcc_aarch64_linux_gnu --compiler='gcc'
+build:gcc_aarch64_linux_gnu --copt='-g'
+build:gcc_aarch64_linux_gnu --host_copt='-g'
+build:gcc_aarch64_linux_gnu --define cross_compiling=true
+build:gcc_aarch64_linux_gnu --build_tag_filters='-ignore'
+
+build:gcc_aarch64_linux_musl --platforms='//bazel:linux_aarch64_platform'
+build:gcc_aarch64_linux_musl --toolchain_resolution_debug='@bazel_tools//tools/jdk:runtime_toolchain_type'
+build:gcc_aarch64_linux_musl --extra_toolchains='@cc_toolchain_config_gcc_aarch64_unknown_linux_musl//:toolchain-gcc_aarch64_unknown_linux_musl'
+build:gcc_aarch64_linux_musl --extra_toolchains='@remotejdk21_linux_toolchain_config_repo//:toolchain'
+build:gcc_aarch64_linux_musl --cpu='aarch64'
+build:gcc_aarch64_linux_musl --compiler='gcc'
+build:gcc_aarch64_linux_musl --copt='-g'
+build:gcc_aarch64_linux_musl --host_copt='-g'
+build:gcc_aarch64_linux_musl --define abi='musl'
+build:gcc_aarch64_linux_musl --define cross_compiling=true
+build:gcc_aarch64_linux_musl --build_tag_filters='-ignore'
+
+build:clang_x86_64_linux_gnu --platforms='//bazel:linux_x86_64_platform'
+build:clang_x86_64_linux_gnu --toolchain_resolution_debug='@bazel_tools//tools/cpp:toolchain_type'
+build:clang_x86_64_linux_gnu --extra_toolchains='@cc_toolchain_config_clang_x86_64_unknown_linux_gnu//:toolchain-clang_x86_64_unknown_linux_gnu'
+build:clang_x86_64_linux_gnu --extra_toolchains='@remotejdk21_linux_toolchain_config_repo//:toolchain'
+build:clang_x86_64_linux_gnu --cpu='x86_64'
+build:clang_x86_64_linux_gnu --compiler='clang'
+build:clang_x86_64_linux_gnu --copt='-g'
+build:clang_x86_64_linux_gnu --host_copt='-g'
+
+build:clang_aarch64_linux_gnu --platforms='//bazel:linux_aarch64_platform'
+build:clang_aarch64_linux_gnu --toolchain_resolution_debug='@bazel_tools//tools/cpp:toolchain_type'
+build:clang_aarch64_linux_gnu --extra_toolchains='@cc_toolchain_config_clang_aarch64_unknown_linux_gnu//:toolchain-clang_aarch64_unknown_linux_gnu'
+build:clang_aarch64_linux_gnu --extra_toolchains='@remotejdk21_linux_aarch64_toolchain_config_repo//:toolchain'
+build:clang_aarch64_linux_gnu --cpu='aarch64'
+build:clang_aarch64_linux_gnu --compiler=clang
+build:clang_aarch64_linux_gnu --copt='-g'
+build:clang_aarch64_linux_gnu --host_copt='-g'
+build:clang_aarch64_linux_gnu --define cross_compiling=true
+build:clang_aarch64_linux_gnu --build_tag_filters='-ignore'

@@ -759,6 +759,44 @@ hedron_compile_commands_setup_transitive_transitive_transitive()
 
 gen_local_config_git(name = "local_config_git")
 
+
+register_toolchains(
+    "@openssl//:preinstalled_make_toolchain",
+    "@openssl//:preinstalled_pkgconfig_toolchain",
+)
+
+http_archive(
+    name = "linux-x86_64-gnu_sysroot",
+    build_file = "//bazel:toolchains.BUILD",
+    sha256 = "30546f20d6a16bf5de3a15eb63418a488f5317402b4907484b1521a7a4e2bc7c",
+    strip_prefix = "linux-x86_64-gnu_sysroot",
+    urls = ["https://code.xiamu.com/files/linux-x86_64-gnu_sysroot.tar.gz"],
+)
+
+http_archive(
+    name = "linux-aarch64-gnu_sysroot",
+    build_file = "//bazel:toolchains.BUILD",
+    sha256 = "16bfff2c7306118f2bebc6d8d35188768bf312e60cf3fc363e2ab8d96f53240e",
+    strip_prefix = "linux-aarch64-gnu_sysroot",
+    urls = ["https://code.xiamu.com/files/linux-aarch64-gnu_sysroot.tar.gz"],
+)
+
+http_archive(
+    name = "linux-aarch64-musl_sysroot",
+    build_file = "//bazel:toolchains.BUILD",
+    sha256 = "a76ef46d1815d465cb2079825104aca507a230bc973477f4ce1e9d94a325d7e8",
+    strip_prefix = "linux-aarch64-musl_sysroot",
+    urls = ["https://code.xiamu.com/files/linux-aarch64-musl_sysroot.tar.gz"],
+)
+
+http_archive(
+    name = "clang18.1.8-aarch64_sysroot",
+    build_file = "//bazel:cc_toolchain.BUILD",
+    sha256 = "95e32680f2f439773edd85640e5072bab099c399506008298cd1251be2d2df39",
+    strip_prefix = "clang18.1.8-linux-aarch64_sysroot",
+    urls = ["https://code.xiamu.com/files/clang18.1.8-linux-aarch64_sysroot.tar.gz"],
+)
+
 new_git_repository(
     name = "cc_toolchains",
     commit = "d52a3974b37e01ab7774694d5cd8ed8ae120f16e",
@@ -771,6 +809,53 @@ cc_toolchains_setup(
     name = "cc_toolchains_setup",
     toolchains = {
         "x86_64": {
+            "linux": [
+                {
+                    "distro": "generic",
+                    "libc": "glibc",
+                    "compiler": "clang",
+                    "triple": "x86_64-unknown-linux-gnu",
+                    "url": "https://code.xiamu.com/files/clang18.1.8-linux-x86_64_toolchain.tar.gz",
+                    "strip_prefix": "clang18.1.8-linux-x86_64_toolchain",
+                    "sha256sum": "be64a29251dd2b7ae6e8e783f99ab395b4bf2a75f98d8a6e03bf855e9d811434",
+                    "sysroot": "@cc_toolchain_repo_x86_64_linux_generic_glibc_clang",
+                    "tool_names": {
+                        "ar": "llvm-ar",
+                        "as": "llvm-as",
+                        "c++": "clang++",
+                        "cpp": "clang-cpp",
+                        "g++": "clang++",
+                        "gcc": "clang",
+                        "gcov": "llvm-cov",
+                        "ld": "ld.lld",
+                        "llvm-cov": "llvm-cov",
+                        "nm": "llvm-nm",
+                        "objcopy": "llvm-objcopy",
+                        "objdump": "llvm-objdump",
+                        "strip": "llvm-strip",
+                    },
+                    "cxx_builtin_include_directories": [
+                        "/usr/include/x86_64-linux-gnu",
+                        "/usr/include",
+                        "include/x86_64-unknown-linux-gnu/c++/v1",
+                        "include/c++/v1",
+                        "lib/clang/18/include",
+                        "lib/clang/18/share",
+                        "include",
+                    ],
+                    "lib_directories": [
+                        "lib",
+                        "lib/x86_64-unknown-linux-gnu",
+                        "lib/clang/18/lib/x86_64-unknown-linux-gnu",
+                        "/usr/lib/x86_64-linux-gnu",
+                    ],
+                    "link_libs": [
+                        "libclang_rt.builtins.a",
+                    ],
+                    "supports_start_end_lib": True,
+                    "debug": True,
+                },
+            ],
             "osx": [
                 {
                     "distro": "generic",
@@ -859,6 +944,57 @@ cc_toolchains_setup(
                     ],
                     "link_libs": [
                         "libgcc.a",
+                    ],
+                    "supports_start_end_lib": True,
+                    "debug": True,
+                },
+                {
+                    "distro": "generic",
+                    "libc": "glibc",
+                    "compiler": "clang",
+                    "triple": "aarch64-unknown-linux-gnu",
+                    "url": "https://code.xiamu.com/files/clang18.1.8-linux-x86_64_toolchain.tar.gz",
+                    "strip_prefix": "clang18.1.8-linux-x86_64_toolchain",
+                    "sha256sum": "be64a29251dd2b7ae6e8e783f99ab395b4bf2a75f98d8a6e03bf855e9d811434",
+                    "sysroot": "@clang18.1.8-aarch64_sysroot",
+                    "tool_names": {
+                        "ar": "llvm-ar",
+                        "as": "llvm-as",
+                        "c++": "clang++",
+                        "cpp": "clang-cpp",
+                        "g++": "clang++",
+                        "gcc": "clang",
+                        "gcov": "llvm-cov",
+                        "ld": "ld",
+                        "llvm-cov": "llvm-cov",
+                        "nm": "llvm-nm",
+                        "objcopy": "llvm-objcopy",
+                        "objdump": "llvm-objdump",
+                        "strip": "llvm-strip",
+                    },
+                    "cxx_builtin_include_directories": [
+                    ],
+                    "lib_directories": [
+                    ],
+                    "sysroot_include_directories": [
+                        "include/aarch64-unknown-linux-gnu/c++/v1",
+                        "include/c++/v1",
+                        "lib/clang/18/include",
+                        "usr/include",
+                    ],
+                    "sysroot_lib_directories": [
+                        "lib",
+                        "lib/aarch64-unknown-linux-gnu",
+                        "lib/clang/18/lib/aarch64-unknown-linux-gnu",
+                        "usr/lib",
+                    ],
+                    "link_libs": [
+                        "libclang_rt.builtins.a",
+                        "Scrt1.o",
+                        "crti.o",
+                        "crtbeginS.o",
+                        "crtendS.o",
+                        "crtn.o",
                     ],
                     "supports_start_end_lib": True,
                     "debug": True,
