@@ -3,23 +3,29 @@ package tbox.proto;
 import "src/proto/error.proto";
 import "src/proto/enums.proto";
 
-service MEGAService {
+service TBOXService {
   // EC2 instance management (start/stop)
-  rpc EC2InstanceManagement(EC2InstanceRequest) returns (EC2InstanceResponse) {}
+  rpc EC2Op(EC2Request) returns (EC2Response) {}
   
   // Route53 DNS management (update A/CNAME records)
-  rpc Route53Management(Route53Request) returns (Route53Response) {}
+  rpc Route53Op(Route53Request) returns (Route53Response) {}
+  
+  // Client IP address reporting
+  rpc ReportOp(ReportRequest) returns (ReportResponse) {}
+  
+  // User operations
+  rpc UserOp(UserRequest) returns (UserResponse) {}
 }
 
 // Request message for EC2 instance operations
-message EC2InstanceRequest {
+message EC2Request {
   OpCode op = 1;
   string instance_id = 2;  // The EC2 instance ID
   string region = 3;       // AWS region (optional, defaults to configured region)
 }
 
 // Response message for EC2 instance operations
-message EC2InstanceResponse {
+message EC2Response {
   ErrCode err_code = 1;
   string instance_id = 2;     // The EC2 instance ID
   string status = 3;          // Current instance status
@@ -45,4 +51,34 @@ message Route53Response {
   string new_value = 4;       // The new value that was set
   string change_id = 5;       // Route53 change ID for tracking
   string message = 6;         // Additional information or error message
+}
+
+// Request message for client IP reporting
+message ReportRequest {
+  OpCode op = 1;
+  repeated string client_ip = 2;  // Client's IP addresses to report (multiple interfaces)
+  int64 timestamp = 3;            // Timestamp of the report (Unix timestamp)
+  string client_info = 4;         // Additional client information (optional)
+}
+
+// Response message for client IP reporting
+message ReportResponse {
+  ErrCode err_code = 1;
+  repeated string client_ip = 2;  // The reported client IP addresses
+  string server_time = 3;         // Server timestamp when report was received
+  string message = 4;             // Additional information or error message
+}
+
+message UserRequest {
+  string request_id = 1;
+  OpCode op = 2;
+  string user = 3;
+  string password = 4;
+  string token = 5;
+  string to_delete_user = 6;
+}
+
+message UserResponse {
+  ErrCode err_code = 1;
+  string token = 5;
 }

@@ -24,16 +24,16 @@ namespace tbox {
 namespace server {
 namespace grpc_handler {
 
-class Route53ManagementHandler : public async_grpc::RpcHandler<Route53ManagementMethod> {
+class Route53OpHandler : public async_grpc::RpcHandler<Route53OpMethod> {
  public:
-  Route53ManagementHandler() {
+  Route53OpHandler() {
     // Initialize AWS SDK
     Aws::SDKOptions options;
     Aws::InitAPI(options);
     aws_initialized_ = true;
   }
 
-  ~Route53ManagementHandler() {
+  ~Route53OpHandler() {
     // Cleanup AWS SDK if we initialized it
     if (aws_initialized_) {
       Aws::SDKOptions options;
@@ -62,14 +62,14 @@ class Route53ManagementHandler : public async_grpc::RpcHandler<Route53Management
           HandleUpdateCNAMERecord(req, res.get());
           break;
         default:
-          res->set_err_code(proto::ErrCode::FAIL);
+          res->set_err_code(proto::ErrCode::Fail);
           res->set_message("Invalid operation code for Route53 management");
           LOG(ERROR) << "Invalid operation code: " << req.op();
           break;
       }
     } catch (const std::exception& e) {
       LOG(ERROR) << "Route53 management operation failed: " << e.what();
-      res->set_err_code(proto::ErrCode::FAIL);
+      res->set_err_code(proto::ErrCode::Fail);
       res->set_message(std::string("Operation failed: ") + e.what());
     }
 
@@ -116,13 +116,13 @@ class Route53ManagementHandler : public async_grpc::RpcHandler<Route53Management
     auto outcome = route53_client.ChangeResourceRecordSets(change_request);
 
     if (outcome.IsSuccess()) {
-      res->set_err_code(proto::ErrCode::SUCCESS);
+      res->set_err_code(proto::ErrCode::Success);
       res->set_change_id(outcome.GetResult().GetChangeInfo().GetId());
       res->set_message("A record updated successfully");
       LOG(INFO) << "Successfully updated A record for domain: " << req.domain_name()
                 << " to IP: " << req.new_value();
     } else {
-      res->set_err_code(proto::ErrCode::FAIL);
+      res->set_err_code(proto::ErrCode::Fail);
       res->set_message("Failed to update A record: " +
                       outcome.GetError().GetMessage());
       LOG(ERROR) << "Failed to update A record for domain: " << req.domain_name()
@@ -167,13 +167,13 @@ class Route53ManagementHandler : public async_grpc::RpcHandler<Route53Management
     auto outcome = route53_client.ChangeResourceRecordSets(change_request);
 
     if (outcome.IsSuccess()) {
-      res->set_err_code(proto::ErrCode::SUCCESS);
+      res->set_err_code(proto::ErrCode::Success);
       res->set_change_id(outcome.GetResult().GetChangeInfo().GetId());
       res->set_message("CNAME record updated successfully");
       LOG(INFO) << "Successfully updated CNAME record for domain: " << req.domain_name()
                 << " to: " << req.new_value();
     } else {
-      res->set_err_code(proto::ErrCode::FAIL);
+      res->set_err_code(proto::ErrCode::Fail);
       res->set_message("Failed to update CNAME record: " +
                       outcome.GetError().GetMessage());
       LOG(ERROR) << "Failed to update CNAME record for domain: " << req.domain_name()

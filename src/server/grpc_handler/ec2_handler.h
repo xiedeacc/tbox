@@ -22,16 +22,16 @@ namespace tbox {
 namespace server {
 namespace grpc_handler {
 
-class EC2InstanceManagementHandler : public async_grpc::RpcHandler<EC2InstanceManagementMethod> {
+class EC2OpHandler : public async_grpc::RpcHandler<EC2OpMethod> {
  public:
-  EC2InstanceManagementHandler() {
+  EC2OpHandler() {
     // Initialize AWS SDK
     Aws::SDKOptions options;
     Aws::InitAPI(options);
     aws_initialized_ = true;
   }
 
-  ~EC2InstanceManagementHandler() {
+  ~EC2OpHandler() {
     // Cleanup AWS SDK if we initialized it
     if (aws_initialized_) {
       Aws::SDKOptions options;
@@ -39,8 +39,8 @@ class EC2InstanceManagementHandler : public async_grpc::RpcHandler<EC2InstanceMa
     }
   }
 
-  void OnRequest(const proto::EC2InstanceRequest& req) override {
-    auto res = std::make_unique<proto::EC2InstanceResponse>();
+  void OnRequest(const proto::EC2Request& req) override {
+    auto res = std::make_unique<proto::EC2Response>();
     res->set_instance_id(req.instance_id());
 
     LOG(INFO) << "EC2 instance management request: " << req.op()
@@ -56,14 +56,14 @@ class EC2InstanceManagementHandler : public async_grpc::RpcHandler<EC2InstanceMa
           HandleStopInstance(req, res.get());
           break;
         default:
-          res->set_err_code(proto::ErrCode::FAIL);
+          res->set_err_code(proto::ErrCode::Fail);
           res->set_message("Invalid operation code for EC2 instance management");
           LOG(ERROR) << "Invalid operation code: " << req.op();
           break;
       }
     } catch (const std::exception& e) {
       LOG(ERROR) << "EC2 instance management operation failed: " << e.what();
-      res->set_err_code(proto::ErrCode::FAIL);
+      res->set_err_code(proto::ErrCode::Fail);
       res->set_message(std::string("Operation failed: ") + e.what());
     }
 
@@ -73,8 +73,8 @@ class EC2InstanceManagementHandler : public async_grpc::RpcHandler<EC2InstanceMa
   void OnReadsDone() override { Finish(grpc::Status::OK); }
 
  private:
-  void HandleStartInstance(const proto::EC2InstanceRequest& req,
-                          proto::EC2InstanceResponse* res) {
+  void HandleStartInstance(const proto::EC2Request& req,
+                          proto::EC2Response* res) {
     // Configure client with region if specified
     Aws::Client::ClientConfiguration config;
     if (!req.region().empty()) {
@@ -88,12 +88,12 @@ class EC2InstanceManagementHandler : public async_grpc::RpcHandler<EC2InstanceMa
     auto outcome = ec2_client.StartInstances(start_request);
 
     if (outcome.IsSuccess()) {
-      res->set_err_code(proto::ErrCode::SUCCESS);
+      res->set_err_code(proto::ErrCode::Success);
       res->set_status("starting");
       res->set_message("Instance start request submitted successfully");
       LOG(INFO) << "Successfully started instance: " << req.instance_id();
     } else {
-      res->set_err_code(proto::ErrCode::FAIL);
+      res->set_err_code(proto::ErrCode::Fail);
       res->set_message("Failed to start instance: " +
                       outcome.GetError().GetMessage());
       LOG(ERROR) << "Failed to start instance: " << req.instance_id()
@@ -101,8 +101,8 @@ class EC2InstanceManagementHandler : public async_grpc::RpcHandler<EC2InstanceMa
     }
   }
 
-  void HandleStopInstance(const proto::EC2InstanceRequest& req,
-                         proto::EC2InstanceResponse* res) {
+  void HandleStopInstance(const proto::EC2Request& req,
+                         proto::EC2Response* res) {
     // Configure client with region if specified
     Aws::Client::ClientConfiguration config;
     if (!req.region().empty()) {
@@ -116,12 +116,12 @@ class EC2InstanceManagementHandler : public async_grpc::RpcHandler<EC2InstanceMa
     auto outcome = ec2_client.StopInstances(stop_request);
 
     if (outcome.IsSuccess()) {
-      res->set_err_code(proto::ErrCode::SUCCESS);
+      res->set_err_code(proto::ErrCode::Success);
       res->set_status("stopping");
       res->set_message("Instance stop request submitted successfully");
       LOG(INFO) << "Successfully stopped instance: " << req.instance_id();
     } else {
-      res->set_err_code(proto::ErrCode::FAIL);
+      res->set_err_code(proto::ErrCode::Fail);
       res->set_message("Failed to stop instance: " +
                       outcome.GetError().GetMessage());
       LOG(ERROR) << "Failed to stop instance: " << req.instance_id()

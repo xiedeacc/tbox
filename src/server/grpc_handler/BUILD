@@ -76,10 +76,21 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
 })
 
 cc_library(
+    name = "meta",
+    hdrs = ["meta.h"],
+    copts = COPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        "//src/proto:cc_grpc_service",
+    ],
+)
+
+cc_library(
     name = "grpc_handler",
     hdrs = [
         "ec2_handler.h",
         "meta.h",
+        "report_handler.h",
         "route53_handler.h",
     ],
     copts = COPTS,
@@ -88,6 +99,7 @@ cc_library(
         "//src/async_grpc",
         "//src/proto:cc_grpc_service",
         "//src/util",
+        "//src/server/handler",
         "@aws-sdk-cpp//:aws-cpp-sdk-core",
         "@aws-sdk-cpp//:aws-cpp-sdk-ec2",
         "@aws-sdk-cpp//:aws-cpp-sdk-route53",

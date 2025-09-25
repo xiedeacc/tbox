@@ -8,6 +8,10 @@
 
 #include "proxygen/httpserver/RequestHandler.h"
 #include "proxygen/httpserver/RequestHandlerFactory.h"
+#include "glog/logging.h"
+#include "src/server/http_handler/default_handler.h"
+// #include "src/server/http_handler/server_handler.h"
+#include "src/server/http_handler/user_handler.h"
 
 namespace tbox {
 namespace server {
@@ -21,11 +25,14 @@ class HTTPHandlerFactory : public proxygen::RequestHandlerFactory {
 
   proxygen::RequestHandler* onRequest(
       proxygen::RequestHandler*, proxygen::HTTPMessage* msg) noexcept override {
-    const std::string& path = msg->getPath();
-    const std::string& method = msg->getMethodString();
-
-    // No handlers registered for now
-    return nullptr;
+        if (msg->getPath() == "/user") {
+          return new UserHandler();
+        // } else if (msg->getPath() == "/server") {
+        //   return new ServerHandler();
+        } else {
+          return new DefaultHandler();
+        }
+        return nullptr;
   }
 };
 

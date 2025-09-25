@@ -8,6 +8,7 @@
 #include "folly/init/Init.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
+#include "src/client/grpc_client.h"
 #include "src/client/websocket_client.h"
 #include "src/util/config_manager.h"
 
@@ -15,6 +16,8 @@ bool shutdown_required = false;
 std::mutex mutex;
 std::condition_variable cv;
 tbox::client::WebSocketClient *websocket_client_ptr = nullptr;
+tbox::client::GrpcClient *grpc_client_ptr = nullptr;
+
 
 void SignalHandler(int sig) {
   LOG(INFO) << "Got signal: " << strsignal(sig) << std::endl;
@@ -25,7 +28,14 @@ void SignalHandler(int sig) {
 void ShutdownCheckingThread(void) {
   std::unique_lock<std::mutex> lock(mutex);
   cv.wait(lock, []() { return shutdown_required; });
-  websocket_client_ptr->Stop();
+  
+  // Stop both clients gracefully
+  if (grpc_client_ptr) {
+    grpc_client_ptr->Stop();
+  }
+  if (websocket_client_ptr) {
+    websocket_client_ptr->Stop();
+  }
 }
 
 void RegisterSignalHandler() {
@@ -62,6 +72,21 @@ int main(int argc, char **argv) {
       tbox::util::ConfigManager::Instance()->ServerAddr();
   auto http_port =
       tbox::util::ConfigManager::Instance()->HttpServerPort();
+  auto grpc_port =
+      tbox::util::ConfigManager::Instance()->GrpcServerPort();
+  auto report_interval =
+      tbox::util::ConfigManager::Instance()->ReportIntervalSeconds();
+  
+  // Initialize gRPC client with configured reporting interval
+  tbox::client::GrpcClient grpc_client(server_addr, grpc_port, report_interval);
+  grpc_client_ptr = &grpc_client;
+  
+  // Start continuous IP reporting in background thread
+  LOG(INFO) << "Starting background IP reporting thread with interval " 
+            << report_interval << " seconds...";
+  grpc_client.StartReporting();
+  
+  // Connect WebSocket client
   tbox::client::WebSocketClient websocket_client(
       server_addr, std::to_string(http_port));
   websocket_client.Connect();

@@ -50,7 +50,11 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
 cc_library(
     name = "http_handler",
     hdrs = [
+        "default_handler.h",
         "http_handler_factory.h",
+        #"server_handler.h",
+        "user_handler.h",
+        "util.h",
         "websocket_handler.h",
     ],
     copts = COPTS,
@@ -58,10 +62,18 @@ cc_library(
     local_defines = LOCAL_DEFINES,
     deps = [
         "//src/common:defs",
+        "//src/server/handler",
         "//src/util:config_manager",
         "@boost//:beast",
         "@boost//:system",
         "@boost//:url",
         "@proxygen",
     ],
+)
+
+cc_test(
+    name = "util_test",
+    srcs = ["util_test.cc"],
+    copts = COPTS,
+    deps = [":http_handler"],
 )

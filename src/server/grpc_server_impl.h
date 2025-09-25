@@ -14,6 +14,7 @@
 #include "src/server/grpc_handler/account_state_handler.h"
 #include "src/server/grpc_handler/ec2_handler.h"
 #include "src/server/grpc_handler/file_handler.h"
+#include "src/server/grpc_handler/report_handler.h"
 #include "src/server/grpc_handler/route53_handler.h"
 #include "src/server/server_context.h"
 #include "src/util/config_manager.h"
@@ -37,9 +38,13 @@ class GrpcServer final {
 
     // Register handlers
     server_builder.RegisterHandler<
-        tbox::server::grpc_handler::EC2InstanceManagementHandler>();
+        tbox::server::grpc_handler::EC2OpHandler>();
     server_builder.RegisterHandler<
-        tbox::server::grpc_handler::Route53ManagementHandler>();
+        tbox::server::grpc_handler::Route53OpHandler>();
+    server_builder.RegisterHandler<
+        tbox::server::grpc_handler::ReportOpHandler>();
+    server_builder.RegisterHandler<
+        tbox::server::grpc_handler::UserHandler>();
 
     server_ = server_builder.Build();
     server_->SetExecutionContext(server_context);

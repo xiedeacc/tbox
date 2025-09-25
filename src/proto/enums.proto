@@ -20,4 +20,14 @@ enum OpCode {
   // Route53 DNS operations
   OP_ROUTE53_UPDATE_A_RECORD = 6;
   OP_ROUTE53_UPDATE_CNAME_RECORD = 7;
+
+  // Client IP reporting operation
+  OP_REPORT = 8;
+
+  // User operations
+  OP_USER_CREATE = 9;
+  OP_USER_DELETE = 10;
+  OP_USER_LOGIN = 11;
+  OP_USER_LOGOUT = 12;
+  OP_USER_CHANGE_PASSWORD = 13;
 }

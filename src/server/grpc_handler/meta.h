@@ -12,20 +12,36 @@ namespace tbox {
 namespace server {
 namespace grpc_handler {
 
-struct EC2InstanceManagementMethod {
+struct EC2OpMethod {
   static constexpr const char* MethodName() {
-    return "/tbox.proto.MEGAService/EC2InstanceManagement";
+    return "/tbox.proto.TBOXService/EC2Op";
   }
-  using IncomingType = tbox::proto::EC2InstanceRequest;
-  using OutgoingType = tbox::proto::EC2InstanceResponse;
+  using IncomingType = tbox::proto::EC2Request;
+  using OutgoingType = tbox::proto::EC2Response;
 };
 
-struct Route53ManagementMethod {
+struct Route53OpMethod {
   static constexpr const char* MethodName() {
-    return "/tbox.proto.MEGAService/Route53Management";
+    return "/tbox.proto.TBOXService/Route53Op";
   }
   using IncomingType = tbox::proto::Route53Request;
   using OutgoingType = tbox::proto::Route53Response;
+};
+
+struct ReportOpMethod {
+  static constexpr const char* MethodName() {
+    return "/tbox.proto.TBOXService/ReportOp";
+  }
+  using IncomingType = tbox::proto::ReportRequest;
+  using OutgoingType = tbox::proto::ReportResponse;
+};
+
+struct UserOpMethod {
+  static constexpr const char* MethodName() {
+    return "/tbox.proto.TBOXService/UserOp";
+  }
+  using IncomingType = tbox::proto::UserRequest;
+  using OutgoingType = tbox::proto::UserResponse;
 };
 
 }  // namespace grpc_handler

@@ -14,24 +14,24 @@ namespace tbox {
 namespace server {
 namespace grpc_handler {
 
-class Route53ManagementHandlerTest : public ::testing::Test {
+class Route53OpHandlerTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    handler_ = std::make_unique<Route53ManagementHandler>();
+    handler_ = std::make_unique<Route53OpHandler>();
   }
 
   void TearDown() override {
     handler_.reset();
   }
 
-  std::unique_ptr<Route53ManagementHandler> handler_;
+  std::unique_ptr<Route53OpHandler> handler_;
 };
 
-TEST_F(Route53ManagementHandlerTest, HandlerCreation) {
+TEST_F(Route53OpHandlerTest, HandlerCreation) {
   EXPECT_NE(handler_, nullptr);
 }
 
-TEST_F(Route53ManagementHandlerTest, CreateUpdateARecordRequest) {
+TEST_F(Route53OpHandlerTest, CreateUpdateARecordRequest) {
   proto::Route53Request req;
   req.set_op(proto::OpCode::OP_ROUTE53_UPDATE_A_RECORD);
   req.set_hosted_zone_id("Z1234567890ABC");
@@ -50,7 +50,7 @@ TEST_F(Route53ManagementHandlerTest, CreateUpdateARecordRequest) {
   EXPECT_EQ(req.region(), "us-west-2");
 }
 
-TEST_F(Route53ManagementHandlerTest, CreateUpdateCNAMERecordRequest) {
+TEST_F(Route53OpHandlerTest, CreateUpdateCNAMERecordRequest) {
   proto::Route53Request req;
   req.set_op(proto::OpCode::OP_ROUTE53_UPDATE_CNAME_RECORD);
   req.set_hosted_zone_id("Z1234567890ABC");
@@ -69,16 +69,16 @@ TEST_F(Route53ManagementHandlerTest, CreateUpdateCNAMERecordRequest) {
   EXPECT_EQ(req.region(), "us-east-1");
 }
 
-TEST_F(Route53ManagementHandlerTest, CreateResponse) {
+TEST_F(Route53OpHandlerTest, CreateResponse) {
   proto::Route53Response res;
-  res.set_err_code(proto::ErrCode::SUCCESS);
+  res.set_err_code(proto::ErrCode::Success);
   res.set_domain_name("api.example.com");
   res.set_record_type("A");
   res.set_new_value("192.168.1.100");
   res.set_change_id("C1234567890ABC");
   res.set_message("A record updated successfully");
 
-  EXPECT_EQ(res.err_code(), proto::ErrCode::SUCCESS);
+  EXPECT_EQ(res.err_code(), proto::ErrCode::Success);
   EXPECT_EQ(res.domain_name(), "api.example.com");
   EXPECT_EQ(res.record_type(), "A");
   EXPECT_EQ(res.new_value(), "192.168.1.100");
@@ -86,7 +86,7 @@ TEST_F(Route53ManagementHandlerTest, CreateResponse) {
   EXPECT_EQ(res.message(), "A record updated successfully");
 }
 
-TEST_F(Route53ManagementHandlerTest, InvalidOperationCode) {
+TEST_F(Route53OpHandlerTest, InvalidOperationCode) {
   proto::Route53Request req;
   req.set_op(proto::OpCode::OP_UNUSED);  // Invalid op code for Route53
   req.set_domain_name("api.example.com");

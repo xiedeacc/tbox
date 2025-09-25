@@ -72,19 +72,29 @@ cc_library(
     name = "util",
     srcs = ["util.cc"],
     hdrs = ["util.h"],
+    copts = COPTS,
+    local_defines = LOCAL_DEFINES,
     deps = [
+        "//src/common:defs",
+        "//src/common:error_code",
+        "//src/proto:cc_service",
+        "@blake3",
         "@boost//:algorithm",
         "@boost//:beast",
         "@boost//:iostreams",
+        "@boost//:uuid",
         "@com_github_glog_glog//:glog",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",
         "@com_google_protobuf//:protobuf",
+        "@crc32c",
         "@fmt",
         "@folly",
         "@openssl",
+        "@rapidjson",
         "@smhasher",
+        "@xz//:lzma",
     ],
 )
 
@@ -107,4 +117,21 @@ cc_test(
     data = ["//conf:server_config.json"],
     local_defines = LOCAL_DEFINES,
     deps = [":config_manager"],
+)
+
+cc_library(
+    name = "sqlite_manager",
+    srcs = ["sqlite_manager.cc"],
+    hdrs = ["sqlite_manager.h"],
+    copts = COPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        ":util",
+        "//src/common:defs",
+        "//src/common:error_code",
+        "//src/proto:cc_error",
+        "@com_github_glog_glog//:glog",
+        "@folly",
+        "@sqlite",
+    ],
 )

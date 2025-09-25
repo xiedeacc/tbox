@@ -14,25 +14,25 @@ namespace tbox {
 namespace server {
 namespace grpc_handler {
 
-class EC2InstanceManagementHandlerTest : public ::testing::Test {
+class EC2OpHandlerTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    handler_ = std::make_unique<EC2InstanceManagementHandler>();
+    handler_ = std::make_unique<EC2OpHandler>();
   }
 
   void TearDown() override {
     handler_.reset();
   }
 
-  std::unique_ptr<EC2InstanceManagementHandler> handler_;
+  std::unique_ptr<EC2OpHandler> handler_;
 };
 
-TEST_F(EC2InstanceManagementHandlerTest, HandlerCreation) {
+TEST_F(EC2OpHandlerTest, HandlerCreation) {
   EXPECT_NE(handler_, nullptr);
 }
 
-TEST_F(EC2InstanceManagementHandlerTest, CreateStartRequest) {
-  proto::EC2InstanceRequest req;
+TEST_F(EC2OpHandlerTest, CreateStartRequest) {
+  proto::EC2Request req;
   req.set_op(proto::OpCode::OP_EC2_START);
   req.set_instance_id("i-1234567890abcdef0");
   req.set_region("us-west-2");
@@ -42,8 +42,8 @@ TEST_F(EC2InstanceManagementHandlerTest, CreateStartRequest) {
   EXPECT_EQ(req.region(), "us-west-2");
 }
 
-TEST_F(EC2InstanceManagementHandlerTest, CreateStopRequest) {
-  proto::EC2InstanceRequest req;
+TEST_F(EC2OpHandlerTest, CreateStopRequest) {
+  proto::EC2Request req;
   req.set_op(proto::OpCode::OP_EC2_STOP);
   req.set_instance_id("i-1234567890abcdef0");
   req.set_region("us-east-1");
@@ -53,21 +53,21 @@ TEST_F(EC2InstanceManagementHandlerTest, CreateStopRequest) {
   EXPECT_EQ(req.region(), "us-east-1");
 }
 
-TEST_F(EC2InstanceManagementHandlerTest, CreateResponse) {
-  proto::EC2InstanceResponse res;
-  res.set_err_code(proto::ErrCode::SUCCESS);
+TEST_F(EC2OpHandlerTest, CreateResponse) {
+  proto::EC2Response res;
+  res.set_err_code(proto::ErrCode::Success);
   res.set_instance_id("i-1234567890abcdef0");
   res.set_status("running");
   res.set_message("Instance is running");
 
-  EXPECT_EQ(res.err_code(), proto::ErrCode::SUCCESS);
+  EXPECT_EQ(res.err_code(), proto::ErrCode::Success);
   EXPECT_EQ(res.instance_id(), "i-1234567890abcdef0");
   EXPECT_EQ(res.status(), "running");
   EXPECT_EQ(res.message(), "Instance is running");
 }
 
-TEST_F(EC2InstanceManagementHandlerTest, InvalidOperationCode) {
-  proto::EC2InstanceRequest req;
+TEST_F(EC2OpHandlerTest, InvalidOperationCode) {
+  proto::EC2Request req;
   req.set_op(proto::OpCode::OP_UNUSED);  // Invalid op code for EC2
   req.set_instance_id("i-1234567890abcdef0");
 

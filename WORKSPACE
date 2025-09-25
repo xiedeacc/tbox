@@ -635,20 +635,35 @@ new_git_repository(
     tag = "v3.13.0",
 )
 
-#new_git_repository(
-#name = "aws-sdk-cpp",
-#build_file = "//bazel:aws-sdk-cpp.BUILD",
-#commit = "81be5495b3824fa877c4d820ab46315fb6b3bcd5",
-#recursive_init_submodules = True,
-#remote = "git@github.com:aws/aws-sdk-cpp.git",
-#shallow_since = "2024-01-01T00:00:00Z",
-#)
+http_archive(
+    name = "sqlite",
+    build_file = "//bazel:sqlite.BUILD",
+    sha256 = "77823cb110929c2bcb0f5d48e4833b5c59a8a6e40cdea3936b99e199dbbe5784",
+    strip_prefix = "sqlite-amalgamation-3460100",
+    urls = ["https://sqlite.org/2024/sqlite-amalgamation-3460100.zip"],
+)
 
-new_local_repository(
+new_git_repository(
     name = "aws-sdk-cpp",
     build_file = "//bazel:aws-sdk-cpp.BUILD",
-    path = "../aws-sdk-cpp",
+    commit = "81be5495b3824fa877c4d820ab46315fb6b3bcd5",
+    recursive_init_submodules = True,
+    remote = "git@github.com:aws/aws-sdk-cpp.git",
+    shallow_since = "2024-01-01T00:00:00Z",
 )
+
+new_git_repository(
+    name = "blake3",
+    build_file = "//bazel:blake3.BUILD",
+    remote = "git@github.com:BLAKE3-team/BLAKE3.git",
+    tag = "1.5.4",
+)
+
+#new_local_repository(
+#name = "aws-sdk-cpp",
+#build_file = "//bazel:aws-sdk-cpp.BUILD",
+#path = "../aws-sdk-cpp",
+#)
 
 #################### java ####################
 load("@rules_java//java:repositories.bzl", "rules_java_dependencies", "rules_java_toolchains")

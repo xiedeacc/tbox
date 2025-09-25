@@ -73,6 +73,21 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "grpc_client",
+    hdrs = ["grpc_client.h"],
+    copts = COPTS,
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        "//src/async_grpc",
+        "//src/proto:cc_grpc_service",
+        "//src/server/grpc_handler:meta",
+        "@com_github_glog_glog//:glog",
+        "@com_github_grpc_grpc//:grpc++",
+    ],
+)
+
 cc_test(
     name = "websocket_client_test",
     srcs = ["websocket_client_test.cc"],
@@ -99,38 +114,40 @@ cc_binary(
     }),
     local_defines = LOCAL_DEFINES,
     deps = [
+        ":grpc_client",
+        ":websocket_client",
         "//src/proto:cc_grpc_service",
         "//src/util:config_manager",
+        "@boost//:url",
         "@folly",
         "@libsodium//:sodium",
         "@openssl//:crypto",
-        ":websocket_client",
-        "@boost//:url",
         "@openssl//:ssl",
         "@xz//:lzma",
     ],
 )
 
-cc_binary(
-    name = "ec2_client_example",
-    srcs = ["ec2_client_example.cc"],
-    copts = COPTS,
-    linkopts = LINKOPTS,
-    local_defines = LOCAL_DEFINES,
-    deps = [
-        "//src/proto:cc_grpc_service",
-        "@com_github_grpc_grpc//:grpc++",
-    ],
-)
-
-cc_binary(
-    name = "route53_client_example",
-    srcs = ["route53_client_example.cc"],
-    copts = COPTS,
-    linkopts = LINKOPTS,
-    local_defines = LOCAL_DEFINES,
-    deps = [
-        "//src/proto:cc_grpc_service",
-        "@com_github_grpc_grpc//:grpc++",
-    ],
-)
+# Commented out until example files are created
+# cc_binary(
+#     name = "ec2_client_example",
+#     srcs = ["ec2_client_example.cc"],
+#     copts = COPTS,
+#     linkopts = LINKOPTS,
+#     local_defines = LOCAL_DEFINES,
+#     deps = [
+#         "//src/proto:cc_grpc_service",
+#         "@com_github_grpc_grpc//:grpc++",
+#     ],
+# )
+#
+# cc_binary(
+#     name = "route53_client_example",
+#     srcs = ["route53_client_example.cc"],
+#     copts = COPTS,
+#     linkopts = LINKOPTS,
+#     local_defines = LOCAL_DEFINES,
+#     deps = [
+#         "//src/proto:cc_grpc_service",
+#         "@com_github_grpc_grpc//:grpc++",
+#     ],
+# )

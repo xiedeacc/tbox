@@ -39,8 +39,13 @@ class ConfigManager {
 
   std::string ServerAddr() { return base_config_.server_addr(); }
   uint32_t HttpServerPort() { return base_config_.http_server_port(); }
+  uint32_t GrpcServerPort() { return base_config_.grpc_server_port(); }
   uint32_t ClientWorkerThreadPoolSize() {
     return base_config_.client_worker_thread_pool_size();
+  }
+  uint32_t ReportIntervalSeconds() { 
+    uint32_t interval = base_config_.report_interval_seconds();
+    return interval > 0 ? interval : 30; // Default to 30 seconds if not set or zero
   }
 
   std::string ToString() {
