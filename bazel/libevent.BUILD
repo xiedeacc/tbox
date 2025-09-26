@@ -96,6 +96,7 @@ cc_library(
         ],
         "@platforms//os:linux": [
             "epoll.c",
+            "epoll_sub.c",
             "epolltable-internal.h",
             "evthread_pthread.c",
             "poll.c",
