@@ -389,7 +389,7 @@ http_archive(
     build_file = "//bazel:libiberty.BUILD",
     sha256 = "f6e4d41fd5fc778b06b7891457b3620da5ecea1006c6a4a41ae998109f85a800",
     strip_prefix = "binutils-2.42",
-    url = "https://ftp.gnu.org/gnu/binutils/binutils-2.42.tar.xz",
+    url = "https://mirrors.aliyun.com/gnu/binutils/binutils-2.42.tar.xz",
 )
 
 new_git_repository(
@@ -759,7 +759,6 @@ hedron_compile_commands_setup_transitive_transitive_transitive()
 
 gen_local_config_git(name = "local_config_git")
 
-
 register_toolchains(
     "@openssl//:preinstalled_make_toolchain",
     "@openssl//:preinstalled_pkgconfig_toolchain",
@@ -770,7 +769,7 @@ http_archive(
     build_file = "//bazel:toolchains.BUILD",
     sha256 = "30546f20d6a16bf5de3a15eb63418a488f5317402b4907484b1521a7a4e2bc7c",
     strip_prefix = "linux-x86_64-gnu_sysroot",
-    urls = ["https://code.xiamu.com/files/linux-x86_64-gnu_sysroot.tar.gz"],
+    urls = ["https://code.xiedeacc.com/files/linux-x86_64-gnu_sysroot.tar.gz"],
 )
 
 http_archive(
@@ -778,7 +777,7 @@ http_archive(
     build_file = "//bazel:toolchains.BUILD",
     sha256 = "16bfff2c7306118f2bebc6d8d35188768bf312e60cf3fc363e2ab8d96f53240e",
     strip_prefix = "linux-aarch64-gnu_sysroot",
-    urls = ["https://code.xiamu.com/files/linux-aarch64-gnu_sysroot.tar.gz"],
+    urls = ["https://code.xiedeacc.com/files/linux-aarch64-gnu_sysroot.tar.gz"],
 )
 
 http_archive(
@@ -786,7 +785,7 @@ http_archive(
     build_file = "//bazel:toolchains.BUILD",
     sha256 = "a76ef46d1815d465cb2079825104aca507a230bc973477f4ce1e9d94a325d7e8",
     strip_prefix = "linux-aarch64-musl_sysroot",
-    urls = ["https://code.xiamu.com/files/linux-aarch64-musl_sysroot.tar.gz"],
+    urls = ["https://code.xiedeacc.com/files/linux-aarch64-musl_sysroot.tar.gz"],
 )
 
 http_archive(
@@ -794,7 +793,7 @@ http_archive(
     build_file = "//bazel:cc_toolchain.BUILD",
     sha256 = "95e32680f2f439773edd85640e5072bab099c399506008298cd1251be2d2df39",
     strip_prefix = "clang18.1.8-linux-aarch64_sysroot",
-    urls = ["https://code.xiamu.com/files/clang18.1.8-linux-aarch64_sysroot.tar.gz"],
+    urls = ["https://code.xiedeacc.com/files/clang18.1.8-linux-aarch64_sysroot.tar.gz"],
 )
 
 new_git_repository(
@@ -803,203 +802,6 @@ new_git_repository(
     remote = "git@github.com:xiedeacc/cc_toolchains.git",
 )
 
-load("@cc_toolchains//toolchain:cc_toolchains_setup.bzl", "cc_toolchains_setup")
+load("//bazel:toolchains.bzl", "cc_toolchains_register")
 
-cc_toolchains_setup(
-    name = "cc_toolchains_setup",
-    toolchains = {
-        "x86_64": {
-            "linux": [
-                {
-                    "distro": "generic",
-                    "libc": "glibc",
-                    "compiler": "clang",
-                    "triple": "x86_64-unknown-linux-gnu",
-                    "url": "https://code.xiamu.com/files/clang18.1.8-linux-x86_64_toolchain.tar.gz",
-                    "strip_prefix": "clang18.1.8-linux-x86_64_toolchain",
-                    "sha256sum": "be64a29251dd2b7ae6e8e783f99ab395b4bf2a75f98d8a6e03bf855e9d811434",
-                    "sysroot": "@cc_toolchain_repo_x86_64_linux_generic_glibc_clang",
-                    "tool_names": {
-                        "ar": "llvm-ar",
-                        "as": "llvm-as",
-                        "c++": "clang++",
-                        "cpp": "clang-cpp",
-                        "g++": "clang++",
-                        "gcc": "clang",
-                        "gcov": "llvm-cov",
-                        "ld": "ld.lld",
-                        "llvm-cov": "llvm-cov",
-                        "nm": "llvm-nm",
-                        "objcopy": "llvm-objcopy",
-                        "objdump": "llvm-objdump",
-                        "strip": "llvm-strip",
-                    },
-                    "cxx_builtin_include_directories": [
-                        "/usr/include/x86_64-linux-gnu",
-                        "/usr/include",
-                        "include/x86_64-unknown-linux-gnu/c++/v1",
-                        "include/c++/v1",
-                        "lib/clang/18/include",
-                        "lib/clang/18/share",
-                        "include",
-                    ],
-                    "lib_directories": [
-                        "lib",
-                        "lib/x86_64-unknown-linux-gnu",
-                        "lib/clang/18/lib/x86_64-unknown-linux-gnu",
-                        "/usr/lib/x86_64-linux-gnu",
-                    ],
-                    "link_libs": [
-                        "libclang_rt.builtins.a",
-                    ],
-                    "supports_start_end_lib": True,
-                    "debug": True,
-                },
-            ],
-            "osx": [
-                {
-                    "distro": "generic",
-                    "libc": "macosx",
-                    "compiler": "clang",
-                    "triple": "x86_64-apple-darwin",
-                    "url": "https://github.com/files/clang18.1.8-linux-x86_64_toolchain.tar.gz",
-                    "strip_prefix": "clang18.1.8-linux-x86_64_toolchain",
-                    "sha256sum": "be64a29251dd2b7ae6e8e783f99ab395b4bf2a75f98d8a6e03bf855e9d811434",
-                    "sysroot": "@macosx14.2-x86_64_sysroot",
-                    "tool_names": {
-                        "ar": "x86_64-apple-darwin23.3-libtool",
-                        "as": "x86_64-apple-darwin23.3-as",
-                        "c++": "clang++",
-                        "cpp": "clang-cpp",
-                        "g++": "clang++",
-                        "gcc": "clang",
-                        "gcov": "x86_64-apple-darwin23.3-gcov",
-                        "ld": "ld64",
-                        "llvm-cov": "None",
-                        "nm": "x86_64-apple-darwin23.3-nm",
-                        "objcopy": "x86_64-apple-darwin-objcopy",
-                        "objdump": "x86_64-apple-darwin-objdump",
-                        "strip": "x86_64-apple-darwin23.3-strip",
-                    },
-                    "cxx_builtin_include_directories": [
-                    ],
-                    "lib_directories": [
-                    ],
-                    "sysroot_include_directories": [
-                        "llvm18.1.8/include/c++/v1",
-                        "llvm18.1.8/lib/clang/18/include",
-                        "usr/include",
-                        "System/Library/Frameworks",
-                    ],
-                    "sysroot_lib_directories": [
-                        "llvm18.1.8/lib",
-                        "llvm18.1.8/lib/clang/18/lib/darwin",
-                        "usr/lib",
-                    ],
-                    "link_libs": [
-                        "libclang_rt.osx.a",
-                    ],
-                    "supports_start_end_lib": False,
-                    "debug": True,
-                },
-            ],
-        },
-        "aarch64": {
-            "linux": [
-                {
-                    "distro": "openwrt",
-                    "libc": "musl",
-                    "compiler": "gcc",
-                    "triple": "aarch64-openwrt-linux-musl",
-                    "url": "https://github.com/files/gcc12.3.0-openwrt23.4-aarch64_toolchain.tar.gz",
-                    "strip_prefix": "gcc12.3.0-openwrt23.4-aarch64_toolchain",
-                    "sha256sum": "03f9bfda848f9d044ec3f4cebf1fce1f82f9c6363d9a3ef36affae522590f52a",
-                    "sysroot": "@cc_toolchain_repo_aarch64_linux_openwrt_musl_gcc",
-                    "tool_names": {
-                        "ar": "aarch64-openwrt-linux-musl-ar",
-                        "as": "aarch64-openwrt-linux-musl-as.bin",
-                        "ld": "aarch64-openwrt-linux-musl-ld.bin",
-                        "llvm-cov": "aarch64-openwrt-linux-musl-gcov.bin",
-                        "gcov": "aarch64-openwrt-linux-musl-gcov.bin",
-                        "cpp": "aarch64-openwrt-linux-musl-cpp.bin",
-                        "gcc": "aarch64-openwrt-linux-musl-gcc.bin",
-                        "nm": "aarch64-openwrt-linux-musl-nm.bin",
-                        "objcopy": "aarch64-openwrt-linux-musl-objcopy.bin",
-                        "objdump": "aarch64-openwrt-linux-musl-objdump.bin",
-                        "strip": "aarch64-openwrt-linux-musl-strip.bin",
-                    },
-                    "cxx_builtin_include_directories": [
-                        "aarch64-openwrt-linux-musl/include/c++/12.3.0/aarch64-openwrt-linux-musl",
-                        "aarch64-openwrt-linux-musl/include/c++/12.3.0",
-                        "aarch64-openwrt-linux-musl/include/c++/12.3.0/backward",
-                        "lib/gcc/aarch64-openwrt-linux-musl/12.3.0/include",
-                        "lib/gcc/aarch64-openwrt-linux-musl/12.3.0/include-fixed",
-                        "include",
-                    ],
-                    "lib_directories": [],
-                    "sysroot_include_directories": [],
-                    "sysroot_lib_directories": [
-                        "lib/gcc/aarch64-openwrt-linux-musl/12.3.0",
-                        "lib",
-                    ],
-                    "link_libs": [
-                        "libgcc.a",
-                    ],
-                    "supports_start_end_lib": True,
-                    "debug": True,
-                },
-                {
-                    "distro": "generic",
-                    "libc": "glibc",
-                    "compiler": "clang",
-                    "triple": "aarch64-unknown-linux-gnu",
-                    "url": "https://code.xiamu.com/files/clang18.1.8-linux-x86_64_toolchain.tar.gz",
-                    "strip_prefix": "clang18.1.8-linux-x86_64_toolchain",
-                    "sha256sum": "be64a29251dd2b7ae6e8e783f99ab395b4bf2a75f98d8a6e03bf855e9d811434",
-                    "sysroot": "@clang18.1.8-aarch64_sysroot",
-                    "tool_names": {
-                        "ar": "llvm-ar",
-                        "as": "llvm-as",
-                        "c++": "clang++",
-                        "cpp": "clang-cpp",
-                        "g++": "clang++",
-                        "gcc": "clang",
-                        "gcov": "llvm-cov",
-                        "ld": "ld",
-                        "llvm-cov": "llvm-cov",
-                        "nm": "llvm-nm",
-                        "objcopy": "llvm-objcopy",
-                        "objdump": "llvm-objdump",
-                        "strip": "llvm-strip",
-                    },
-                    "cxx_builtin_include_directories": [
-                    ],
-                    "lib_directories": [
-                    ],
-                    "sysroot_include_directories": [
-                        "include/aarch64-unknown-linux-gnu/c++/v1",
-                        "include/c++/v1",
-                        "lib/clang/18/include",
-                        "usr/include",
-                    ],
-                    "sysroot_lib_directories": [
-                        "lib",
-                        "lib/aarch64-unknown-linux-gnu",
-                        "lib/clang/18/lib/aarch64-unknown-linux-gnu",
-                        "usr/lib",
-                    ],
-                    "link_libs": [
-                        "libclang_rt.builtins.a",
-                        "Scrt1.o",
-                        "crti.o",
-                        "crtbeginS.o",
-                        "crtendS.o",
-                        "crtn.o",
-                    ],
-                    "supports_start_end_lib": True,
-                    "debug": True,
-                },
-            ],
-        },
-    },
-)
+cc_toolchains_register()
