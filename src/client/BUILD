@@ -74,7 +74,13 @@ cc_library(
 
 cc_library(
     name = "grpc_client",
-    hdrs = ["grpc_client.h"],
+    srcs = ["grpc_client.cc"],
+    hdrs = [
+        "grpc_client.h",
+        "ssl_config_loader.h",
+        "network_info_provider.h",
+        "authentication_manager.h",
+    ],
     copts = COPTS,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
@@ -82,6 +88,8 @@ cc_library(
         "//src/async_grpc",
         "//src/proto:cc_grpc_service",
         "//src/server/grpc_handler:meta",
+        "//src/util:config_manager",
+        "//src/util:util",
         "@com_github_glog_glog//:glog",
         "@com_github_grpc_grpc//:grpc++",
     ],

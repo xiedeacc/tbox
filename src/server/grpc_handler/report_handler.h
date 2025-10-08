@@ -54,14 +54,14 @@ class ReportOpHandler : public async_grpc::RpcHandler<ReportOpMethod> {
           HandleReport(req, res.get());
           break;
         default:
-          res->set_err_code(proto::ErrCode::FAIL);
+          res->set_err_code(proto::ErrCode::Fail);
           res->set_message("Invalid operation code for Report");
           LOG(ERROR) << "Invalid operation code: " << req.op();
           break;
       }
     } catch (const std::exception& e) {
       LOG(ERROR) << "Report operation failed: " << e.what();
-      res->set_err_code(proto::ErrCode::FAIL);
+      res->set_err_code(proto::ErrCode::Fail);
       res->set_message(std::string("Operation failed: ") + e.what());
     }
 
@@ -71,6 +71,11 @@ class ReportOpHandler : public async_grpc::RpcHandler<ReportOpMethod> {
   void OnReadsDone() override { Finish(grpc::Status::OK); }
 
  private:
+  bool IsIPv6Address(const std::string& ip) {
+    // Simple check: IPv6 addresses contain colons
+    return ip.find(':') != std::string::npos;
+  }
+
   void HandleReport(const proto::ReportRequest& req,
                    proto::ReportResponse* res) {
     // Get current server time
@@ -81,6 +86,18 @@ class ReportOpHandler : public async_grpc::RpcHandler<ReportOpMethod> {
     ss << std::put_time(std::gmtime(&time_t), "%Y-%m-%d %H:%M:%S UTC");
     std::string server_time = ss.str();
 
+    // Separate IPv4 and IPv6 addresses
+    std::vector<std::string> ipv4_addrs;
+    std::vector<std::string> ipv6_addrs;
+    
+    for (const auto& ip : req.client_ip()) {
+      if (IsIPv6Address(ip)) {
+        ipv6_addrs.push_back(ip);
+      } else {
+        ipv4_addrs.push_back(ip);
+      }
+    }
+
     // Create a string representation of all IPs for logging
     std::ostringstream ip_stream;
     for (int i = 0; i < req.client_ip_size(); ++i) {
@@ -89,24 +106,46 @@ class ReportOpHandler : public async_grpc::RpcHandler<ReportOpMethod> {
     }
     std::string all_ips = ip_stream.str();
 
-    // Log the client IP report
-    LOG(INFO) << "Client IP report received: " 
-              << "IPs=[" << all_ips << "]"
-              << ", Client Time=" << req.timestamp()
-              << ", Server Time=" << server_time
-              << ", Client Info=" << req.client_info();
+    // Log the client IP report with IPv6 emphasis
+    LOG(INFO) << "============================================";
+    LOG(INFO) << "Client IP Report Received";
+    LOG(INFO) << "  Total IPs: " << req.client_ip_size();
+    LOG(INFO) << "  IPv4 addresses (" << ipv4_addrs.size() << "): " 
+              << (ipv4_addrs.empty() ? "none" : [&]() {
+                std::ostringstream oss;
+                for (size_t i = 0; i < ipv4_addrs.size(); ++i) {
+                  if (i > 0) oss << ", ";
+                  oss << ipv4_addrs[i];
+                }
+                return oss.str();
+              }());
+    
+    if (!ipv6_addrs.empty()) {
+      LOG(INFO) << "  *** IPv6 addresses (" << ipv6_addrs.size() << "): ***";
+      for (const auto& ipv6 : ipv6_addrs) {
+        LOG(INFO) << "      >>> " << ipv6 << " <<<";
+      }
+    } else {
+      LOG(INFO) << "  IPv6 addresses (0): none";
+    }
+    
+    LOG(INFO) << "  Client Time: " << req.timestamp();
+    LOG(INFO) << "  Server Time: " << server_time;
+    LOG(INFO) << "  Client Info: " << req.client_info();
+    LOG(INFO) << "============================================";
 
     // Set response fields
-    res->set_err_code(proto::ErrCode::SUCCESS);
+    res->set_err_code(proto::ErrCode::Success);
     res->set_server_time(server_time);
     
     std::ostringstream msg_stream;
     msg_stream << "Client IP report received successfully. " 
-               << req.client_ip_size() << " IP address(es) reported: [" << all_ips << "]";
+               << req.client_ip_size() << " IP address(es) reported";
+    if (!ipv6_addrs.empty()) {
+      msg_stream << " (including " << ipv6_addrs.size() << " IPv6 address(es))";
+    }
+    msg_stream << ": [" << all_ips << "]";
     res->set_message(msg_stream.str());
-
-    LOG(INFO) << "Successfully processed IP report from client with " 
-              << req.client_ip_size() << " IP addresses: [" << all_ips << "]";
   }
 };
 

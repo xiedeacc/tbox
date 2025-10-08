@@ -40,6 +40,14 @@ class ConfigManager {
   std::string ServerAddr() { return base_config_.server_addr(); }
   uint32_t HttpServerPort() { return base_config_.http_server_port(); }
   uint32_t GrpcServerPort() { return base_config_.grpc_server_port(); }
+  uint32_t GrpcThreads() { 
+    uint32_t threads = base_config_.grpc_threads();
+    return threads > 0 ? threads : 3; // Default to 3 if not set
+  }
+  uint32_t EventThreads() { 
+    uint32_t threads = base_config_.event_threads();
+    return threads > 0 ? threads : 5; // Default to 5 if not set
+  }
   uint32_t ClientWorkerThreadPoolSize() {
     return base_config_.client_worker_thread_pool_size();
   }

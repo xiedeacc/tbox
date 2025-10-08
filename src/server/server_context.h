@@ -11,20 +11,28 @@
 
 #include "fmt/core.h"
 #include "glog/logging.h"
+#include "src/async_grpc/execution_context.h"
 #include "src/server/version_info.h"
 #include "src/util/config_manager.h"
 
 namespace tbox {
 namespace server {
 
-class ServerContext {
+class ServerContext : public async_grpc::ExecutionContext {
  public:
   ServerContext() : is_inited_(false), git_commit_(GIT_VERSION) {}
 
   void MarkedHttpServerInitedDone() {
-    LOG(INFO) << "http server started on: "
+    LOG(INFO) << "HTTP server started on: "
               << util::ConfigManager::Instance()->ServerAddr() << ", port: "
               << util::ConfigManager::Instance()->HttpServerPort();
+  }
+
+  void MarkedGrpcServerInitedDone() {
+    LOG(INFO) << "gRPC server started on: "
+              << util::ConfigManager::Instance()->ServerAddr() << ", port: "
+              << util::ConfigManager::Instance()->GrpcServerPort();
+    is_inited_ = true;
   }
 
   bool IsInitYet() { return is_inited_.load(); }

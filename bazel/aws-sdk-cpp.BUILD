@@ -4,22 +4,22 @@ load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOP
 
 package(default_visibility = ["//visibility:public"])
 
-COPTS = GLOBAL_COPTS + select({
+COPTS_BASE = GLOBAL_COPTS + select({
     "@platforms//os:windows": [
-        "/std:c++17",
         "/Iexternal/aws-sdk-cpp/src",
         "/Iexternal/aws-sdk-cpp/generated/src",
         "/Iexternal/aws-sdk-cpp/include",
         "/Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/include",
     ],
     "//conditions:default": [
-        "-std=c++17",
         "-isystem external/aws-sdk-cpp/src",
         "-isystem external/aws-sdk-cpp/generated/src",
         "-isystem external/aws-sdk-cpp/include",
         "-isystem external/aws-sdk-cpp/crt/aws-crt-cpp/include",
     ],
-}) + select({
+})
+
+COPTS_COMMON = COPTS_BASE + select({
     "@platforms//os:linux": [
         "-fPIC",
         "-D_GNU_SOURCE",
@@ -48,6 +48,44 @@ COPTS = GLOBAL_COPTS + select({
         "-mtune=generic",
     ],
     "//conditions:default": [],
+})
+
+COPTS_C = COPTS_COMMON + select({
+    "@tbox//bazel:linux_aarch64": [
+        "-march=armv8-a+crc+crypto",
+    ],
+    "//conditions:default": [],
+}) + [
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-auth/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-cal/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-compression/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-event-stream/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-http/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-io/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-mqtt/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-s3/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-sdkutils/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-checksums/include",
+    "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-c-common/generated/include",
+    "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-crt-cpp/generated/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/source",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/source/external/libcbor",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/api",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/include",
+    "-include external/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/utils/s2n_prelude.h",
+]
+
+COPTS = COPTS_COMMON + select({
+    "@platforms//os:windows": [
+        "/std:c++17",
+    ],
+    "//conditions:default": [
+        "-std=c++17",
+    ],
 }) + [
     "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-auth/include",
     "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-cal/include",
@@ -292,12 +330,11 @@ genrule(
     ]),
 )
 
-# AWS Common Runtime C++ library (from submodule)
+# AWS Common Runtime C library (from submodule)
 cc_library(
-    name = "aws-crt-cpp",
+    name = "aws-crt-c",
     srcs = glob(
         [
-            "crt/aws-crt-cpp/source/**/*.cpp",
             "crt/aws-crt-cpp/crt/aws-c-auth/source/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-cal/source/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-common/source/**/*.c",
@@ -355,10 +392,6 @@ cc_library(
         ],
         "@platforms//os:linux": glob([
             "crt/aws-crt-cpp/crt/aws-c-io/source/linux/**/*.c",
-            "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
-            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/encoding_avx2.c",
-            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/asm/cpuid.c",
-            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/cpuid.c",
             "crt/aws-crt-cpp/crt/aws-c-common/source/linux/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-io/source/posix/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-common/source/posix/**/*.c",
@@ -390,12 +423,22 @@ cc_library(
         ]),
         "@tbox//bazel:linux_x86_64": glob([
             "crt/aws-crt-cpp/crt/aws-checksums/source/generic/**/*.c",
+            "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/**/*.c",
+            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
         ]),
-        "@tbox//bazel:linux_aarch64": glob([
-            "crt/aws-crt-cpp/crt/aws-checksums/source/arm/**/*.c",
-            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/**/*.c",
-        ]),
+        "@tbox//bazel:linux_aarch64": glob(
+            [
+                "crt/aws-crt-cpp/crt/aws-checksums/source/arm/**/*.c",
+                "crt/aws-crt-cpp/crt/aws-checksums/source/generic/**/*.c",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/**/*.c",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/**/*.c",
+            ],
+            exclude = [
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/darwin/**",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/windows/**",
+            ],
+        ) + ["@tbox//bazel:aws_intel_stubs.c"],
         "@tbox//bazel:osx_x86_64": glob([
             "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
         ]),
@@ -477,8 +520,7 @@ cc_library(
         ]),
         "//conditions:default": [],
     }),
-    copts = COPTS + [
-    ],
+    copts = COPTS_C,
     includes = [
         "include",
     ],
@@ -491,6 +533,34 @@ cc_library(
         "@openssl",
         "@tinyxml2",
         "@zlib",
+    ],
+)
+
+# AWS Common Runtime C++ library (from submodule)
+cc_library(
+    name = "aws-crt-cpp",
+    srcs = glob(
+        [
+            "crt/aws-crt-cpp/source/**/*.cpp",
+        ],
+    ),
+    hdrs = [
+        ":Config_h",
+        ":config_h",
+    ] + glob(
+        [
+            "crt/aws-crt-cpp/include/**/*.h",
+            "crt/aws-crt-cpp/include/**/*.hpp",
+        ],
+    ),
+    copts = COPTS,
+    includes = [
+        "include",
+    ],
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        ":aws-crt-c",
     ],
 )
 

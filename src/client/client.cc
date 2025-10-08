@@ -78,7 +78,12 @@ int main(int argc, char **argv) {
       tbox::util::ConfigManager::Instance()->ReportIntervalSeconds();
   
   // Initialize gRPC client with configured reporting interval
-  tbox::client::GrpcClient grpc_client(server_addr, grpc_port, report_interval);
+  tbox::client::GrpcClientConfig grpc_config;
+  grpc_config.host = server_addr;
+  grpc_config.port = grpc_port;
+  grpc_config.report_interval_seconds = report_interval;
+  
+  tbox::client::GrpcClient grpc_client(grpc_config);
   grpc_client_ptr = &grpc_client;
   
   // Start continuous IP reporting in background thread

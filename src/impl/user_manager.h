@@ -34,6 +34,10 @@ class UserManager final {
     if (!util::SqliteManager::Instance()->Init()) {
       return false;
     }
+    
+    // Initialize preset user: tiger with password qh6288QHW
+    InitializePresetUser();
+    
     return true;
   }
 
@@ -247,6 +251,31 @@ class UserManager final {
   }
 
  private:
+  void InitializePresetUser() {
+    const std::string preset_user = "tiger";
+    const std::string preset_password = "qh6288QHW";
+    
+    // Check if user already exists
+    int32_t exists_result = UserExists(preset_user);
+    if (exists_result == Err_User_exists) {
+      LOG(INFO) << "Preset user '" << preset_user << "' already exists";
+      return;
+    }
+    
+    // Register the preset user
+    std::string token;
+    int32_t result = UserRegister(preset_user, preset_password, &token);
+    
+    if (result == Err_Success) {
+      LOG(INFO) << "Successfully initialized preset user '" << preset_user << "'";
+    } else if (result == Err_User_exists) {
+      LOG(INFO) << "Preset user '" << preset_user << "' already exists (concurrent registration)";
+    } else {
+      LOG(ERROR) << "Failed to initialize preset user '" << preset_user 
+                 << "', error code: " << result;
+    }
+  }
+
   mutable absl::base_internal::SpinLock lock_;
   std::atomic<bool> stop_ = false;
   std::mutex mu_;

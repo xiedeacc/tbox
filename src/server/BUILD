@@ -146,6 +146,7 @@ cc_binary(
         "@folly",
         "@libsodium//:sodium",
         "@openssl//:crypto",
+        ":grpc_server_impl",
         ":http_server_impl",
         #"@jemalloc",
         "@boost//:url",

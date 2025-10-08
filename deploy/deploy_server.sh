@@ -19,8 +19,8 @@ SERVICE_USER="tbox"
 WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Remote deployment configuration
-REMOTE_HOST="54.169.178.197"
-SSH_KEY="/root/src/share/ubuntu/conf/aws.pem"
+REMOTE_HOST="13.215.176.217"
+SSH_KEY="/home/ubuntu/.ssh/id_ed25519"
 REMOTE_USER="ubuntu"
 
 echo -e "${GREEN}Starting deployment of tbox to ${REMOTE_HOST}...${NC}"
@@ -73,10 +73,10 @@ print_success "SSH connection verified"
 print_status "Stopping existing service on remote host if running..."
 ssh_exec "sudo systemctl stop ${SERVICE_NAME} 2>/dev/null || true"
 
-# Build all targets locally
-print_status "Building all targets locally..."
+# Build all targets locally for ARM64
+print_status "Building all targets locally for ARM64..."
 cd "${WORKSPACE_ROOT}"
-if ! bazel build //...; then
+if ! bazel build --config=clang_aarch64_linux_gnu //...; then
     print_error "Failed to build all targets"
     exit 1
 fi
@@ -84,18 +84,19 @@ print_success "All targets built successfully"
 
 # Strip the binary to reduce size
 print_status "Stripping binary to reduce size..."
-cp bazel-bin/src/server/tbox_server /tmp/tbox_server_stripped
-if strip /tmp/tbox_server_stripped; then
+TEMP_BINARY="${HOME}/tbox_server_stripped_temp"
+cp bazel-bin/src/server/tbox_server "$TEMP_BINARY"
+chmod u+w "$TEMP_BINARY"
+if strip "$TEMP_BINARY"; then
     print_success "Binary stripped successfully"
     
     # Show size comparison
     original_size=$(stat -c%s bazel-bin/src/server/tbox_server)
-    stripped_size=$(stat -c%s /tmp/tbox_server_stripped)
+    stripped_size=$(stat -c%s "$TEMP_BINARY")
     reduction=$((original_size - stripped_size))
     print_status "Size reduction: $(numfmt --to=iec $original_size) → $(numfmt --to=iec $stripped_size) (saved $(numfmt --to=iec $reduction))"
 else
     print_error "Failed to strip binary, using original"
-    cp bazel-bin/src/server/tbox_server /tmp/tbox_server_stripped
 fi
 
 # Create service user on remote host if it doesn't exist
@@ -110,7 +111,7 @@ print_success "Directories created"
 
 # Copy the stripped binary to remote host
 print_status "Copying stripped binary to remote host..."
-scp_copy /tmp/tbox_server_stripped "${REMOTE_USER}@${REMOTE_HOST}:/tmp/${BINARY_NAME}"
+scp_copy "$TEMP_BINARY" "${REMOTE_USER}@${REMOTE_HOST}:/tmp/${BINARY_NAME}"
 ssh_exec "sudo mv /tmp/${BINARY_NAME} ${BIN_DIR}/${BINARY_NAME}"
 ssh_exec "sudo chmod +x ${BIN_DIR}/${BINARY_NAME}"
 print_success "Binary installed on remote host"
@@ -167,7 +168,7 @@ fi
 
 # Clean up temporary files
 print_status "Cleaning up temporary files..."
-rm -f /tmp/tbox_server_stripped
+rm -f "$TEMP_BINARY"
 
 echo
 print_success "Remote deployment completed!"

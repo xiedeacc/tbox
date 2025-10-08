@@ -11,9 +11,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "src/async_grpc/server.h"
-#include "src/server/grpc_handler/account_state_handler.h"
 #include "src/server/grpc_handler/ec2_handler.h"
-#include "src/server/grpc_handler/file_handler.h"
 #include "src/server/grpc_handler/report_handler.h"
 #include "src/server/grpc_handler/route53_handler.h"
 #include "src/server/server_context.h"
@@ -43,8 +41,6 @@ class GrpcServer final {
         tbox::server::grpc_handler::Route53OpHandler>();
     server_builder.RegisterHandler<
         tbox::server::grpc_handler::ReportOpHandler>();
-    server_builder.RegisterHandler<
-        tbox::server::grpc_handler::UserHandler>();
 
     server_ = server_builder.Build();
     server_->SetExecutionContext(server_context);
