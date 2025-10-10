@@ -10,14 +10,17 @@
 #include "folly/init/Init.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
+#include "src/impl/config_manager.h"
+#include "src/impl/ddns_manager.h"
+#include "src/impl/user_manager.h"
 #include "src/server/grpc_server_impl.h"
 #include "src/server/http_server_impl.h"
 #include "src/server/server_context.h"
-#include "src/util/config_manager.h"
 
 // https://github.com/grpc/grpc/issues/24884
-tbox::server::HttpServer *http_server_ptr = nullptr;
-tbox::server::GrpcServer *grpc_server_ptr = nullptr;
+tbox::server::HttpServer* http_server_ptr = nullptr;
+tbox::server::GrpcServer* grpc_server_ptr = nullptr;
+tbox::impl::DDNSManager* ddns_manager_ptr = nullptr;
 bool shutdown_required = false;
 std::mutex mutex;
 std::condition_variable cv;
@@ -31,6 +34,13 @@ void SignalHandler(int sig) {
 void ShutdownCheckingThread(void) {
   std::unique_lock<std::mutex> lock(mutex);
   cv.wait(lock, []() { return shutdown_required; });
+
+  // Stop DDNS manager first
+  if (ddns_manager_ptr && ddns_manager_ptr->IsRunning()) {
+    ddns_manager_ptr->Stop();
+    LOG(INFO) << "DDNS manager stopped";
+  }
+
   if (http_server_ptr) {
     http_server_ptr->Shutdown();
   }
@@ -47,7 +57,7 @@ void RegisterSignalHandler() {
   signal(SIGPIPE, SIG_IGN);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   // ProfilerStart("tbox_profile");
   LOG(INFO) << "Server initializing ...";
 
@@ -62,8 +72,35 @@ int main(int argc, char **argv) {
   google::SetStderrLogging(google::GLOG_INFO);
   LOG(INFO) << "CommandLine: " << google::GetArgv();
 
-  tbox::util::ConfigManager::Instance()->Init(
-      "./conf/server_config.json");
+  if (!tbox::util::ConfigManager::Instance()->Init(
+          "./conf/server_config.json")) {
+    LOG(FATAL) << "Failed to initialize configuration from "
+               << "./conf/server_config.json";
+    return 1;
+  }
+  LOG(INFO) << "Configuration initialized successfully";
+
+  // Initialize UserManager to create preset users
+  if (!tbox::impl::UserManager::Instance()->Init()) {
+    LOG(ERROR) << "Failed to initialize UserManager";
+    return 1;
+  }
+  LOG(INFO) << "UserManager initialized successfully";
+
+  // Initialize DDNS manager singleton
+  auto ddns_manager = tbox::impl::DDNSManager::Instance();
+  if (ddns_manager->Init()) {
+    LOG(INFO) << "DDNS manager initialized";
+    ddns_manager_ptr = ddns_manager.get();
+
+    // Start DDNS manager
+    if (!ddns_manager->IsRunning()) {
+      ddns_manager->Start();
+      LOG(INFO) << "DDNS manager started";
+    }
+  } else {
+    LOG(WARNING) << "Failed to initialize DDNS manager, continuing without it";
+  }
 
   RegisterSignalHandler();
 
@@ -75,8 +112,8 @@ int main(int argc, char **argv) {
   // Initialize gRPC server
   tbox::server::GrpcServer grpc_server(server_context);
   ::grpc_server_ptr = &grpc_server;
-  
-  LOG(INFO) << "Starting gRPC server on " 
+
+  LOG(INFO) << "Starting gRPC server on "
             << tbox::util::ConfigManager::Instance()->ServerAddr() << ":"
             << tbox::util::ConfigManager::Instance()->GrpcServerPort();
   grpc_server.Start();
@@ -86,7 +123,7 @@ int main(int argc, char **argv) {
   tbox::server::HttpServer http_server(server_context);
   ::http_server_ptr = &http_server;
 
-  LOG(INFO) << "Starting HTTP server on " 
+  LOG(INFO) << "Starting HTTP server on "
             << tbox::util::ConfigManager::Instance()->ServerAddr() << ":"
             << tbox::util::ConfigManager::Instance()->HttpServerPort();
   http_server.Start();

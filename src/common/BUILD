@@ -17,30 +17,8 @@ cc_library(
     name = "defs",
     hdrs = ["defs.h"],
     deps = [
-        ":blocking_queue",
         "//src/proto:cc_error",
         "//src/proto:cc_service",
-    ],
-)
-
-cc_library(
-    name = "blocking_queue",
-    hdrs = ["blocking_queue.h"],
-    copts = COPTS,
-    linkopts = LINKOPTS,
-    local_defines = LOCAL_DEFINES,
-    deps = [],
-)
-
-cc_test(
-    name = "blocking_queue_test",
-    srcs = ["blocking_queue_test.cc"],
-    copts = COPTS,
-    linkopts = LINKOPTS,
-    local_defines = LOCAL_DEFINES,
-    deps = [
-        ":blocking_queue",
-        "@com_google_googletest//:gtest_main",
     ],
 )
 

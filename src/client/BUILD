@@ -30,6 +30,20 @@ COPTS = GLOBAL_COPTS + select({
         "-isystem external/fizz",
         "-isystem external/wangle",
         "-isystem $(GENDIR)/external/folly",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-auth/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-cal/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-compression/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-event-stream/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-http/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-io/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-mqtt/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-s3/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-sdkutils/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-checksums/include",
+        "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-c-common/generated/include",
+        "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-crt-cpp/generated/include",
     ],
 }) + select({
     "@platforms//os:linux": [],
@@ -57,41 +71,90 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
 
 cc_library(
     name = "websocket_client",
+    srcs = ["websocket_client.cc"],
     hdrs = ["websocket_client.h"],
     copts = COPTS,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
-        "//src/common:blocking_queue",
         "//src/proto:cc_enums",
         "@boost//:asio",
         "@boost//:beast",
         "@boost//:json",
+        "@com_github_glog_glog//:glog",
         "@folly",
         "@simdjson",
     ],
 )
 
 cc_library(
-    name = "grpc_client",
-    srcs = ["grpc_client.cc"],
-    hdrs = [
-        "grpc_client.h",
-        "ssl_config_loader.h",
-        "network_info_provider.h",
-        "authentication_manager.h",
-    ],
+    name = "authentication_manager",
+    srcs = ["authentication_manager.cc"],
+    hdrs = ["authentication_manager.h"],
     copts = COPTS,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
+        "//src/impl:config_manager",
+        "//src/proto:cc_grpc_service",
+        "//src/util",
+        "@com_github_glog_glog//:glog",
+        "@com_github_grpc_grpc//:grpc++",
+        "@folly",
+    ],
+)
+
+cc_library(
+    name = "report_manager",
+    srcs = ["report_manager.cc"],
+    hdrs = ["report_manager.h"],
+    copts = COPTS,
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        ":authentication_manager",
         "//src/async_grpc",
         "//src/proto:cc_grpc_service",
         "//src/server/grpc_handler:meta",
-        "//src/util:config_manager",
-        "//src/util:util",
+        "//src/util",
         "@com_github_glog_glog//:glog",
         "@com_github_grpc_grpc//:grpc++",
+        "@folly",
+    ],
+)
+
+cc_library(
+    name = "ssl_config_manager",
+    srcs = ["ssl_config_manager.cc"],
+    hdrs = ["ssl_config_manager.h"],
+    copts = COPTS,
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        "//src/util",
+        "@com_github_glog_glog//:glog",
+        "@folly",
+    ],
+)
+
+cc_library(
+    name = "grpc_client",
+    srcs = ["grpc_client.cc"],
+    hdrs = ["grpc_client.h"],
+    copts = COPTS,
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        ":authentication_manager",
+        ":report_manager",
+        ":ssl_config_manager",
+        "//src/impl:config_manager",
+        "//src/impl:ddns_manager",
+        "//src/proto:cc_grpc_service",
+        "//src/util",
+        "@com_github_glog_glog//:glog",
+        "@com_github_grpc_grpc//:grpc++",
+        "@folly",
     ],
 )
 
@@ -111,6 +174,63 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "ssl_config_manager_test",
+    srcs = ["ssl_config_manager_test.cc"],
+    copts = COPTS,
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        ":ssl_config_manager",
+        "//src/util",
+        "@com_github_glog_glog//:glog",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "authentication_manager_test",
+    srcs = ["authentication_manager_test.cc"],
+    copts = COPTS,
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        ":authentication_manager",
+        "//src/impl:config_manager",
+        "//src/proto:cc_grpc_service",
+        "//src/proto:cc_service",
+        "@com_github_glog_glog//:glog",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "report_manager_test",
+    srcs = ["report_manager_test.cc"],
+    copts = COPTS,
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        ":report_manager",
+        "@com_github_glog_glog//:glog",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "grpc_client_test",
+    srcs = ["grpc_client_test.cc"],
+    copts = COPTS,
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        ":grpc_client",
+        "@com_github_glog_glog//:glog",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
 cc_binary(
     name = "tbox_client",
     srcs = ["client.cc"],
@@ -123,8 +243,8 @@ cc_binary(
     deps = [
         ":grpc_client",
         ":websocket_client",
+        "//src/impl:config_manager",
         "//src/proto:cc_grpc_service",
-        "//src/util:config_manager",
         "@boost//:url",
         "@folly",
         "@libsodium//:sodium",
@@ -133,28 +253,3 @@ cc_binary(
         "@xz//:lzma",
     ],
 )
-
-# Commented out until example files are created
-# cc_binary(
-#     name = "ec2_client_example",
-#     srcs = ["ec2_client_example.cc"],
-#     copts = COPTS,
-#     linkopts = LINKOPTS,
-#     local_defines = LOCAL_DEFINES,
-#     deps = [
-#         "//src/proto:cc_grpc_service",
-#         "@com_github_grpc_grpc//:grpc++",
-#     ],
-# )
-#
-# cc_binary(
-#     name = "route53_client_example",
-#     srcs = ["route53_client_example.cc"],
-#     copts = COPTS,
-#     linkopts = LINKOPTS,
-#     local_defines = LOCAL_DEFINES,
-#     deps = [
-#         "//src/proto:cc_grpc_service",
-#         "@com_github_grpc_grpc//:grpc++",
-#     ],
-# )

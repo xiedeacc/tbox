@@ -23,65 +23,51 @@ namespace client {
 // Forward declarations
 class AuthenticationManager;
 
-struct GrpcClientConfig {
-  std::string host;
-  int port;
-  int report_interval_seconds = 30;
-  int login_retry_seconds = 60;
-  int connection_timeout_seconds = 10;
-  std::string ca_cert_path = "/conf/xiedeacc.com.ca.cer";
-  std::string ssl_target_name = "xiedeacc.com";
-};
-
+/// @brief Manages gRPC connection and client lifecycle.
+/// @details Handles connection setup (HTTP/HTTPS), authentication,
+///          and integrates with ReportManager for IP reporting and
+///          DDNSManager for dynamic DNS updates.
+///          Configuration is loaded from ConfigManager singleton.
 class GrpcClient {
  public:
-  explicit GrpcClient(const GrpcClientConfig& config);
+  /// @brief Constructor that uses ConfigManager for configuration.
+  GrpcClient();
   ~GrpcClient();
 
-  // Delete copy operations
+  /// @brief Deleted copy constructor.
   GrpcClient(const GrpcClient&) = delete;
+
+  /// @brief Deleted copy assignment operator.
   GrpcClient& operator=(const GrpcClient&) = delete;
 
-  // Start the background thread for periodic IP reporting
+  /// @brief Start ReportManager and DDNSManager.
   void Start();
 
-  // Stop the background thread
+  /// @brief Stop ReportManager and DDNSManager.
   void Stop();
 
-  // Check if the client is running
-  bool IsRunning() const { return running_.load(); }
+  /// @brief Check if the client is running.
+  /// @return True if managers are active, false otherwise.
+  bool IsRunning() const;
 
  private:
-  // Initialize gRPC channel and stub
-  bool InitializeChannel();
+  /// @brief Initialize gRPC channel and stub.
+  /// @return True on success, false on failure.
+  bool Init();
 
-  // Report client IP addresses to the server
-  bool ReportClientIP();
-
-  // The main loop that runs in the background thread
-  void ReportingLoop();
-
-  // Configuration
-  GrpcClientConfig config_;
+  /// @brief Parse hostname by removing protocol prefix.
+  /// @param hostname Hostname possibly with http:// or https:// prefix.
+  /// @return Pair of (cleaned_hostname, use_http).
+  static std::pair<std::string, bool> ParseHostname(
+      const std::string& hostname);
 
   // Connection components
   std::string target_address_;
   std::shared_ptr<grpc::Channel> channel_;
-  std::unique_ptr<tbox::proto::TBOXService::Stub> stub_;
-
-  // Authentication manager
-  std::unique_ptr<AuthenticationManager> auth_manager_;
-
-  // Thread management for IP reporting
-  std::atomic<bool> running_;
-  std::atomic<bool> should_stop_;
-  std::thread reporting_thread_;
-  std::mutex mutex_;
-  std::condition_variable cv_;
+  std::shared_ptr<tbox::proto::TBOXService::Stub> stub_;
 };
 
 }  // namespace client
 }  // namespace tbox
 
 #endif  // TBOX_CLIENT_GRPC_CLIENT_H_
-

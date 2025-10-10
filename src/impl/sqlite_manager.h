@@ -17,12 +17,23 @@
 namespace tbox {
 namespace util {
 
+/**
+ * @brief SQLite database manager.
+ * 
+ * Singleton class that manages SQLite database connections and operations.
+ * Handles user database initialization and provides prepared statement
+ * and query execution interfaces. Thread-safe singleton using folly::Singleton.
+ */
 class SqliteManager final {
  private:
   friend class folly::Singleton<SqliteManager>;
   SqliteManager() {}
 
  public:
+  /**
+   * @brief Get singleton instance.
+   * @return Shared pointer to SqliteManager instance.
+   */
   static std::shared_ptr<SqliteManager> Instance();
 
   ~SqliteManager() {
@@ -31,6 +42,14 @@ class SqliteManager final {
     }
   }
 
+  /**
+   * @brief Initialize database connection and schema.
+   * 
+   * Opens database at ~/data/user.db, creates users table if needed,
+   * and initializes default admin user.
+   * 
+   * @return true if initialization successful, false otherwise.
+   */
   bool Init() {
     std::string home_dir = tbox::util::Util::HomeDir();
     std::string user_db_path = home_dir + "/data/user.db";
@@ -90,6 +109,12 @@ class SqliteManager final {
     return true;
   }
 
+  /**
+   * @brief Prepare SQL statement.
+   * @param query SQL query string.
+   * @param stmt Output parameter for prepared statement.
+   * @return Err_Success on success, Err_Sql_prepare_error on failure.
+   */
   int32_t PrepareStatement(const std::string& query, sqlite3_stmt** stmt) {
     if (sqlite3_prepare_v2(db_, query.c_str(), -1, stmt, nullptr) !=
         SQLITE_OK) {
@@ -99,6 +124,12 @@ class SqliteManager final {
     return Err_Success;
   }
 
+  /**
+   * @brief Execute non-query SQL statement.
+   * @param query SQL query string.
+   * @param error_msg Output parameter for error message if execution fails.
+   * @return Err_Success on success, Err_Sql_execute_error on failure.
+   */
   int32_t ExecuteNonQuery(const std::string& query, std::string* error_msg) {
     char* errmsg = nullptr;
     if (sqlite3_exec(db_, query.c_str(), nullptr, nullptr, &errmsg) !=
@@ -110,7 +141,11 @@ class SqliteManager final {
     return Err_Success;
   }
 
-  int32_t AffectRows() { return sqlite3_changes(db_); }
+  /**
+   * @brief Get number of rows affected by last operation.
+   * @return Number of rows changed.
+   */
+  int32_t AffectRows() const { return sqlite3_changes(db_); }
 
  private:
   sqlite3* db_ = nullptr;

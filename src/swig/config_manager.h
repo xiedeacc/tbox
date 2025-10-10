@@ -9,7 +9,7 @@
 #include <map>
 #include <string>
 
-#include "src/util/config_manager.h"
+#include "src/impl/config_manager.h"
 
 namespace tbox {
 namespace swig {

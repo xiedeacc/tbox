@@ -635,6 +635,13 @@ new_git_repository(
     tag = "v3.13.0",
 )
 
+new_git_repository(
+    name = "spdlog",
+    build_file = "//bazel:spdlog.BUILD",
+    remote = "git@github.com:gabime/spdlog.git",
+    tag = "v1.15.3",
+)
+
 http_archive(
     name = "sqlite",
     build_file = "//bazel:sqlite.BUILD",
@@ -756,6 +763,15 @@ hedron_compile_commands_setup_transitive()
 hedron_compile_commands_setup_transitive_transitive()
 
 hedron_compile_commands_setup_transitive_transitive_transitive()
+
+#################### ankerl::unordered_dense ####################
+# Fast & densely stored hashmap based on robin-hood backward shift deletion
+new_git_repository(
+    name = "ankerl_unordered_dense",
+    build_file = "//bazel:unordered_dense.BUILD",
+    remote = "https://github.com/martinus/unordered_dense.git",
+    tag = "v4.5.0",
+)
 
 gen_local_config_git(name = "local_config_git")
 

@@ -81,7 +81,7 @@ cc_library(
     local_defines = LOCAL_DEFINES,
     deps = [
         ":version_info",
-        "//src/util:config_manager",
+        "//src/impl:config_manager",
         "@fmt",
     ],
 )
@@ -111,10 +111,10 @@ cc_library(
     local_defines = LOCAL_DEFINES,
     deps = [
         "//src/async_grpc",
+        "//src/impl:config_manager",
         "//src/proto:cc_grpc_service",
         "//src/server:server_context",
         "//src/server/grpc_handler",
-        "//src/util:config_manager",
     ],
 )
 
@@ -124,8 +124,8 @@ cc_library(
     copts = COPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
+        "//src/impl:config_manager",
         "//src/server:server_context",
-        "//src/util:config_manager",
         "@proxygen",
     ],
 )
@@ -140,17 +140,19 @@ cc_binary(
     }),
     local_defines = LOCAL_DEFINES,
     deps = [
+        ":grpc_server_impl",
+        ":http_server_impl",
         ":server_context",
+        "//src/impl:ddns_manager",
+        "//src/impl:user_manager",
         "//src/proto:cc_grpc_service",
         "//src/server/http_handler",
+        "@boost//:url",
         "@folly",
         "@libsodium//:sodium",
         "@openssl//:crypto",
-        ":grpc_server_impl",
-        ":http_server_impl",
-        #"@jemalloc",
-        "@boost//:url",
         "@openssl//:ssl",
         "@xz//:lzma",
+        #"@jemalloc",
     ],
 )

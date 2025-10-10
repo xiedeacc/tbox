@@ -3,17 +3,15 @@
  * All rights reserved.
  *******************************************************************************/
 
-#include "src/util/config_manager.h"
-
-#include "glog/logging.h"
-#include "gtest/gtest.h"
+#include "src/impl/sqlite_manager.h"
 
 namespace tbox {
 namespace util {
 
-TEST(ConfigManager, Init) {
-  EXPECT_TRUE(ConfigManager::Instance()->Init("./conf/server_config.json"));
-  LOG(INFO) << ConfigManager::Instance()->ToString();
+static folly::Singleton<SqliteManager> sqlite_manager;
+
+std::shared_ptr<SqliteManager> SqliteManager::Instance() {
+  return sqlite_manager.try_get();
 }
 
 }  // namespace util

@@ -421,12 +421,17 @@ cc_library(
         "@tbox//bazel:windows_aarch64": glob([
             "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/**/*.c",
         ]),
-        "@tbox//bazel:linux_x86_64": glob([
-            "crt/aws-crt-cpp/crt/aws-checksums/source/generic/**/*.c",
-            "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
-            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/**/*.c",
-            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
-        ]),
+        "@tbox//bazel:linux_x86_64": glob(
+            [
+                "crt/aws-crt-cpp/crt/aws-checksums/source/generic/**/*.c",
+                "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/**/*.c",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
+            ],
+            exclude = [
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/msvc/**",
+            ],
+        ),
         "@tbox//bazel:linux_aarch64": glob(
             [
                 "crt/aws-crt-cpp/crt/aws-checksums/source/arm/**/*.c",
@@ -439,9 +444,14 @@ cc_library(
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/windows/**",
             ],
         ) + ["@tbox//bazel:aws_intel_stubs.c"],
-        "@tbox//bazel:osx_x86_64": glob([
-            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
-        ]),
+        "@tbox//bazel:osx_x86_64": glob(
+            [
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
+            ],
+            exclude = [
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/msvc/**",
+            ],
+        ),
         "@tbox//bazel:osx_aarch64": glob([
             "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/**/*.c",
         ]),
@@ -622,10 +632,17 @@ cc_library(
         ":VersionConfig_h",
         ":config_h",
     ],
-    copts = COPTS,
+    copts = COPTS + [
+        "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-c-common/generated/include",
+        "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-crt-cpp/generated/include",
+    ],
     includes = [
         "include",
         "src/aws-cpp-sdk-core/include",
+        "crt/aws-crt-cpp/include",
+        "crt/aws-crt-cpp/crt/aws-c-common/include",
+        "crt/aws-crt-cpp/crt/aws-c-io/include",
+        "crt/aws-crt-cpp/crt/aws-c-cal/include",
     ],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,

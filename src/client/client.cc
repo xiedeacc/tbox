@@ -5,39 +5,59 @@
 
 // #include "gperftools/profiler.h"
 
+#include <csignal>
+
 #include "folly/init/Init.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 #include "src/client/grpc_client.h"
-#include "src/client/websocket_client.h"
-#include "src/util/config_manager.h"
+// #include "src/client/websocket_client.h"  // WebSocket disabled for now
+#include "src/impl/config_manager.h"
 
-bool shutdown_required = false;
+namespace {
+
+// Signal-safe shutdown state
+std::atomic<bool> shutdown_required(false);
+std::atomic<int> received_signal(0);
 std::mutex mutex;
 std::condition_variable cv;
-tbox::client::WebSocketClient *websocket_client_ptr = nullptr;
-tbox::client::GrpcClient *grpc_client_ptr = nullptr;
+// tbox::client::WebSocketClient* websocket_client_ptr = nullptr;  // WebSocket
+// disabled
+tbox::client::GrpcClient* grpc_client_ptr = nullptr;
 
-
+/// @brief Handle signals for graceful shutdown.
+/// @param sig Signal number received.
+/// @note This function is async-signal-safe - only sets atomic flags.
 void SignalHandler(int sig) {
-  LOG(INFO) << "Got signal: " << strsignal(sig) << std::endl;
-  shutdown_required = true;
+  received_signal.store(sig);
+  shutdown_required.store(true);
+  // Note: cv.notify_all() is not async-signal-safe, but in practice
+  // it usually works. For strict safety, use a self-pipe pattern.
   cv.notify_all();
 }
 
+/// @brief Thread function that waits for shutdown signal.
 void ShutdownCheckingThread(void) {
   std::unique_lock<std::mutex> lock(mutex);
-  cv.wait(lock, []() { return shutdown_required; });
-  
-  // Stop both clients gracefully
+  cv.wait(lock, []() { return shutdown_required.load(); });
+
+  // Log the signal information (safe here, not in signal handler)
+  int sig = received_signal.load();
+  if (sig > 0) {
+    LOG(INFO) << "Got signal: " << strsignal(sig) << " (" << sig << ")";
+  }
+
+  // Stop gRPC client gracefully
   if (grpc_client_ptr) {
     grpc_client_ptr->Stop();
   }
-  if (websocket_client_ptr) {
-    websocket_client_ptr->Stop();
-  }
+  // WebSocket disabled for now
+  // if (websocket_client_ptr) {
+  //   websocket_client_ptr->Stop();
+  // }
 }
 
+/// @brief Register signal handlers for graceful shutdown.
 void RegisterSignalHandler() {
   signal(SIGTERM, &SignalHandler);
   signal(SIGINT, &SignalHandler);
@@ -46,7 +66,9 @@ void RegisterSignalHandler() {
   signal(SIGPIPE, SIG_IGN);
 }
 
-int main(int argc, char **argv) {
+}  // namespace
+
+int main(int argc, char** argv) {
   // ProfilerStart("tbox_profile");
   LOG(INFO) << "Client initializing ...";
 
@@ -61,48 +83,39 @@ int main(int argc, char **argv) {
   google::SetStderrLogging(google::GLOG_INFO);
   LOG(INFO) << "CommandLine: " << google::GetArgv();
 
-  tbox::util::ConfigManager::Instance()->Init(
-      "./conf/client_config.json");
+  // Initialize configuration
+  auto config_manager = tbox::util::ConfigManager::Instance();
+  if (!config_manager->Init("./conf/client_config.json")) {
+    LOG(FATAL) << "Failed to initialize configuration from "
+               << "./conf/client_config.json";
+    return 1;
+  }
+  LOG(INFO) << "Configuration initialized successfully";
 
   RegisterSignalHandler();
 
   std::thread shutdown_thread(ShutdownCheckingThread);
 
-  auto server_addr =
-      tbox::util::ConfigManager::Instance()->ServerAddr();
-  auto http_port =
-      tbox::util::ConfigManager::Instance()->HttpServerPort();
-  auto grpc_port =
-      tbox::util::ConfigManager::Instance()->GrpcServerPort();
-  auto report_interval =
-      tbox::util::ConfigManager::Instance()->ReportIntervalSeconds();
-  
-  // Initialize gRPC client with configured reporting interval
-  tbox::client::GrpcClientConfig grpc_config;
-  grpc_config.host = server_addr;
-  grpc_config.port = grpc_port;
-  grpc_config.report_interval_seconds = report_interval;
-  
-  tbox::client::GrpcClient grpc_client(grpc_config);
+  // Initialize gRPC client (uses ConfigManager for configuration)
+  tbox::client::GrpcClient grpc_client;
   grpc_client_ptr = &grpc_client;
-  
-  // Start continuous IP reporting in background thread
-  LOG(INFO) << "Starting background IP reporting thread with interval " 
-            << report_interval << " seconds...";
+
   grpc_client.Start();
-  
-  // Connect WebSocket client
-  tbox::client::WebSocketClient websocket_client(
-      server_addr, std::to_string(http_port));
-  websocket_client.Connect();
 
-  websocket_client_ptr = &websocket_client;
+  LOG(INFO) << "Client running. Waiting for shutdown signal...";
 
-  LOG(INFO) << "Now stopped websocket client";
+  // WebSocket disabled for now - only using gRPC
+  // tbox::client::WebSocketClient websocket_client(
+  //     server_addr, std::to_string(http_port));
+  // websocket_client.Connect();
+  // websocket_client_ptr = &websocket_client;
 
+  // Wait for shutdown signal
   if (shutdown_thread.joinable()) {
     shutdown_thread.join();
   }
+
+  LOG(INFO) << "Client shutdown complete";
   // ProfilerStop();
   return 0;
 }

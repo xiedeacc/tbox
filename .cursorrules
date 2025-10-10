@@ -1,0 +1,36 @@
+{
+  "rules": [
+    {
+      "pattern": "src/**/*.{cpp,h,hpp,cc}",
+      "settings": {
+        "language": "cpp",
+        "style": {
+          "standard": "google",
+          "indentation": 2,
+          "maxLineLength": 80,
+          "braces": "attach",
+          "spacesAroundOperators": true,
+          "spacesInsideParentheses": false,
+          "pointerAlignment": "left"
+        },
+        "naming": {
+          "variables": "snake_case",
+          "functions": "UpperCamelCase",
+          "classes": "UpperCamelCase",
+          "constants": "kConstantCase"
+        },
+        "comments": {
+          "requireDoxygen": true
+        },
+        "ai": {
+          "language": "en",
+          "tone": "technical",
+          "description": "Use Google C++ Style Guide for code generation and refactoring"
+        }
+      }
+    }
+  ],
+  "ai": {
+    "strictAdherence": true
+  }
+}

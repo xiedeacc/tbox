@@ -13,7 +13,7 @@
 #include "glog/logging.h"
 #include "src/async_grpc/execution_context.h"
 #include "src/server/version_info.h"
-#include "src/util/config_manager.h"
+#include "src/impl/config_manager.h"
 
 namespace tbox {
 namespace server {

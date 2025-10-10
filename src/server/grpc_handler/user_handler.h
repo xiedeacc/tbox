@@ -9,17 +9,17 @@
 #include "src/async_grpc/rpc_handler.h"
 #include "src/proto/service.pb.h"
 #include "src/server/grpc_handler/meta.h"
-#include "src/server/handler_proxy/handler.h"
+#include "src/server/handler/handler.h"
 
 namespace tbox {
 namespace server {
 namespace grpc_handler {
 
-class UserHandler : public async_grpc::RpcHandler<UserMethod> {
+class UserHandler : public async_grpc::RpcHandler<UserOpMethod> {
  public:
   void OnRequest(const proto::UserRequest& req) override {
     auto res = std::make_unique<proto::UserResponse>();
-    handler_proxy::HandlerProxy::UserOpHandle(req, res.get());
+    handler::Handler::UserOpHandle(req, res.get());
     Send(std::move(res));
   }
 

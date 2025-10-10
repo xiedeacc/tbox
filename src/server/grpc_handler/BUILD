@@ -87,19 +87,23 @@ cc_library(
 
 cc_library(
     name = "grpc_handler",
+    srcs = [
+        "report_handler.cc",
+    ],
     hdrs = [
         "ec2_handler.h",
         "meta.h",
         "report_handler.h",
         "route53_handler.h",
+        "user_handler.h",
     ],
     copts = COPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
         "//src/async_grpc",
         "//src/proto:cc_grpc_service",
-        "//src/util",
         "//src/server/handler",
+        "//src/util",
         "@aws-sdk-cpp//:aws-cpp-sdk-core",
         "@aws-sdk-cpp//:aws-cpp-sdk-ec2",
         "@aws-sdk-cpp//:aws-cpp-sdk-route53",

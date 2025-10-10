@@ -56,19 +56,6 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
 })
 
 cc_library(
-    name = "config_manager",
-    srcs = ["config_manager.cc"],
-    hdrs = ["config_manager.h"],
-    copts = COPTS,
-    local_defines = LOCAL_DEFINES,
-    deps = [
-        ":util",
-        "//src/proto:cc_config",
-        "@folly",
-    ],
-)
-
-cc_library(
     name = "util",
     srcs = ["util.cc"],
     hdrs = ["util.h"],
@@ -83,6 +70,7 @@ cc_library(
         "@boost//:beast",
         "@boost//:iostreams",
         "@boost//:uuid",
+        "@c-ares",
         "@com_github_glog_glog//:glog",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
@@ -102,36 +90,11 @@ cc_test(
     name = "util_test",
     timeout = "short",
     srcs = ["util_test.cc"],
+    copts = COPTS,
+    local_defines = LOCAL_DEFINES,
     deps = [
         ":util",
         "@com_google_googletest//:gtest_main",
-    ],
-)
-
-cc_test(
-    name = "config_manager_test",
-    srcs = [
-        "config_manager_test.cc",
-    ],
-    copts = COPTS,
-    data = ["//conf:server_config.json"],
-    local_defines = LOCAL_DEFINES,
-    deps = [":config_manager"],
-)
-
-cc_library(
-    name = "sqlite_manager",
-    srcs = ["sqlite_manager.cc"],
-    hdrs = ["sqlite_manager.h"],
-    copts = COPTS,
-    local_defines = LOCAL_DEFINES,
-    deps = [
-        ":util",
-        "//src/common:defs",
-        "//src/common:error_code",
-        "//src/proto:cc_error",
-        "@com_github_glog_glog//:glog",
         "@folly",
-        "@sqlite",
     ],
 )

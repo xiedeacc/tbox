@@ -1,11 +1,14 @@
 {
-    "server_addr": "127.0.0.1",
-    "grpc_server_port": 10001,
-    "http_server_port": 10003,
+    "server_addr": "http://ip.xiedeacc.com",
+    "grpc_server_port": 80,
+    "http_server_port": 443,
     "client_worker_thread_pool_size": 3,
-    "report_interval_seconds": 30,
+    "report_interval_seconds": 5,
     "user": "tiger",
     "password": "qh6288QHW",
     "route53_hosted_zone_id": "Z03208552MCHUIEH26IEK",
-    "domain_name": "host.xiedeacc.com"
+    "domain_name": "ip.xiedeacc.com",
+    "monitor_domains": [
+        "home.xiedeacc.com"
+    ]
 }

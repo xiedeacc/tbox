@@ -13,7 +13,7 @@
 #include "proxygen/httpserver/HTTPServerOptions.h"
 #include "src/server/http_handler/http_handler_factory.h"
 #include "src/server/server_context.h"
-#include "src/util/config_manager.h"
+#include "src/impl/config_manager.h"
 
 namespace tbox {
 namespace server {

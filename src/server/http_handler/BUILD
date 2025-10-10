@@ -62,8 +62,8 @@ cc_library(
     local_defines = LOCAL_DEFINES,
     deps = [
         "//src/common:defs",
+        "//src/impl:config_manager",
         "//src/server/handler",
-        "//src/util:config_manager",
         "@boost//:beast",
         "@boost//:system",
         "@boost//:url",

@@ -70,7 +70,7 @@ cc_library(
     copts = COPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
-        "//src/util:config_manager",
+        "//src/impl:config_manager",
     ],
     alwayslink = True,
 )
@@ -88,7 +88,7 @@ java_wrap_cc(
     use_directors = False,
     deps = [
         ":config_manager",
-        "//src/util:config_manager",
+        "//src/impl:config_manager",
     ],
 )
 

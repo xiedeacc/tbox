@@ -3,7 +3,7 @@
  * All rights reserved.
  *******************************************************************************/
 
-#include "src/util/sqlite_manager.h"
+#include "src/impl/sqlite_manager.h"
 
 #include "gtest/gtest.h"
 

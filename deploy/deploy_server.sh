@@ -15,6 +15,7 @@ INSTALL_DIR="/usr/local/tbox"
 BIN_DIR="${INSTALL_DIR}/bin"
 CONF_DIR="${INSTALL_DIR}/conf"
 LOG_DIR="${INSTALL_DIR}/log"
+DATA_DIR="${INSTALL_DIR}/data"
 SERVICE_USER="tbox"
 WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -106,7 +107,7 @@ print_success "Service user verified on remote host"
 
 # Create installation directories on remote host
 print_status "Creating installation directories on remote host..."
-ssh_exec "sudo mkdir -p ${BIN_DIR} ${CONF_DIR} ${LOG_DIR}"
+ssh_exec "sudo mkdir -p ${BIN_DIR} ${CONF_DIR} ${LOG_DIR} ${DATA_DIR}"
 print_success "Directories created"
 
 # Copy the stripped binary to remote host
@@ -134,6 +135,7 @@ ssh_exec "sudo chown -R ${SERVICE_USER}:${SERVICE_USER} ${INSTALL_DIR}"
 ssh_exec "sudo chmod 755 ${BIN_DIR}/${BINARY_NAME}"
 ssh_exec "sudo chmod 644 ${CONF_DIR}/server_config.json"
 ssh_exec "sudo chmod 755 ${LOG_DIR}"
+ssh_exec "sudo chmod 755 ${DATA_DIR}"
 print_success "Permissions set on remote host"
 
 # Reload systemd and enable service on remote host
@@ -176,6 +178,7 @@ print_status "Remote host: ${REMOTE_HOST}"
 print_status "Binary location: ${BIN_DIR}/${BINARY_NAME}"
 print_status "Config location: ${CONF_DIR}/server_config.json"
 print_status "Log directory: ${LOG_DIR}"
+print_status "Data directory: ${DATA_DIR}"
 print_status "Service name: ${SERVICE_NAME}"
 echo
 print_status "Useful remote commands:"
