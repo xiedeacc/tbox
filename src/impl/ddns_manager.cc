@@ -21,6 +21,7 @@
 #include <thread>
 #include <vector>
 
+#include "aws/core/Aws.h"
 #include "aws/core/auth/AWSCredentials.h"
 #include "aws/core/client/ClientConfiguration.h"
 #include "aws/route53/Route53Client.h"
@@ -53,6 +54,11 @@ bool DDNSManager::Init() {
     LOG(WARNING) << "DDNSManager already initialized";
     return true;
   }
+
+  // Initialize AWS SDK
+  Aws::SDKOptions aws_options;
+  Aws::InitAPI(aws_options);
+  LOG(INFO) << "AWS SDK initialized for DDNSManager";
 
   // Get monitor domains from ConfigManager
   auto config_manager = util::ConfigManager::Instance();
@@ -88,6 +94,13 @@ bool DDNSManager::Init() {
 
 DDNSManager::~DDNSManager() {
   Stop();
+
+  // Shutdown AWS SDK if it was initialized
+  if (initialized_) {
+    Aws::SDKOptions aws_options;
+    Aws::ShutdownAPI(aws_options);
+    LOG(INFO) << "AWS SDK shutdown for DDNSManager";
+  }
 }
 
 void DDNSManager::Start() {
