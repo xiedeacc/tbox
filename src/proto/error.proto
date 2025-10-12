@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package tbox.proto;
+
+enum ErrCode {
+  Success = 0;
+  Fail = 1;
+  Unsupported_op = 2;
+
+  File_permission = 10000;
+  File_disk_full = 10001;
+
+  // 16000
+  Sql_prepare_error = 16000;
+  Sql_execute_error = 16001;
+
+  // 17000
+  User_invalid_name = 17000;
+  User_invalid_passwd = 17001;
+  User_session_error = 17002;
+  User_register_prepare_error = 17003;
+  User_register_execute_error = 17004;
+  User_register_error = 17005;
+  User_delete_prepare_error = 17006;
+  User_delete_execute_error = 17007;
+  User_delete_error = 17008;
+  User_login_prepare_error = 17009;
+  User_login_execute_error = 17010;
+  User_login_error = 17011;
+  User_exists_prepare_error = 17012;
+  User_exists_execute_error = 17013;
+  User_exists_error = 17014;
+  User_exists = 17015;
+  User_not_exists = 17016;
+  User_change_password_error = 17017;
+
+  // 18000
+  Dns_update_recored_error = 18000;
+
+}

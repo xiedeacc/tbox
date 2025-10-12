@@ -1,0 +1,94 @@
+syntax = "proto3";
+package tbox.proto;
+import "src/proto/error.proto";
+
+service TBOXService {
+  // EC2 instance management (start/stop)
+  rpc EC2Op(EC2Request) returns (EC2Response) {}
+
+  // Client IP address reporting
+  rpc ReportOp(ReportRequest) returns (ReportResponse) {}
+
+  // User operations
+  rpc UserOp(UserRequest) returns (UserResponse) {}
+}
+
+// OpCode enum for WebSocket message operations
+enum OpCode {
+  // Default value, should not be used
+  OP_UNUSED = 0;
+
+  // File key operation
+  OP_FILE_KEY = 2;
+
+  // File upload operation
+  OP_FILE_UPLOAD = 3;
+
+  // EC2 instance operations
+  OP_EC2_START = 4;
+  OP_EC2_STOP = 5;
+
+  // Client IP reporting operation
+  OP_REPORT = 8;
+
+  // User operations
+  OP_USER_CREATE = 9;
+  OP_USER_DELETE = 10;
+  OP_USER_LOGIN = 11;
+  OP_USER_LOGOUT = 12;
+  OP_USER_CHANGE_PASSWORD = 13;
+
+  // Get public IP addresses from server
+  OP_GET_PUBLIC_IPV4 = 14;
+  OP_GET_PUBLIC_IPV6 = 15;
+}
+
+
+// Request message for EC2 instance operations
+message EC2Request {
+  OpCode op = 1;
+  string instance_id = 2;  // The EC2 instance ID
+  string region = 3;       // AWS region (optional, defaults to configured region)
+  string token = 4;        // Authentication token
+}
+
+// Response message for EC2 instance operations
+message EC2Response {
+  ErrCode err_code = 1;
+  string instance_id = 2;     // The EC2 instance ID
+  string status = 3;          // Current instance status
+  string message = 4;         // Additional information or error message
+}
+
+// Request message for client IP reporting
+message ReportRequest {
+  string request_id = 1;          // Unique request identifier (UUID)
+  OpCode op = 2;
+  repeated string client_ip = 3;  // Client's IP addresses to report (multiple interfaces)
+  int64 timestamp = 4;            // Timestamp of the report (Unix timestamp)
+  string client_info = 5;         // Additional client information (optional)
+  string token = 6;               // Authentication token
+  string client_id = 7;           // Client identifier from configuration
+}
+
+// Response message for client IP reporting
+message ReportResponse {
+  ErrCode err_code = 1;
+  repeated string client_ip = 2;  // The reported client IP addresses
+  string server_time = 3;         // Server timestamp when report was received
+  string message = 4;             // Additional information or error message
+}
+
+message UserRequest {
+  string request_id = 1;
+  OpCode op = 2;
+  string user = 3;
+  string password = 4;
+  string token = 5;
+  string to_delete_user = 6;
+}
+
+message UserResponse {
+  ErrCode err_code = 1;
+  string token = 5;
+}

@@ -1,0 +1,15 @@
+{
+    "server_addr": "http://ip.xiedeacc.com",
+    "grpc_server_port": 80,
+    "http_server_port": 443,
+    "client_worker_thread_pool_size": 3,
+    "check_interval_seconds": 5,
+    "user": "tiger",
+    "password": "test",
+    "client_id": "test-client-001",
+    "monitor_domains": ["home.xiedeacc.com"],
+    "route53_hosted_zone_id": "test",
+    "aws_access_key_id": "test",
+    "aws_secret_access_key": "test",
+    "aws_region": "ap-southeast-1"
+}

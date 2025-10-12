@@ -1,0 +1,41 @@
+[Unit]
+Description=Home Updater Service
+Documentation=https://github.com/your-repo/tbox
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=tbox
+Group=tbox
+WorkingDirectory=/usr/local/tbox
+ExecStart=/usr/local/tbox/bin/tbox_server
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/usr/local/tbox/log /usr/local/tbox/data
+
+# Environment
+Environment="GLOG_log_dir=/usr/local/tbox/log"
+Environment="GLOG_logtostderr=0"
+Environment="GLOG_alsologtostderr=1"
+
+# Resource limits
+LimitNOFILE=65536
+LimitCORE=infinity
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tbox
+
+[Install]
+WantedBy=multi-user.target
