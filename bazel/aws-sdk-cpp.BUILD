@@ -31,7 +31,6 @@ COPTS_COMMON = COPTS_BASE + select({
     "//conditions:default": [],
 }) + select({
     "@tbox//bazel:linux_x86_64": [
-        "-mavx2",
         "-msse4.2",
         "-march=x86-64",
         "-mtune=generic",
@@ -424,9 +423,7 @@ cc_library(
         "@tbox//bazel:linux_x86_64": glob(
             [
                 "crt/aws-crt-cpp/crt/aws-checksums/source/generic/**/*.c",
-                "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
-                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/**/*.c",
-                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/cpuid.c",
             ],
             exclude = [
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/msvc/**",
