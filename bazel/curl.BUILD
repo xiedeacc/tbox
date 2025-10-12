@@ -1204,10 +1204,5 @@ template_rule(
             "/* #undef ssize_t */": "#define ssize_t __int64",
         },
         "//conditions:default": {},
-    }) | select({
-        "@tbox//bazel:redhat": {
-            "#define CURL_CA_BUNDLE \"/etc/ssl/certs/ca-certificates.crt\"": "#define CURL_CA_BUNDLE \"/etc/pki/tls/certs/ca-bundle.crt\"",
-        },
-        "//conditions:default": {},
     }),
 )

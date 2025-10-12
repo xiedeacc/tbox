@@ -101,19 +101,19 @@ toolchain(
 configure_make(
     name = "openssl_static",
     args = select({
-        "@tbox//bazel:not_cross_compiling_on_osx": ["-j4"],
+        "@platforms//os:osx": ["-j4"],
         "//conditions:default": ["-j"],
     }),
     configure_command = "Configure",
     configure_in_place = True,
     configure_options = CONFIGURE_OPTIONS + select({
-        "@tbox//bazel:cross_compiling_for_linux_aarch64": [
+        "@tbox//bazel:linux_aarch64": [
             "linux-aarch64",
         ],
-        "@tbox//bazel:cross_compiling_for_osx_x86_64": [
+        "@tbox//bazel:osx_x86_64": [
             "darwin64-x86_64-cc",
         ],
-        "@tbox//bazel:cross_compiling_for_osx_aarch64": [
+        "@tbox//bazel:osx_aarch64": [
             "darwin64-arm64-cc",
         ],
         "//conditions:default": [],

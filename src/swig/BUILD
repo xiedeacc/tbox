@@ -96,7 +96,7 @@ cc_test(
     name = "config_manager_test",
     srcs = ["config_manager_test.cc"],
     copts = COPTS,
-    data = ["//conf:client_config.json"],
+    data = ["//test_data/config_test:client_config.json"],
     local_defines = LOCAL_DEFINES,
     tags = ["ignore"],
     deps = [

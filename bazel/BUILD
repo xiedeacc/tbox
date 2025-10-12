@@ -1,5 +1,3 @@
-load("@bazel_skylib//lib:selects.bzl", "selects")
-
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
@@ -31,13 +29,18 @@ config_setting(
 )
 
 config_setting(
-    name = "debian",
-    define_values = {"distro": "debian"},
+    name = "x64_small",
+    define_values = {"cpu_tier": "small"},
 )
 
 config_setting(
-    name = "redhat",
-    define_values = {"distro": "redhat"},
+    name = "x64_medium",
+    define_values = {"cpu_tier": "medium"},
+)
+
+config_setting(
+    name = "x64_large",
+    define_values = {"cpu_tier": "large"},
 )
 
 config_setting(
@@ -133,79 +136,6 @@ platform(
     constraint_values = [
         "@platforms//os:osx",
         "@platforms//cpu:aarch64",
-    ],
-)
-
-config_setting(
-    name = "cross_compiling",
-    define_values = {"cross_compiling": "true"},
-)
-
-config_setting(
-    name = "not_cross_compiling",
-    define_values = {"cross_compiling": "false"},
-)
-
-config_setting(
-    name = "gnu-abi",
-    define_values = {"abi": "gnu"},
-)
-
-config_setting(
-    name = "musl-abi",
-    define_values = {"abi": "musl"},
-)
-
-selects.config_setting_group(
-    name = "cross_compiling_for_linux_aarch64",
-    match_all = [
-        ":cross_compiling",
-        "@platforms//os:linux",
-        "@platforms//cpu:aarch64",
-    ],
-)
-
-selects.config_setting_group(
-    name = "cross_compiling_for_linux_aarch64_musl",
-    match_all = [
-        ":musl-abi",
-        ":cross_compiling",
-        "@platforms//os:linux",
-        "@platforms//cpu:aarch64",
-    ],
-)
-
-selects.config_setting_group(
-    name = "linux_gnu",
-    match_all = [
-        ":gnu-abi",
-        "@platforms//os:linux",
-    ],
-)
-
-selects.config_setting_group(
-    name = "cross_compiling_for_osx_x86_64",
-    match_all = [
-        ":cross_compiling",
-        "@platforms//os:osx",
-        "@platforms//cpu:x86_64",
-    ],
-)
-
-selects.config_setting_group(
-    name = "cross_compiling_for_osx_aarch64",
-    match_all = [
-        ":cross_compiling",
-        "@platforms//os:osx",
-        "@platforms//cpu:aarch64",
-    ],
-)
-
-selects.config_setting_group(
-    name = "not_cross_compiling_on_osx",
-    match_all = [
-        ":not_cross_compiling",
-        "@platforms//os:osx",
     ],
 )
 

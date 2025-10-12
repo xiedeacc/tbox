@@ -54,7 +54,7 @@ print_status "Stopping existing service if running..."
 execute_cmd "systemctl is-active --quiet ${SERVICE_NAME} && systemctl stop ${SERVICE_NAME} && echo 'Stopped ${SERVICE_NAME} service' || true"
 
 # Build client binary locally
-print_status "Building client binary..."
+print_status "Building client binary (small tier - no AVX2 for NAS compatibility)..."
 cd "${WORKSPACE_ROOT}"
 
 # Check if JAVA_HOME is set
@@ -64,7 +64,8 @@ if [ -z "$JAVA_HOME" ]; then
     exit 1
 fi
 
-if ! bazel build //src/client:tbox_client; then
+# Build with small tier (no AVX2) for NAS devices (typically Celeron/Atom CPUs)
+if ! bazel build //src/client:tbox_client --define=cpu_tier=small; then
     print_error "Failed to build client binary"
     exit 1
 fi

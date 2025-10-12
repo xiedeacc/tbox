@@ -801,10 +801,5 @@ template_rule(
             "#define STACK_DIRECTION 1": "#define STACK_DIRECTION -1",
         },
         "//conditions:default": {},
-    }) | select({
-        "@tbox//bazel:cross_compiling_for_linux_aarch64_musl": {
-            "#define HAVE_CANONICALIZE_FILE_NAME 1": "/* #undef HAVE_CANONICALIZE_FILE_NAME */",
-        },
-        "//conditions:default": {},
     }),
 )

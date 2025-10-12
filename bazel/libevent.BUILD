@@ -105,8 +105,7 @@ cc_library(
         ],
         "//conditions:default": [],
         #}) + select({
-        #"@tbox//bazel:cross_compiling_for_linux_aarch64_musl": [],
-        #"@tbox//bazel:linux_gnu": [
+        #"//conditions:default": [],
         #"epoll_sub.c",
         #],
         #"//conditions:default": [],
@@ -126,18 +125,12 @@ cc_library(
             "WIN32-Code/tree.h",
             "compat/sys/queue.h",
         ],
-        "@tbox//bazel:cross_compiling_for_linux_aarch64_musl": [
-            "compat/sys/queue.h",
-        ],
         "//conditions:default": [],
     }),
     copts = COPTS + select({
         "@platforms//os:windows": [
             "-Iexternal/libevent/compat",
             "-Iexternal/libevent/WIN32-Code",
-        ],
-        "@tbox//bazel:cross_compiling_for_linux_aarch64_musl": [
-            "-Iexternal/libevent/compat",
         ],
         "//conditions:default": [],
     }),
@@ -169,18 +162,12 @@ cc_library(
             "WIN32-Code/tree.h",
             "compat/sys/queue.h",
         ],
-        "@tbox//bazel:cross_compiling_for_linux_aarch64_musl": [
-            "compat/sys/queue.h",
-        ],
         "//conditions:default": [],
     }),
     copts = COPTS + select({
         "@platforms//os:windows": [
             "-Iexternal/libevent/compat",
             "-Iexternal/libevent/WIN32-Code",
-        ],
-        "@tbox//bazel:cross_compiling_for_linux_aarch64_musl": [
-            "-Iexternal/libevent/compat",
         ],
         "//conditions:default": [],
     }),
@@ -217,18 +204,12 @@ cc_library(
             "WIN32-Code/tree.h",
             "compat/sys/queue.h",
         ],
-        "@tbox//bazel:cross_compiling_for_linux_aarch64_musl": [
-            "compat/sys/queue.h",
-        ],
         "//conditions:default": [],
     }),
     copts = COPTS + select({
         "@platforms//os:windows": [
             "-Iexternal/libevent/compat",
             "-Iexternal/libevent/WIN32-Code",
-        ],
-        "@tbox//bazel:cross_compiling_for_linux_aarch64_musl": [
-            "-Iexternal/libevent/compat",
         ],
         "//conditions:default": [],
     }),
@@ -1070,12 +1051,6 @@ template_rule(
         },
         "//conditions:default": {
         },
-    }) | select({
-        "@tbox//bazel:cross_compiling_for_linux_aarch64_musl": {
-            "#define EVENT__HAVE_SYS_QUEUE_H 1": "/* #undef EVENT__HAVE_SYS_QUEUE_H */",
-            "#define EVENT__HAVE_MMAP64 1": "/* #undef EVENT__HAVE_MMAP64 */",
-        },
-        "//conditions:default": {},
     }),
 )
 

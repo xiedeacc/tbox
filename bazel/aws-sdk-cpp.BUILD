@@ -1,6 +1,5 @@
-load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "template_rule")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "template_rule")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -12,14 +11,32 @@ COPTS_BASE = GLOBAL_COPTS + select({
         "/Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/include",
     ],
     "//conditions:default": [
-        "-isystem external/aws-sdk-cpp/src",
-        "-isystem external/aws-sdk-cpp/generated/src",
-        "-isystem external/aws-sdk-cpp/include",
-        "-isystem external/aws-sdk-cpp/crt/aws-crt-cpp/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-auth/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-cal/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-compression/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-event-stream/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-http/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-io/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-mqtt/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-s3/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-sdkutils/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-checksums/include",
+        "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-c-common/generated/include",
+        "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-crt-cpp/generated/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/source",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/source/external/libcbor",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/include",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/api",
+        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/include",
+        "-include external/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/utils/s2n_prelude.h",
     ],
 })
 
 COPTS_COMMON = COPTS_BASE + select({
+    "@platforms//os:windows": [],
     "@platforms//os:linux": [
         "-fPIC",
         "-D_GNU_SOURCE",
@@ -27,56 +44,32 @@ COPTS_COMMON = COPTS_BASE + select({
     "@platforms//os:osx": [
         "-fPIC",
     ],
-    "@platforms//os:windows": [],
     "//conditions:default": [],
 }) + select({
-    "@tbox//bazel:linux_x86_64": [
+    # Base architecture flags
+    "@platforms//cpu:x86_64": [
         "-msse4.2",
         "-march=x86-64",
         "-mtune=generic",
         "-msse4.1",
         "-mpclmul",
     ],
-    "@tbox//bazel:windows_x86_64": [
-        "/arch:AVX2",
-    ],
-    "@tbox//bazel:osx_x86_64": [
-        "-mavx2",
-        "-msse4.2",
-        "-march=x86-64",
-        "-mtune=generic",
-    ],
-    "//conditions:default": [],
-})
-
-COPTS_C = COPTS_COMMON + select({
-    "@tbox//bazel:linux_aarch64": [
+    "@platforms//cpu:aarch64": [
         "-march=armv8-a+crc+crypto",
     ],
     "//conditions:default": [],
-}) + [
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-auth/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-cal/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-compression/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-event-stream/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-http/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-io/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-mqtt/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-s3/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-sdkutils/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-checksums/include",
-    "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-c-common/generated/include",
-    "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-crt-cpp/generated/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/source",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/source/external/libcbor",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/api",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/include",
-    "-include external/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/utils/s2n_prelude.h",
-]
+}) + select({
+    # CPU tier-specific extensions (x86_64 only)
+    "@tbox//bazel:x64_large": [
+        "-mavx2",
+        "-mavx512f",
+    ],
+    "@tbox//bazel:x64_small": [],  # No AVX2 for small tier
+    "@tbox//bazel:x64_medium": [
+        "-mavx2",
+    ],
+    "//conditions:default": ["-mavx2"],  # Default to medium (AVX2)
+})
 
 COPTS = COPTS_COMMON + select({
     "@platforms//os:windows": [
@@ -85,29 +78,7 @@ COPTS = COPTS_COMMON + select({
     "//conditions:default": [
         "-std=c++17",
     ],
-}) + [
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-auth/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-cal/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-compression/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-event-stream/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-http/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-io/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-mqtt/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-s3/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-sdkutils/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-checksums/include",
-    "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-c-common/generated/include",
-    "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-crt-cpp/generated/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/source",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/source/external/libcbor",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/include",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/api",
-    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/include",
-    "-include external/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/utils/s2n_prelude.h",
-]
+})
 
 LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "AWS_SDK_VERSION_MAJOR=1",
@@ -129,34 +100,35 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "AWS_S2N_INSOURCE_PATH",
     "USE_S2N",
 ] + select({
-    "@tbox//bazel:linux_x86_64": [
-        "AWS_HAVE_AVX2_INTRINSICS",
-        #"AWS_HAVE_AVX512_INTRINSICS",
-        "AWS_HAVE_MM256_EXTRACT_EPI64",
+    # Base architecture defines
+    "@platforms//cpu:x86_64": [
         "AWS_HAVE_CLMUL",
         "AWS_ARCH_INTEL",
         "AWS_ARCH_INTEL_X64",
         "AWS_USE_CPU_EXTENSIONS",
     ],
-    "@tbox//bazel:windows_x86_64": [
-        "AWS_HAVE_AVX2_INTRINSICS",
-        #"AWS_HAVE_AVX512_INTRINSICS",
-        "AWS_HAVE_MM256_EXTRACT_EPI64",
-        "AWS_HAVE_CLMUL",
-        "AWS_ARCH_INTEL",
-        "AWS_ARCH_INTEL_X64",
-        "AWS_USE_CPU_EXTENSIONS",
-    ],
-    "@tbox//bazel:osx_x86_64": [
-        "AWS_HAVE_AVX2_INTRINSICS",
-        #"AWS_HAVE_AVX512_INTRINSICS",
-        "AWS_HAVE_MM256_EXTRACT_EPI64",
-        "AWS_HAVE_CLMUL",
-        "AWS_ARCH_INTEL",
-        "AWS_ARCH_INTEL_X64",
+    "@platforms//cpu:aarch64": [
+        "AWS_ARCH_ARM64",
+        "AWS_HAVE_ARMv8_1",
         "AWS_USE_CPU_EXTENSIONS",
     ],
     "//conditions:default": [],
+}) + select({
+    # CPU tier-specific defines (x86_64 only)
+    "@tbox//bazel:x64_large": [
+        "AWS_HAVE_AVX2_INTRINSICS",
+        "AWS_HAVE_MM256_EXTRACT_EPI64",
+        "AWS_HAVE_AVX512_INTRINSICS",
+    ],
+    "@tbox//bazel:x64_small": [],  # No AVX2 for small tier
+    "@tbox//bazel:x64_medium": [
+        "AWS_HAVE_AVX2_INTRINSICS",
+        "AWS_HAVE_MM256_EXTRACT_EPI64",
+    ],
+    "//conditions:default": [  # Default to medium (AVX2)
+        "AWS_HAVE_AVX2_INTRINSICS",
+        "AWS_HAVE_MM256_EXTRACT_EPI64",
+    ],
 }) + select({
     "@platforms//os:windows": [
         "WIN32",
@@ -187,11 +159,6 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
         "AWS_HAVE_EXECINFO",
     ],
     "//conditions:default": [],
-}) + select({
-    "@platforms//os:linux": [],
-    "@platforms//os:osx": [],
-    "@platforms//os:windows": [],
-    "//conditions:default": [],
 })
 
 LINKOPTS = GLOBAL_LINKOPTS + select({
@@ -216,11 +183,6 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
         "-framework CoreFoundation",
     ],
     "//conditions:default": [],
-}) + select({
-    "@platforms//os:linux": [],
-    "@platforms//os:osx": [],
-    "@platforms//os:windows": [],
-    "//conditions:default": [],
 })
 
 write_file(
@@ -236,15 +198,14 @@ write_file(
         "#define AWS_HAVE_EXECINFO",
         "/* #undef AWS_HAVE_WINAPI_DESKTOP */",
         "#define AWS_HAVE_LINUX_IF_LINK_H",
-        "#define AWS_HAVE_AVX2_INTRINSICS",
-        #"#define AWS_HAVE_AVX512_INTRINSICS",
-        "#define AWS_HAVE_MM256_EXTRACT_EPI64",
-        "#define AWS_HAVE_CLMUL",
-        "/* #undef AWS_HAVE_ARM32_CRC */",
-        "/* #undef AWS_HAVE_ARMv8_1 */",
-        "/* #undef AWS_ARCH_ARM64 */",
-        "#define AWS_ARCH_INTEL",
-        "#define AWS_ARCH_INTEL_X64",
+        "{{AVX2_INTRINSICS}}",
+        "{{MM256_EXTRACT}}",
+        "{{CLMUL}}",
+        "{{ARM32_CRC}}",
+        "{{ARMv8_1}}",
+        "{{ARCH_ARM64}}",
+        "{{ARCH_INTEL}}",
+        "{{ARCH_INTEL_X64}}",
         "#define AWS_USE_CPU_EXTENSIONS",
         "",
         "#endif",
@@ -256,13 +217,43 @@ template_rule(
     src = ":config_h_in",
     out = "crt/aws-c-common/generated/include/aws/common/config.h",
     substitutions = select({
-        "@tbox//bazel:linux_aarch64": {
+        "@platforms//cpu:x86_64": {
+            "{{CLMUL}}": "#define AWS_HAVE_CLMUL",
+            "{{ARM32_CRC}}": "/* #undef AWS_HAVE_ARM32_CRC */",
+            "{{ARMv8_1}}": "/* #undef AWS_HAVE_ARMv8_1 */",
+            "{{ARCH_ARM64}}": "/* #undef AWS_ARCH_ARM64 */",
+            "{{ARCH_INTEL}}": "#define AWS_ARCH_INTEL",
+            "{{ARCH_INTEL_X64}}": "#define AWS_ARCH_INTEL_X64",
         },
-        "//conditions:default": {},
+        "@platforms//cpu:aarch64": {
+            "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
+            "{{ARM32_CRC}}": "/* #undef AWS_HAVE_ARM32_CRC */",
+            "{{ARMv8_1}}": "#define AWS_HAVE_ARMv8_1",
+            "{{ARCH_ARM64}}": "#define AWS_ARCH_ARM64",
+            "{{ARCH_INTEL}}": "/* #undef AWS_ARCH_INTEL */",
+            "{{ARCH_INTEL_X64}}": "/* #undef AWS_ARCH_INTEL_X64 */",
+        },
+        "//conditions:default": {
+            "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
+            "{{ARM32_CRC}}": "/* #undef AWS_HAVE_ARM32_CRC */",
+            "{{ARMv8_1}}": "/* #undef AWS_HAVE_ARMv8_1 */",
+            "{{ARCH_ARM64}}": "/* #undef AWS_ARCH_ARM64 */",
+            "{{ARCH_INTEL}}": "/* #undef AWS_ARCH_INTEL */",
+            "{{ARCH_INTEL_X64}}": "/* #undef AWS_ARCH_INTEL_X64 */",
+        },
     }) | select({
-        "@platforms//os:linux": {},
-        "@platforms//os:osx": {},
-        "@platforms//os:windows": {},
+        "@tbox//bazel:x64_large": {
+            "{{AVX2_INTRINSICS}}": "#define AWS_HAVE_AVX2_INTRINSICS",
+            "{{MM256_EXTRACT}}": "#define AWS_HAVE_MM256_EXTRACT_EPI64",
+        },
+        "@tbox//bazel:x64_small": {
+            "{{AVX2_INTRINSICS}}": "/* #undef AWS_HAVE_AVX2_INTRINSICS */",
+            "{{MM256_EXTRACT}}": "/* #undef AWS_HAVE_MM256_EXTRACT_EPI64 */",
+        },
+        "@tbox//bazel:x64_medium": {
+            "{{AVX2_INTRINSICS}}": "#define AWS_HAVE_AVX2_INTRINSICS",
+            "{{MM256_EXTRACT}}": "#define AWS_HAVE_MM256_EXTRACT_EPI64",
+        }
     }),
 )
 
@@ -411,25 +402,22 @@ cc_library(
         ],
         "//conditions:default": [],
     }) + select({
-        "@tbox//bazel:windows_x86_64": glob([
-            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/**/*.c",
-            #"crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/msvc/*.c",
-            #"crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/cpuid.c",
-            #"crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/encoding_avx2.c",
-        ]),
-        "@tbox//bazel:windows_aarch64": glob([
-            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/**/*.c",
-        ]),
-        "@tbox//bazel:linux_x86_64": glob(
+        # Base architecture-specific source files
+        "@platforms//cpu:x86_64": glob(
             [
+                "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-checksums/source/generic/**/*.c",
-                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/cpuid.c",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/**/*.c",
             ],
             exclude = [
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/msvc/**",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/encoding_avx2.c",  # Conditionally added below
+                "crt/aws-crt-cpp/crt/aws-checksums/source/intel/cpuid.c",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",
             ],
         ),
-        "@tbox//bazel:linux_aarch64": glob(
+        "@platforms//cpu:aarch64": glob(
             [
                 "crt/aws-crt-cpp/crt/aws-checksums/source/arm/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-checksums/source/generic/**/*.c",
@@ -438,21 +426,17 @@ cc_library(
             ],
             exclude = [
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/darwin/**",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/linux/**",
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/windows/**",
             ],
-        ) + ["@tbox//bazel:aws_intel_stubs.c"],
-        "@tbox//bazel:osx_x86_64": glob(
-            [
-                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
-            ],
-            exclude = [
-                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/msvc/**",
-            ],
         ),
-        "@tbox//bazel:osx_aarch64": glob([
-            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/**/*.c",
-        ]),
         "//conditions:default": [],
+    }) + select({
+        # CPU tier-specific sources: include AVX2 sources for medium/large tiers
+        "@tbox//bazel:x64_large": ["crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/encoding_avx2.c"],
+        "@tbox//bazel:x64_small": [],  # No AVX2 sources for small tier
+        "@tbox//bazel:x64_medium": ["crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/encoding_avx2.c"],
+        "//conditions:default": ["crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/encoding_avx2.c"],  # Default to medium (AVX2)
     }),
     hdrs = [
         ":Config_h",
@@ -527,7 +511,7 @@ cc_library(
         ]),
         "//conditions:default": [],
     }),
-    copts = COPTS_C,
+    copts = COPTS_COMMON,
     includes = [
         "include",
     ],
@@ -634,12 +618,12 @@ cc_library(
         "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-crt-cpp/generated/include",
     ],
     includes = [
-        "include",
-        "src/aws-cpp-sdk-core/include",
-        "crt/aws-crt-cpp/include",
+        "crt/aws-crt-cpp/crt/aws-c-cal/include",
         "crt/aws-crt-cpp/crt/aws-c-common/include",
         "crt/aws-crt-cpp/crt/aws-c-io/include",
-        "crt/aws-crt-cpp/crt/aws-c-cal/include",
+        "crt/aws-crt-cpp/include",
+        "include",
+        "src/aws-cpp-sdk-core/include",
     ],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
@@ -670,6 +654,8 @@ cc_library(
     local_defines = LOCAL_DEFINES,
     deps = [
         ":aws-cpp-sdk-core",
+        ":aws-cpp-sdk-cognito-identity",
+        ":aws-cpp-sdk-iam",
     ],
 )
 
@@ -692,6 +678,8 @@ cc_library(
     local_defines = LOCAL_DEFINES,
     deps = [
         ":aws-cpp-sdk-core",
+        ":aws-cpp-sdk-cognito-identity",
+        ":aws-cpp-sdk-sts",
     ],
 )
 
@@ -818,6 +806,50 @@ cc_library(
     copts = COPTS,
     includes = [
         "generated/src/aws-cpp-sdk-secretsmanager/include",
+        "include",
+    ],
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        ":aws-cpp-sdk-core",
+    ],
+)
+
+# Cognito Identity library (from generated sources)
+cc_library(
+    name = "aws-cpp-sdk-cognito-identity",
+    srcs = glob([
+        "generated/src/aws-cpp-sdk-cognito-identity/source/**/*.cpp",
+    ]),
+    hdrs = glob([
+        "generated/src/aws-cpp-sdk-cognito-identity/include/**/*.h",
+        "generated/src/aws-cpp-sdk-cognito-identity/include/**/*.hpp",
+    ]),
+    copts = COPTS,
+    includes = [
+        "generated/src/aws-cpp-sdk-cognito-identity/include",
+        "include",
+    ],
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        ":aws-cpp-sdk-core",
+    ],
+)
+
+# STS (Security Token Service) library (from generated sources)
+cc_library(
+    name = "aws-cpp-sdk-sts",
+    srcs = glob([
+        "generated/src/aws-cpp-sdk-sts/source/**/*.cpp",
+    ]),
+    hdrs = glob([
+        "generated/src/aws-cpp-sdk-sts/include/**/*.h",
+        "generated/src/aws-cpp-sdk-sts/include/**/*.hpp",
+    ]),
+    copts = COPTS,
+    includes = [
+        "generated/src/aws-cpp-sdk-sts/include",
         "include",
     ],
     linkopts = LINKOPTS,

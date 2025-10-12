@@ -766,12 +766,6 @@ template_rule(
             "#define HAVE_WRITEV 1": "/* #undef HAVE_WRITEV */",
         },
         "//conditions:default": {},
-    }) | select({
-        "@tbox//bazel:musl-abi": {
-            "#define EVENT__HAVE_SYS_QUEUE_H 1": "#define EVENT__HAVE_SYS_QUEUE_H 0",
-            "#define EVENT__HAVE_MMAP64 1": "/* #undef EVENT__HAVE_MMAP64 */",
-        },
-        "//conditions:default": {},
     }),
 )
 

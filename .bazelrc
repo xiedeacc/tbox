@@ -101,7 +101,7 @@ build --host_features=-module_maps
 #build --features=-layering_check
 #build --host_features=-layering_check
 #build --remote_cache=http://192.168.1.101/bazel_cache
-build --keep_going
+#build --keep_going
 
 build:opt --compilation_mode=opt
 build:opt --copt=-Wframe-larger-than=16384
@@ -139,6 +139,7 @@ build:linux --host_copt='-O2'
 build:linux --host_copt='-Wall'
 build:linux --host_cxxopt='-std=c++17'
 build:linux --host_cxxopt=-D_GLIBCXX_USE_CXX11_ABI=1
+build:linux --define=cpu_tier=medium
 #build:linux --workspace_status_command=bazel/workspace_status.sh
 
 build:android --noenable_platform_specific_config

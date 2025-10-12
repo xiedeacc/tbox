@@ -242,12 +242,7 @@ cc_library(
         "@platforms//cpu:aarch64": ["folly/external/aor/asmdefs.h"],
     }),
     copts = COPTS,
-    defines = select({
-        "@tbox//bazel:cross_compiling_for_linux_aarch64_musl": [
-            "FOLLY_STATIC_LIBSTDCXX=1",
-        ],
-        "//conditions:default": [],
-    }),
+    defines = [],
     linkopts = GLOBAL_LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
@@ -434,9 +429,5 @@ template_rule(
             "#define FOLLY_HAVE_VLA 1": "/* #undef FOLLY_HAVE_VLA */",
             "#define FOLLY_HAVE_EXTRANDOM_SFMT19937 1": "/* #undef FOLLY_HAVE_EXTRANDOM_SFMT19937 */",
         },
-    }) | select({
-        "@tbox//bazel:cross_compiling_for_linux_aarch64_musl": {
-        },
-        "//conditions:default": {},
     }),
 )

@@ -237,10 +237,7 @@ cc_binary(
     name = "tbox_client",
     srcs = ["client.cc"],
     copts = COPTS,
-    linkopts = LINKOPTS + select({
-        "@tbox//bazel:cross_compiling_for_linux_aarch64_musl": [],
-        "//conditions:default": [],
-    }),
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
         ":grpc_client",
