@@ -48,11 +48,8 @@ COPTS_COMMON = COPTS_BASE + select({
 }) + select({
     # Base architecture flags
     "@platforms//cpu:x86_64": [
-        "-msse4.2",
         "-march=x86-64",
         "-mtune=generic",
-        "-msse4.1",
-        "-mpclmul",
     ],
     "@platforms//cpu:aarch64": [
         "-march=armv8-a+crc+crypto",
@@ -61,14 +58,25 @@ COPTS_COMMON = COPTS_BASE + select({
 }) + select({
     # CPU tier-specific extensions (x86_64 only)
     "@tbox//bazel:x64_large": [
+        "-msse4.2",
+        "-msse4.1",
+        "-mpclmul",
         "-mavx2",
         "-mavx512f",
     ],
-    "@tbox//bazel:x64_small": [],  # No AVX2 for small tier
     "@tbox//bazel:x64_medium": [
+        "-msse4.2",
+        "-msse4.1",
+        "-mpclmul",
         "-mavx2",
     ],
-    "//conditions:default": ["-mavx2"],  # Default to medium (AVX2)
+    "@tbox//bazel:x64_small": [],  # No CPU extensions - generic x86-64 only
+    "//conditions:default": [  # Default to medium
+        "-msse4.2",
+        "-msse4.1",
+        "-mpclmul",
+        "-mavx2",
+    ],
 })
 
 COPTS = COPTS_COMMON + select({
@@ -102,10 +110,8 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
 ] + select({
     # Base architecture defines
     "@platforms//cpu:x86_64": [
-        "AWS_HAVE_CLMUL",
         "AWS_ARCH_INTEL",
         "AWS_ARCH_INTEL_X64",
-        "AWS_USE_CPU_EXTENSIONS",
     ],
     "@platforms//cpu:aarch64": [
         "AWS_ARCH_ARM64",
@@ -119,15 +125,24 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
         "AWS_HAVE_AVX2_INTRINSICS",
         "AWS_HAVE_MM256_EXTRACT_EPI64",
         "AWS_HAVE_AVX512_INTRINSICS",
+        "AWS_HAVE_CLMUL",
+        "AWS_USE_CPU_EXTENSIONS",
+        "USE_SIMD_ENCODING",  # Enable SIMD base64 encoding
     ],
-    "@tbox//bazel:x64_small": [],  # No AVX2 for small tier
     "@tbox//bazel:x64_medium": [
         "AWS_HAVE_AVX2_INTRINSICS",
         "AWS_HAVE_MM256_EXTRACT_EPI64",
+        "AWS_HAVE_CLMUL",
+        "AWS_USE_CPU_EXTENSIONS",
+        "USE_SIMD_ENCODING",  # Enable SIMD base64 encoding
     ],
+    "@tbox//bazel:x64_small": [],  # No CPU extensions for small tier - use generic implementations
     "//conditions:default": [  # Default to medium (AVX2)
         "AWS_HAVE_AVX2_INTRINSICS",
         "AWS_HAVE_MM256_EXTRACT_EPI64",
+        "AWS_HAVE_CLMUL",
+        "AWS_USE_CPU_EXTENSIONS",
+        "USE_SIMD_ENCODING",  # Enable SIMD base64 encoding
     ],
 }) + select({
     "@platforms//os:windows": [
@@ -206,7 +221,7 @@ write_file(
         "{{ARCH_ARM64}}",
         "{{ARCH_INTEL}}",
         "{{ARCH_INTEL_X64}}",
-        "#define AWS_USE_CPU_EXTENSIONS",
+        "{{USE_CPU_EXTENSIONS}}",
         "",
         "#endif",
     ],
@@ -218,7 +233,6 @@ template_rule(
     out = "crt/aws-c-common/generated/include/aws/common/config.h",
     substitutions = select({
         "@platforms//cpu:x86_64": {
-            "{{CLMUL}}": "#define AWS_HAVE_CLMUL",
             "{{ARM32_CRC}}": "/* #undef AWS_HAVE_ARM32_CRC */",
             "{{ARMv8_1}}": "/* #undef AWS_HAVE_ARMv8_1 */",
             "{{ARCH_ARM64}}": "/* #undef AWS_ARCH_ARM64 */",
@@ -226,34 +240,52 @@ template_rule(
             "{{ARCH_INTEL_X64}}": "#define AWS_ARCH_INTEL_X64",
         },
         "@platforms//cpu:aarch64": {
-            "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
             "{{ARM32_CRC}}": "/* #undef AWS_HAVE_ARM32_CRC */",
             "{{ARMv8_1}}": "#define AWS_HAVE_ARMv8_1",
             "{{ARCH_ARM64}}": "#define AWS_ARCH_ARM64",
             "{{ARCH_INTEL}}": "/* #undef AWS_ARCH_INTEL */",
             "{{ARCH_INTEL_X64}}": "/* #undef AWS_ARCH_INTEL_X64 */",
+            "{{USE_CPU_EXTENSIONS}}": "#define AWS_USE_CPU_EXTENSIONS",
+            "{{AVX2_INTRINSICS}}": "/* #undef AWS_HAVE_AVX2_INTRINSICS */",
+            "{{MM256_EXTRACT}}": "/* #undef AWS_HAVE_MM256_EXTRACT_EPI64 */",
+            "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
         },
         "//conditions:default": {
-            "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
             "{{ARM32_CRC}}": "/* #undef AWS_HAVE_ARM32_CRC */",
             "{{ARMv8_1}}": "/* #undef AWS_HAVE_ARMv8_1 */",
             "{{ARCH_ARM64}}": "/* #undef AWS_ARCH_ARM64 */",
             "{{ARCH_INTEL}}": "/* #undef AWS_ARCH_INTEL */",
             "{{ARCH_INTEL_X64}}": "/* #undef AWS_ARCH_INTEL_X64 */",
+            "{{USE_CPU_EXTENSIONS}}": "/* #undef AWS_USE_CPU_EXTENSIONS */",
+            "{{AVX2_INTRINSICS}}": "/* #undef AWS_HAVE_AVX2_INTRINSICS */",
+            "{{MM256_EXTRACT}}": "/* #undef AWS_HAVE_MM256_EXTRACT_EPI64 */",
+            "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
         },
     }) | select({
         "@tbox//bazel:x64_large": {
             "{{AVX2_INTRINSICS}}": "#define AWS_HAVE_AVX2_INTRINSICS",
             "{{MM256_EXTRACT}}": "#define AWS_HAVE_MM256_EXTRACT_EPI64",
-        },
-        "@tbox//bazel:x64_small": {
-            "{{AVX2_INTRINSICS}}": "/* #undef AWS_HAVE_AVX2_INTRINSICS */",
-            "{{MM256_EXTRACT}}": "/* #undef AWS_HAVE_MM256_EXTRACT_EPI64 */",
+            "{{CLMUL}}": "#define AWS_HAVE_CLMUL",
+            "{{USE_CPU_EXTENSIONS}}": "#define AWS_USE_CPU_EXTENSIONS",
         },
         "@tbox//bazel:x64_medium": {
             "{{AVX2_INTRINSICS}}": "#define AWS_HAVE_AVX2_INTRINSICS",
             "{{MM256_EXTRACT}}": "#define AWS_HAVE_MM256_EXTRACT_EPI64",
-        }
+            "{{CLMUL}}": "#define AWS_HAVE_CLMUL",
+            "{{USE_CPU_EXTENSIONS}}": "#define AWS_USE_CPU_EXTENSIONS",
+        },
+        "@tbox//bazel:x64_small": {
+            "{{AVX2_INTRINSICS}}": "/* #undef AWS_HAVE_AVX2_INTRINSICS */",
+            "{{MM256_EXTRACT}}": "/* #undef AWS_HAVE_MM256_EXTRACT_EPI64 */",
+            "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
+            "{{USE_CPU_EXTENSIONS}}": "/* #undef AWS_USE_CPU_EXTENSIONS */",
+        },
+        "//conditions:default": {
+            "{{AVX2_INTRINSICS}}": "#define AWS_HAVE_AVX2_INTRINSICS",
+            "{{MM256_EXTRACT}}": "#define AWS_HAVE_MM256_EXTRACT_EPI64",
+            "{{CLMUL}}": "#define AWS_HAVE_CLMUL",
+            "{{USE_CPU_EXTENSIONS}}": "#define AWS_USE_CPU_EXTENSIONS",
+        },
     }),
 )
 
@@ -402,19 +434,14 @@ cc_library(
         ],
         "//conditions:default": [],
     }) + select({
-        # Base architecture-specific source files
+        # Base architecture-specific source files (only generic for x86_64, excluding cpuid)
         "@platforms//cpu:x86_64": glob(
             [
-                "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-checksums/source/generic/**/*.c",
-                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/**/*.c",
             ],
             exclude = [
-                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/msvc/**",
-                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/encoding_avx2.c",  # Conditionally added below
-                "crt/aws-crt-cpp/crt/aws-checksums/source/intel/cpuid.c",
-                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",  # Conditionally added below
             ],
         ),
         "@platforms//cpu:aarch64": glob(
@@ -432,11 +459,42 @@ cc_library(
         ),
         "//conditions:default": [],
     }) + select({
-        # CPU tier-specific sources: include AVX2 sources for medium/large tiers
-        "@tbox//bazel:x64_large": ["crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/encoding_avx2.c"],
-        "@tbox//bazel:x64_small": [],  # No AVX2 sources for small tier
-        "@tbox//bazel:x64_medium": ["crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/encoding_avx2.c"],
-        "//conditions:default": ["crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/encoding_avx2.c"],  # Default to medium (AVX2)
+        # CPU tier-specific sources: Intel optimizations for medium/large tiers
+        "@tbox//bazel:x64_large": glob(
+            [
+                "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
+            ],
+            exclude = [
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/msvc/**",
+                "crt/aws-crt-cpp/crt/aws-checksums/source/intel/cpuid.c",
+            ],
+        ),
+        "@tbox//bazel:x64_medium": glob(
+            [
+                "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
+            ],
+            exclude = [
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/msvc/**",
+                "crt/aws-crt-cpp/crt/aws-checksums/source/intel/cpuid.c",
+            ],
+        ),
+        "@tbox//bazel:x64_small": [
+            # For small tier, add generic cpuid and minimal CPU stubs
+            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",
+            "@tbox//bazel:aws_cpu_stubs_small.c",
+        ],
+        "//conditions:default": glob(  # Default to medium
+            [
+                "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
+            ],
+            exclude = [
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/msvc/**",
+                "crt/aws-crt-cpp/crt/aws-checksums/source/intel/cpuid.c",
+            ],
+        ),
     }),
     hdrs = [
         ":Config_h",
