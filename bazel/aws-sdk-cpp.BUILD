@@ -71,12 +71,6 @@ COPTS_COMMON = COPTS_BASE + select({
         "-mavx2",
     ],
     "@tbox//bazel:x64_small": [],  # No CPU extensions - generic x86-64 only
-    "//conditions:default": [  # Default to medium
-        "-msse4.2",
-        "-msse4.1",
-        "-mpclmul",
-        "-mavx2",
-    ],
 })
 
 COPTS = COPTS_COMMON + select({
@@ -137,13 +131,6 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
         "USE_SIMD_ENCODING",  # Enable SIMD base64 encoding
     ],
     "@tbox//bazel:x64_small": [],  # No CPU extensions for small tier - use generic implementations
-    "//conditions:default": [  # Default to medium (AVX2)
-        "AWS_HAVE_AVX2_INTRINSICS",
-        "AWS_HAVE_MM256_EXTRACT_EPI64",
-        "AWS_HAVE_CLMUL",
-        "AWS_USE_CPU_EXTENSIONS",
-        "USE_SIMD_ENCODING",  # Enable SIMD base64 encoding
-    ],
 }) + select({
     "@platforms//os:windows": [
         "WIN32",
@@ -279,12 +266,6 @@ template_rule(
             "{{MM256_EXTRACT}}": "/* #undef AWS_HAVE_MM256_EXTRACT_EPI64 */",
             "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
             "{{USE_CPU_EXTENSIONS}}": "/* #undef AWS_USE_CPU_EXTENSIONS */",
-        },
-        "//conditions:default": {
-            "{{AVX2_INTRINSICS}}": "#define AWS_HAVE_AVX2_INTRINSICS",
-            "{{MM256_EXTRACT}}": "#define AWS_HAVE_MM256_EXTRACT_EPI64",
-            "{{CLMUL}}": "#define AWS_HAVE_CLMUL",
-            "{{USE_CPU_EXTENSIONS}}": "#define AWS_USE_CPU_EXTENSIONS",
         },
     }),
 )
@@ -485,16 +466,6 @@ cc_library(
             "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",
             "@tbox//bazel:aws_cpu_stubs_small.c",
         ],
-        "//conditions:default": glob(  # Default to medium
-            [
-                "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
-                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
-            ],
-            exclude = [
-                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/msvc/**",
-                "crt/aws-crt-cpp/crt/aws-checksums/source/intel/cpuid.c",
-            ],
-        ),
     }),
     hdrs = [
         ":Config_h",
