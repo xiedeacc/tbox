@@ -638,21 +638,22 @@ bool DDNSManager::UpdateDNS() {
           log_buffer.push_back(
               "All local IPv6 addresses are private - skipping update");
         } else {
+          // Use the primary (first) IPv6 address - sorted by longest prefix
+          std::string primary_ipv6 = public_ipv6s[0];
           bool ipv6_needs_update = true;
 
-          // Check if any Route53 IPv6 record matches any local public IPv6
+          // Check if Route53 already has the primary IPv6 address
           for (const auto& route53_ipv6 : route53_ipv6s) {
-            if (IsIPInList(route53_ipv6, public_ipv6s)) {
+            if (route53_ipv6 == primary_ipv6) {
               ipv6_needs_update = false;
               break;
             }
           }
 
           if (ipv6_needs_update) {
-            std::string primary_ipv6 = public_ipv6s[0];
             if (UpdateRoute53AAAARecord(zone_id, domain, primary_ipv6)) {
               log_buffer.push_back("Route53 AAAA record for " + domain +
-                                   " updated successfully -> " + primary_ipv6);
+                                   " updated to primary IPv6 -> " + primary_ipv6);
             } else {
               log_buffer.push_back("Failed to update Route53 AAAA record for " +
                                    domain);
@@ -660,7 +661,7 @@ bool DDNSManager::UpdateDNS() {
             }
           } else {
             log_buffer.push_back("Route53 AAAA record for " + domain +
-                                 " is up to date - no update needed");
+                                 " is up to date with primary IPv6: " + primary_ipv6);
           }
         }
       }

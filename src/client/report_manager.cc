@@ -303,11 +303,25 @@ void ReportManager::ReportingLoop() {
     // Output separator for this check cycle
     LOG(INFO) << "=== Checking Local IP Addresses ===";
 
-    // Get current IP addresses
-    std::vector<std::string> client_ips = util::Util::GetAllLocalIPAddresses();
+    // Get public IP addresses from server to determine reportable IPs
+    std::string public_ipv4 = GetPublicIPv4();
+    std::string public_ipv6 = GetPublicIPv6();
+    
+    // Get all local IP addresses
+    std::vector<std::string> all_local_ips = 
+        util::Util::GetAllLocalIPAddresses();
 
-    // Check if we should report (IP changed or heartbeat due)
-    if (!ShouldReport(client_ips)) {
+    // Filter to only IPs that match public IPs (same logic as ReportClientIP)
+    std::vector<std::string> reportable_ips;
+    for (const auto& local_ip : all_local_ips) {
+      if ((!public_ipv4.empty() && local_ip == public_ipv4) ||
+          (!public_ipv6.empty() && local_ip == public_ipv6)) {
+        reportable_ips.push_back(local_ip);
+      }
+    }
+
+    // Check if we should report (reportable IPs changed or heartbeat due)
+    if (!ShouldReport(reportable_ips)) {
       LOG(INFO) << "IP addresses unchanged and heartbeat not due. Skipping "
                    "report.";
       continue;

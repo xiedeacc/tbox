@@ -972,7 +972,10 @@ std::vector<std::string> Util::GetPublicIPv6Addresses() {
   }
 
   IfAddrsGuard guard(ifaddrs_ptr);
-  std::set<std::string> unique_addresses;
+  
+  // Store addresses with their prefix lengths for sorting
+  // Use map to deduplicate: IP -> prefix length
+  std::map<std::string, int> address_prefix_map;
 
   for (struct ifaddrs* ifa = ifaddrs_ptr; ifa != nullptr; ifa = ifa->ifa_next) {
     if (ifa->ifa_addr == nullptr || ifa->ifa_addr->sa_family != AF_INET6) {
@@ -994,9 +997,32 @@ std::vector<std::string> Util::GetPublicIPv6Addresses() {
         continue;
       }
 
-      // This is a global unicast address (public IPv6)
+      // Calculate prefix length from netmask
+      int prefix_len = 0;
+      if (ifa->ifa_netmask != nullptr && 
+          ifa->ifa_netmask->sa_family == AF_INET6) {
+        auto* netmask = reinterpret_cast<struct sockaddr_in6*>(ifa->ifa_netmask);
+        // Count the number of 1 bits in the netmask
+        for (int i = 0; i < 16; ++i) {
+          uint8_t byte = netmask->sin6_addr.s6_addr[i];
+          for (int bit = 7; bit >= 0; --bit) {
+            if (byte & (1 << bit)) {
+              prefix_len++;
+            } else {
+              // Once we hit a 0 bit, rest should be 0
+              goto done_counting;
+            }
+          }
+        }
+        done_counting:;
+      }
+
+      // Store IP with its prefix length (keep longest if duplicate)
       std::string ip_str = ipv6_addr.str();
-      unique_addresses.insert(ip_str);
+      auto it = address_prefix_map.find(ip_str);
+      if (it == address_prefix_map.end() || prefix_len > it->second) {
+        address_prefix_map[ip_str] = prefix_len;
+      }
     } catch (const std::exception& e) {
       LOG(WARNING) << "Failed to parse IPv6 address for interface: "
                    << (ifa->ifa_name ? ifa->ifa_name : "unknown") << " - "
@@ -1004,7 +1030,24 @@ std::vector<std::string> Util::GetPublicIPv6Addresses() {
     }
   }
 
-  addresses.assign(unique_addresses.begin(), unique_addresses.end());
+  // Convert to vector of pairs for sorting
+  std::vector<std::pair<std::string, int>> addr_prefix_vec(
+      address_prefix_map.begin(), address_prefix_map.end());
+
+  // Sort by prefix length (longest first), then alphabetically
+  std::sort(addr_prefix_vec.begin(), addr_prefix_vec.end(),
+            [](const std::pair<std::string, int>& a,
+               const std::pair<std::string, int>& b) {
+              if (a.second != b.second) {
+                return a.second > b.second;  // Longer prefix first
+              }
+              return a.first < b.first;  // Alphabetical for same prefix
+            });
+
+  // Extract just the addresses
+  for (const auto& pair : addr_prefix_vec) {
+    addresses.push_back(pair.first);
+  }
 
   if (addresses.empty()) {
     LOG(WARNING) << "No public IPv6 addresses found";
