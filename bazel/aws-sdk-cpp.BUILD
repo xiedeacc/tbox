@@ -459,6 +459,8 @@ cc_library(
             exclude = [
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/msvc/**",
                 "crt/aws-crt-cpp/crt/aws-checksums/source/intel/cpuid.c",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/encoding_avx2.c",
+                "crt/aws-crt-cpp/crt/aws-checksums/source/intel/crc32c_sse42_avx512.c",
             ],
         ),
         "@tbox//bazel:x64_small": [
@@ -682,8 +684,8 @@ cc_library(
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
-        ":aws-cpp-sdk-core",
         ":aws-cpp-sdk-cognito-identity",
+        ":aws-cpp-sdk-core",
         ":aws-cpp-sdk-iam",
     ],
 )
@@ -706,8 +708,8 @@ cc_library(
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
-        ":aws-cpp-sdk-core",
         ":aws-cpp-sdk-cognito-identity",
+        ":aws-cpp-sdk-core",
         ":aws-cpp-sdk-sts",
     ],
 )
