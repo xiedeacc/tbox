@@ -35,7 +35,6 @@ ReportManager::ReportManager()
     : running_(false), should_stop_(false), connection_healthy_(false) {}
 
 bool ReportManager::Init(std::shared_ptr<grpc::Channel> channel,
-                         std::shared_ptr<tbox::proto::TBOXService::Stub> stub,
                          int report_interval_seconds, int login_retry_seconds) {
   std::lock_guard<std::mutex> lock(init_mutex_);
 
@@ -45,7 +44,6 @@ bool ReportManager::Init(std::shared_ptr<grpc::Channel> channel,
   }
 
   channel_ = channel;
-  stub_ = stub;
   report_interval_seconds_ = report_interval_seconds;
   login_retry_seconds_ = login_retry_seconds;
 
@@ -228,6 +226,17 @@ bool ReportManager::ReportClientIP() {
       }
       return true;
     } else {
+      // Check if failure is due to authentication (server restart scenario)
+      if (status.error_code() == grpc::StatusCode::UNAUTHENTICATED ||
+          status.error_message().find("authentication") != std::string::npos ||
+          status.error_message().find("token") != std::string::npos) {
+        log_buffer.push_back(
+            "Authentication failed - server may have restarted. Will re-login "
+            "on next cycle.");
+        // Clear token to force re-login
+        auth_manager->ClearToken();
+      }
+      
       log_buffer.push_back(
           "Report failed - status: " + std::to_string(status.error_code()) +
           ", message: " + status.error_message());
@@ -302,6 +311,21 @@ void ReportManager::ReportingLoop() {
       LOG(INFO) << "IP addresses unchanged and heartbeat not due. Skipping "
                    "report.";
       continue;
+    }
+
+    // Check if we need to re-authenticate (e.g., after server restart)
+    if (!auth_manager->IsAuthenticated()) {
+      LOG(INFO) << "Authentication lost, attempting to re-login...";
+      if (auth_manager->Login()) {
+        LOG(INFO) << "Re-login successful after authentication loss";
+        std::lock_guard<std::mutex> lock(connection_mutex_);
+        last_successful_op_millis_ = util::Util::CurrentTimeMillis();
+        connection_healthy_.store(true);
+      } else {
+        LOG(WARNING) << "Re-login failed, will retry on next cycle";
+        connection_healthy_.store(false);
+        continue;
+      }
     }
 
     // Report client IP addresses
@@ -514,6 +538,14 @@ std::string ReportManager::GetPublicIPv4() {
           response.client_ip_size() > 0) {
         return response.client_ip(0);
       }
+    } else {
+      // Check for authentication failure
+      if (status.error_code() == grpc::StatusCode::UNAUTHENTICATED ||
+          status.error_message().find("authentication") != std::string::npos ||
+          status.error_message().find("token") != std::string::npos) {
+        LOG(WARNING) << "Authentication failed while getting public IPv4";
+        auth_manager->ClearToken();
+      }
     }
   } catch (const std::exception& e) {
     // Silent failure, will be logged by caller
@@ -553,6 +585,14 @@ std::string ReportManager::GetPublicIPv6() {
       if (response.err_code() == tbox::proto::ErrCode::Success &&
           response.client_ip_size() > 0) {
         return response.client_ip(0);
+      }
+    } else {
+      // Check for authentication failure
+      if (status.error_code() == grpc::StatusCode::UNAUTHENTICATED ||
+          status.error_message().find("authentication") != std::string::npos ||
+          status.error_message().find("token") != std::string::npos) {
+        LOG(WARNING) << "Authentication failed while getting public IPv6";
+        auth_manager->ClearToken();
       }
     }
   } catch (const std::exception& e) {

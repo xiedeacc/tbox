@@ -33,12 +33,10 @@ class ReportManager final {
 
   /// @brief Initialize with gRPC channel and configuration.
   /// @param channel Shared pointer to gRPC channel.
-  /// @param stub Shared pointer to TBOXService stub.
   /// @param report_interval_seconds Interval between reports.
   /// @param login_retry_seconds Interval between login retries.
   /// @return True on success, false on failure.
   bool Init(std::shared_ptr<grpc::Channel> channel,
-            std::shared_ptr<tbox::proto::TBOXService::Stub> stub,
             int report_interval_seconds = 30, int login_retry_seconds = 60);
 
   /// @brief Start the background reporting thread.
@@ -99,7 +97,6 @@ class ReportManager final {
 
   // Connection components
   std::shared_ptr<grpc::Channel> channel_;
-  std::shared_ptr<tbox::proto::TBOXService::Stub> stub_;
   std::shared_ptr<tbox::proto::TBOXService::Stub> ipv4_stub_;
   std::shared_ptr<tbox::proto::TBOXService::Stub> ipv6_stub_;
 

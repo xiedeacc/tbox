@@ -138,7 +138,7 @@ fi
 
 # Copy configuration file
 print_status "Installing configuration file..."
-cp conf/client_config.json ${CONF_DIR}/client_config.json
+cp conf/client_local_config.json ${CONF_DIR}/client_config.json
 print_success "Configuration file installed"
 
 # Set ownership and permissions

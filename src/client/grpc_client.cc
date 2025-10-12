@@ -127,7 +127,7 @@ bool GrpcClient::Init() {
   auto report_manager = ReportManager::Instance();
   uint32_t check_interval_seconds = config_manager->CheckIntervalSeconds();
   int login_retry_seconds = 60;
-  if (report_manager->Init(channel_, stub_, check_interval_seconds,
+  if (report_manager->Init(channel_, check_interval_seconds,
                            login_retry_seconds)) {
     LOG(INFO) << "Report manager initialized";
   } else {

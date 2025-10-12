@@ -18,44 +18,12 @@ LOG_DIR="${INSTALL_DIR}/log"
 SERVICE_USER="tbox"
 WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# Remote deployment parameters
-REMOTE_HOST=""
-REMOTE_PORT="22"
-SSH_KEY=""
+# NAS deployment parameters (pre-configured)
+REMOTE_HOST="192.168.3.100"
+REMOTE_PORT="10022"
 REMOTE_USER="root"
 
-# Parse command line arguments
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --remote-host)
-            REMOTE_HOST="$2"
-            shift 2
-            ;;
-        --ssh-port)
-            REMOTE_PORT="$2"
-            shift 2
-            ;;
-        --ssh-key)
-            SSH_KEY="$2"
-            shift 2
-            ;;
-        --remote-user)
-            REMOTE_USER="$2"
-            shift 2
-            ;;
-        *)
-            echo "Unknown option: $1"
-            echo "Usage: $0 [--remote-host HOST] [--ssh-port PORT] [--ssh-key KEY_PATH] [--remote-user USER]"
-            exit 1
-            ;;
-    esac
-done
-
-if [ -n "$REMOTE_HOST" ]; then
-    echo -e "${GREEN}Starting remote deployment of tbox_client to ${REMOTE_HOST}...${NC}"
-else
-    echo -e "${GREEN}Starting local deployment of tbox_client...${NC}"
-fi
+echo -e "${GREEN}Starting deployment of tbox_client to NAS (${REMOTE_HOST}:${REMOTE_PORT})...${NC}"
 
 # Function to print status
 print_status() {
@@ -71,42 +39,15 @@ print_success() {
 }
 
 # SSH/SCP command builders
-SSH_CMD=""
-SCP_CMD=""
-if [ -n "$REMOTE_HOST" ]; then
-    # Check if it's an IPv6 address and wrap in brackets for SCP
-    if [[ "$REMOTE_HOST" =~ : ]]; then
-        REMOTE_HOST_SCP="[${REMOTE_HOST}]"
-    else
-        REMOTE_HOST_SCP="${REMOTE_HOST}"
-    fi
-    
-    SSH_OPTS="-p ${REMOTE_PORT} -o StrictHostKeyChecking=no"
-    SCP_OPTS="-P ${REMOTE_PORT} -o StrictHostKeyChecking=no"
-    if [ -n "$SSH_KEY" ]; then
-        SSH_OPTS="${SSH_OPTS} -i ${SSH_KEY}"
-        SCP_OPTS="${SCP_OPTS} -i ${SSH_KEY}"
-    fi
-    SSH_CMD="ssh ${SSH_OPTS} ${REMOTE_USER}@${REMOTE_HOST}"
-    SCP_CMD="scp ${SCP_OPTS}"
-fi
+SSH_OPTS="-p ${REMOTE_PORT} -o StrictHostKeyChecking=no"
+SCP_OPTS="-P ${REMOTE_PORT} -o StrictHostKeyChecking=no"
+SSH_CMD="ssh ${SSH_OPTS} ${REMOTE_USER}@${REMOTE_HOST}"
+SCP_CMD="scp ${SCP_OPTS}"
 
-# Execute command (local or remote)
+# Execute command on remote
 execute_cmd() {
-    if [ -n "$REMOTE_HOST" ]; then
-        $SSH_CMD "$1"
-    else
-        eval "$1"
-    fi
+    $SSH_CMD "$1"
 }
-
-# Check if running as root (for local deployment only)
-if [ -z "$REMOTE_HOST" ]; then
-    if [[ $EUID -ne 0 ]]; then
-       print_error "This script must be run as root for local deployment (use sudo)"
-       exit 1
-    fi
-fi
 
 # Stop existing service if running
 print_status "Stopping existing service if running..."
@@ -153,11 +94,7 @@ execute_cmd "mkdir -p ${BIN_DIR} ${CONF_DIR} ${LOG_DIR}"
 
 # Copy the binary
 print_status "Installing binary to ${BIN_DIR}/${BINARY_NAME}..."
-if [ -n "$REMOTE_HOST" ]; then
-    $SCP_CMD ${TEMP_BINARY} ${REMOTE_USER}@${REMOTE_HOST_SCP}:${BIN_DIR}/${BINARY_NAME}
-else
-    cp ${TEMP_BINARY} ${BIN_DIR}/${BINARY_NAME}
-fi
+$SCP_CMD ${TEMP_BINARY} ${REMOTE_USER}@${REMOTE_HOST}:${BIN_DIR}/${BINARY_NAME}
 execute_cmd "chmod +x ${BIN_DIR}/${BINARY_NAME}"
 print_success "Binary installed"
 
@@ -177,11 +114,7 @@ fi
 
 # Copy configuration file
 print_status "Installing configuration file..."
-if [ -n "$REMOTE_HOST" ]; then
-    $SCP_CMD conf/client_config.json ${REMOTE_USER}@${REMOTE_HOST_SCP}:${CONF_DIR}/client_config.json
-else
-    cp conf/client_config.json ${CONF_DIR}/client_config.json
-fi
+$SCP_CMD conf/client_nas_config.json ${REMOTE_USER}@${REMOTE_HOST}:${CONF_DIR}/client_config.json
 print_success "Configuration file installed"
 
 # Set ownership and permissions
@@ -191,11 +124,7 @@ print_success "Permissions set"
 
 # Install systemd service file
 print_status "Installing systemd service file..."
-if [ -n "$REMOTE_HOST" ]; then
-    $SCP_CMD deploy/tbox_client.service ${REMOTE_USER}@${REMOTE_HOST_SCP}:/etc/systemd/system/
-else
-    cp deploy/tbox_client.service /etc/systemd/system/
-fi
+$SCP_CMD deploy/tbox_client.service ${REMOTE_USER}@${REMOTE_HOST}:/etc/systemd/system/
 print_success "Service file installed"
 
 # Reload systemd and enable service
@@ -224,29 +153,17 @@ else
 fi
 
 echo
-if [ -n "$REMOTE_HOST" ]; then
-    print_success "Remote deployment to ${REMOTE_HOST} completed!"
-else
-    print_success "Local deployment completed!"
-fi
+print_success "Deployment to NAS (${REMOTE_HOST}) completed!"
 print_status "Binary location: ${BIN_DIR}/${BINARY_NAME}"
 print_status "Config location: ${CONF_DIR}/client_config.json"
 print_status "Certificate location: ${CONF_DIR}/xiedeacc.com.ca.cer"
 print_status "Log directory: ${LOG_DIR}"
 print_status "Service name: ${SERVICE_NAME}"
 echo
-if [ -n "$REMOTE_HOST" ]; then
-    print_status "Useful commands (run on remote host or with ssh):"
-    echo "  - Check status: ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} 'systemctl status ${SERVICE_NAME}'"
-    echo "  - View logs: ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} 'journalctl -u ${SERVICE_NAME} -f'"
-    echo "  - Stop service: ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} 'systemctl stop ${SERVICE_NAME}'"
-    echo "  - Start service: ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} 'systemctl start ${SERVICE_NAME}'"
-    echo "  - Restart service: ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} 'systemctl restart ${SERVICE_NAME}'"
-else
-    print_status "Useful commands:"
-    echo "  - Check status: sudo systemctl status ${SERVICE_NAME}"
-    echo "  - View logs: sudo journalctl -u ${SERVICE_NAME} -f"
-    echo "  - Stop service: sudo systemctl stop ${SERVICE_NAME}"
-    echo "  - Start service: sudo systemctl start ${SERVICE_NAME}"
-    echo "  - Restart service: sudo systemctl restart ${SERVICE_NAME}"
-fi
+print_status "Useful commands (run on remote host or with ssh):"
+echo "  - Check status: ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} 'systemctl status ${SERVICE_NAME}'"
+echo "  - View logs: ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} 'journalctl -u ${SERVICE_NAME} -f'"
+echo "  - Stop service: ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} 'systemctl stop ${SERVICE_NAME}'"
+echo "  - Start service: ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} 'systemctl start ${SERVICE_NAME}'"
+echo "  - Restart service: ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} 'systemctl restart ${SERVICE_NAME}'"
+

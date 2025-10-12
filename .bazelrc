@@ -172,15 +172,6 @@ build:gcc_aarch64_linux_gnu --host_copt='-g'
 build:gcc_aarch64_linux_gnu --define cross_compiling=true
 build:gcc_aarch64_linux_gnu --build_tag_filters='-ignore'
 
-build:clang --platforms='//bazel:linux_x86_64_platform'
-build:clang --toolchain_resolution_debug='@bazel_tools//tools/cpp:toolchain_type'
-build:clang --extra_toolchains='@cc_toolchain_config_x86_64_linux_generic_glibc_clang//:toolchain-x86_64_linux_generic_glibc_clang'
-build:clang --extra_toolchains='@remotejdk21_linux_toolchain_config_repo//:toolchain'
-build:clang --cpu='x86_64'
-build:clang --compiler='clang'
-build:clang --copt='-g'
-build:clang --host_copt='-g'
-
 build:clang_aarch64_linux_gnu --platforms='//bazel:linux_aarch64_platform'
 build:clang_aarch64_linux_gnu --toolchain_resolution_debug='@bazel_tools//tools/cpp:toolchain_type'
 build:clang_aarch64_linux_gnu --extra_toolchains='@cc_toolchain_config_aarch64_linux_generic_glibc_clang//:toolchain-aarch64_linux_generic_glibc_clang'
@@ -201,4 +192,3 @@ build:clang_macosx_x86_64 --compiler='clang'
 build:clang_macosx_x86_64 --copt='-mmacosx-version-min=10.15'
 build:clang_macosx_x86_64 --define cross_compiling=true
 build:clang_macosx_x86_64 --build_tag_filters='-ignore'
-

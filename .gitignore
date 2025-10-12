@@ -15,3 +15,15 @@ conf/*
 !conf/server_example_config.json
 !conf/BUILD
 compile_commands.json
+
+
+# Log files
+*.log
+log/
+logs/
+
+# Temporary/cache files
+*.tmp
+*.temp
+.DS_Store
+data/
