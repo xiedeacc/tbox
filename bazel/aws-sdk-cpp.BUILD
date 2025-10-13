@@ -62,7 +62,10 @@ COPTS_COMMON = COPTS_BASE + select({
         "-msse4.1",
         "-mpclmul",
         "-mavx2",
-        "-mavx512f",
+        "-mavx512f",  # AVX-512 Foundation
+        "-mavx512vl",  # AVX-512 Vector Length (128/256-bit ops)
+        "-mavx512dq",  # AVX-512 Doubleword/Quadword
+        "-mvpclmulqdq",  # Vector PCLMULQDQ for carry-less multiplication
     ],
     "@tbox//bazel:x64_medium": [
         "-msse4.2",
