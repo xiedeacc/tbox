@@ -52,7 +52,7 @@ cc_library(
     hdrs = [
         "default_handler.h",
         "http_handler_factory.h",
-        #"server_handler.h",
+        "server_handler.h",
         "user_handler.h",
         "util.h",
         "websocket_handler.h",

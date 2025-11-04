@@ -126,6 +126,7 @@ cc_library(
     deps = [
         "//src/impl:config_manager",
         "//src/server:server_context",
+        "//src/server/http_handler",
         "@proxygen",
     ],
 )
