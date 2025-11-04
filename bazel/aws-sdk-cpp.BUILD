@@ -3,87 +3,7 @@ load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL
 
 package(default_visibility = ["//visibility:public"])
 
-COPTS_BASE = GLOBAL_COPTS + select({
-    "@platforms//os:windows": [
-        "/Iexternal/aws-sdk-cpp/src",
-        "/Iexternal/aws-sdk-cpp/generated/src",
-        "/Iexternal/aws-sdk-cpp/include",
-        "/Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/include",
-    ],
-    "//conditions:default": [
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-auth/include",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-cal/include",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/include",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-compression/include",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-event-stream/include",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-http/include",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-io/include",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-mqtt/include",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-s3/include",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-sdkutils/include",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-checksums/include",
-        "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-c-common/generated/include",
-        "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-crt-cpp/generated/include",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/source",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/source/external/libcbor",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/include",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/api",
-        "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/include",
-        "-include external/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/utils/s2n_prelude.h",
-    ],
-})
-
-COPTS_COMMON = COPTS_BASE + select({
-    "@platforms//os:windows": [],
-    "@platforms//os:linux": [
-        "-fPIC",
-        "-D_GNU_SOURCE",
-    ],
-    "@platforms//os:osx": [
-        "-fPIC",
-    ],
-    "//conditions:default": [],
-}) + select({
-    # Base architecture flags
-    "@platforms//cpu:x86_64": [
-        "-march=x86-64",
-        "-mtune=generic",
-    ],
-    "@platforms//cpu:aarch64": [
-        "-march=armv8-a+crc+crypto",
-    ],
-    "//conditions:default": [],
-}) + select({
-    # CPU tier-specific extensions (x86_64 only)
-    "@tbox//bazel:x86_64_feature_large": [
-        "-msse4.2",
-        "-msse4.1",
-        "-mpclmul",
-        "-mavx2",
-        "-mavx512f",  # AVX-512 Foundation
-        "-mavx512vl",  # AVX-512 Vector Length (128/256-bit ops)
-        "-mavx512dq",  # AVX-512 Doubleword/Quadword
-        "-mvpclmulqdq",  # Vector PCLMULQDQ for carry-less multiplication
-    ],
-    "@tbox//bazel:x86_64_feature_medium": [
-        "-msse4.2",
-        "-msse4.1",
-        "-mpclmul",
-        "-mavx2",
-    ],
-    "@tbox//bazel:x86_64_feature_small": [],  # No CPU extensions - generic x86-64 only
-})
-
-COPTS = COPTS_COMMON + select({
-    "@platforms//os:windows": [
-        "/std:c++17",
-    ],
-    "//conditions:default": [
-        "-std=c++17",
-    ],
-})
+COPTS = GLOBAL_COPTS
 
 LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "AWS_SDK_VERSION_MAJOR=1",
@@ -166,29 +86,7 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "//conditions:default": [],
 })
 
-LINKOPTS = GLOBAL_LINKOPTS + select({
-    "@platforms//os:windows": [
-        "ws2_32.lib",
-        "bcrypt.lib",
-        "crypt32.lib",
-        "iphlpapi.lib",
-        "userenv.lib",
-        "version.lib",
-        "wininet.lib",
-        "winmm.lib",
-        "wldap32.lib",
-    ],
-    "@platforms//os:linux": [
-        "-lpthread",
-        "-lrt",
-        "-ldl",
-    ],
-    "@platforms//os:osx": [
-        "-framework Security",
-        "-framework CoreFoundation",
-    ],
-    "//conditions:default": [],
-})
+LINKOPTS = GLOBAL_LINKOPTS
 
 write_file(
     name = "config_h_in",
@@ -544,7 +442,8 @@ cc_library(
         ]),
         "//conditions:default": [],
     }),
-    copts = COPTS_COMMON,
+    copts = COPTS,
+    defines = DEFINES,
     includes = [
         "include",
     ],

@@ -1,4 +1,4 @@
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -32,6 +32,8 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
     "//conditions:default": [],
 })
 
+DEFINES = GLOBAL_DEFINES
+
 cc_library(
     name = "sqlite",
     srcs = ["sqlite3.c"],
@@ -40,6 +42,7 @@ cc_library(
         "sqlite3ext.h",
     ],
     copts = COPTS,
+    defines = DEFINES,
     linkopts = LINKOPTS + select({
         "@platforms//os:freebsd": ["-lpthread"],
         "@platforms//os:linux": [

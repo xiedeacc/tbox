@@ -170,8 +170,10 @@ cc_library(
         ],
         "//conditions:default": [],
     }),
+    defines = DEFINES,
     includes = ["include"],
-    local_defines = [
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES + [
         "HAVE_CONFIG_H",
         "LITTLE_ENDIAN",
         "NDEBUG",
@@ -212,8 +214,10 @@ cc_library(
         ],
         "//conditions:default": [],
     }),
+    defines = DEFINES,
     includes = ["include"],
-    local_defines = [
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES + [
         "HAVE_CONFIG_H",
         "NDEBUG",
         "LITTLE_ENDIAN",

@@ -1,5 +1,5 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -55,6 +55,8 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
     "//conditions:default": [],
 })
 
+DEFINES = GLOBAL_DEFINES
+
 cc_library(
     name = "zstd",
     srcs = glob(
@@ -87,6 +89,7 @@ cc_library(
         "lib/zstd_errors.h",
     ],
     copts = COPTS,
+    defines = DEFINES,
     includes = ["lib"],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
@@ -106,6 +109,7 @@ cc_library(
         "zlibWrapper/*.h",
     ]),
     copts = COPTS,
+    defines = DEFINES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":zstd"],
@@ -141,6 +145,7 @@ cc_library(
         "programs/zstdcli_trace.h",
     ],
     copts = COPTS,
+    defines = DEFINES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":zstd"],
@@ -150,6 +155,7 @@ cc_binary(
     name = "zstdcli",
     srcs = ["programs/zstdcli.c"],
     copts = COPTS,
+    defines = DEFINES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":zstd_util"],

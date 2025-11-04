@@ -1,4 +1,4 @@
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -163,6 +163,8 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
     "@platforms//os:windows": [],
     "//conditions:default": [],
 })
+
+DEFINES = GLOBAL_DEFINES
 
 cc_library(
     name = "lzma",
@@ -332,7 +334,7 @@ cc_library(
         "//conditions:default": [],
     }),
     local_defines = LOCAL_DEFINES,
-    defines = select({
+    defines = DEFINES + select({
         "@platforms//os:windows": ["LZMA_API_STATIC"],
         "//conditions:default": [],
     }),

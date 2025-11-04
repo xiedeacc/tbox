@@ -1,4 +1,4 @@
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 
 COPTS = GLOBAL_COPTS + select({
     "@platforms//os:windows": [],
@@ -9,6 +9,8 @@ COPTS = GLOBAL_COPTS + select({
     "@platforms//os:windows": [],
     "//conditions:default": [],
 })
+
+DEFINES = GLOBAL_DEFINES
 
 LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + select({
     "@platforms//os:windows": [],
@@ -45,7 +47,7 @@ cc_library(
         "-DMI_MALLOC_OVERRIDE=1",
         "-fPIC",
     ],
-    defines = LOCAL_DEFINES,
+    defines = DEFINES,
     includes = [
         "include",
         "src",

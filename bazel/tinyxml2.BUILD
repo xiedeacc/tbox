@@ -36,6 +36,8 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
     "//conditions:default": [],
 })
 
+DEFINES = GLOBAL_DEFINES
+
 cc_library(
     name = "tinyxml2",
     srcs = glob([
@@ -45,6 +47,7 @@ cc_library(
         "tinyxml2.h",
     ]),
     copts = COPTS,
+    defines = DEFINES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
 )
@@ -54,4 +57,4 @@ alias(
     name = "tinyxml2_lib",
     actual = ":tinyxml2",
     visibility = ["//visibility:public"],
-) 
+)

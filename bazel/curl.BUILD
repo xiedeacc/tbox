@@ -1,7 +1,7 @@
 #https://github.com/tensorflow/tensorflow/blob/51d480498b07346b8b6e2ee3fbd3dc486f60ed96/third_party/curl.BUILD
 #https://github.com/googleapis/google-cloud-cpp/blob/main/bazel/curl.BUILD
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LOCAL_DEFINES", "template_rule")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "template_rule")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -47,6 +47,13 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
         "_CRT_NONSTDC_NO_DEPRECATE",
         "_CRT_SECURE_NO_DEPRECATE",
     ],
+    "//conditions:default": [],
+})
+
+LINKOPTS = GLOBAL_LINKOPTS + select({
+    "@platforms//os:windows": [],
+    "@platforms//os:linux": [],
+    "@platforms//os:osx": [],
     "//conditions:default": [],
 })
 
@@ -247,6 +254,7 @@ cc_library(
         "//conditions:default": [],
     }),
     includes = ["include"],
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
         "@c-ares",
