@@ -44,6 +44,11 @@ config_setting(
 )
 
 config_setting(
+    name = "cpu_model_neoverse11",
+    define_values = {"cpu_model": "neoverse-11"},
+)
+
+config_setting(
     name = "osx_ryzen9",
     constraint_values = [
         "@platforms//os:osx",
@@ -76,6 +81,15 @@ config_setting(
 )
 
 config_setting(
+    name = "linux_neoverse11",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+    define_values = {"cpu_model": "neoverse-11"},
+)
+
+config_setting(
     name = "windows_n105",
     constraint_values = [
         "@platforms//os:windows",
@@ -97,6 +111,14 @@ config_setting(
         "@platforms//os:windows",
     ],
     define_values = {"cpu_model": "ryzen9"},
+)
+
+config_setting(
+    name = "windows_neoverse11",
+    constraint_values = [
+        "@platforms//os:windows",
+    ],
+    define_values = {"cpu_model": "neoverse-11"},
 )
 
 config_setting(

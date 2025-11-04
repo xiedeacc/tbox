@@ -88,6 +88,10 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
         "USE_SIMD_ENCODING",  # Enable SIMD base64 encoding
     ],
     "@tbox//bazel:cpu_model_n105": [],
+    "@tbox//bazel:cpu_model_neoverse11": [
+        "AWS_HAVE_ARMv8_1",
+        "AWS_USE_CPU_EXTENSIONS",
+    ],
     "//conditions:default": [],
 }) + select({
     "@platforms//os:windows": [
@@ -224,6 +228,10 @@ template_rule(
             "{{MM256_EXTRACT}}": "/* #undef AWS_HAVE_MM256_EXTRACT_EPI64 */",
             "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
             "{{USE_CPU_EXTENSIONS}}": "/* #undef AWS_USE_CPU_EXTENSIONS */",
+        },
+        "@tbox//bazel:cpu_model_neoverse11": {
+            "{{ARM32_CRC}}": "#define AWS_HAVE_ARM32_CRC",
+            "{{USE_CPU_EXTENSIONS}}": "#define AWS_USE_CPU_EXTENSIONS",
         },
         "//conditions:default": {
             "{{AVX2_INTRINSICS}}": "/* #undef AWS_HAVE_AVX2_INTRINSICS */",
@@ -430,6 +438,9 @@ cc_library(
         "@tbox//bazel:cpu_model_n105": [
             "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",
             "@tbox//bazel:aws_cpu_stubs_small.c",
+        ],
+        "@tbox//bazel:cpu_model_neoverse11": [
+            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/cpuid.c",
         ],
         "//conditions:default": [
             "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",

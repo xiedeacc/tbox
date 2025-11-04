@@ -76,9 +76,9 @@ print_status "Stopping existing service on remote host if running..."
 ssh_exec "sudo systemctl stop ${SERVICE_NAME} 2>/dev/null || true"
 
 # Build all targets locally for ARM64
-print_status "Building all targets locally for ARM64..."
+print_status "Building all targets locally for ARM64 (cpu_model=neoverse-11)..."
 cd "${WORKSPACE_ROOT}"
-if ! bazel build --config=clang_aarch64_linux_gnu //...; then
+if ! bazel build --define=cpu_model=neoverse-11 --config=clang_aarch64_linux_gnu //...; then
     print_error "Failed to build all targets"
     exit 1
 fi

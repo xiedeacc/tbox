@@ -10,6 +10,11 @@ load(
     "n105_cpu_instruction_features_msvc",
 )
 load(
+    "//bazel/cpu:neoverse-11.bzl",
+    "neoverse11_cpu_instruction_features_gcc_clang",
+    "neoverse11_cpu_instruction_features_msvc",
+)
+load(
     "//bazel/cpu:ryzen5.bzl",
     "ryzen5_cpu_instruction_features_gcc_clang",
     "ryzen5_cpu_instruction_features_msvc",
@@ -136,6 +141,11 @@ GLOBAL_COPTS = select({
     "@tbox//bazel:windows_n105": n105_cpu_instruction_features_msvc,
     "@tbox//bazel:windows_ryzen5": ryzen5_cpu_instruction_features_msvc,
     "@tbox//bazel:windows_ryzen9": ryzen9_cpu_instruction_features_msvc,
+    "@tbox//bazel:windows_neoverse11": neoverse11_cpu_instruction_features_msvc,
+    "//conditions:default": [],
+}) + select({
+    # aarch64 CPU feature tiers
+    "@tbox//bazel:linux_neoverse11": neoverse11_cpu_instruction_features_gcc_clang,
     "//conditions:default": [],
 })
 
