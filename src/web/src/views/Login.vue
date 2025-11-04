@@ -36,7 +36,8 @@ const login = async () => {
   const userCredentials = {
     user: user.value,
     password: password.value,
-    op: 3,
+    // Use enum name so server JSON->proto maps reliably
+    op: 'OP_USER_LOGIN',
     request_id: generateRequestId(), // Generate unique request ID for each login request
   };
 
@@ -51,15 +52,13 @@ const login = async () => {
     });
 
     // Check if the login was successful
-    if (response.ok) {
-      const data = await response.json();
-      // Assuming the response contains a token or success message
+    const data = await response.json();
+    if (response.ok && data && data.token) {
       localStorage.setItem('user', user.value);
       localStorage.setItem('token', data.token);
       router.push('/dashboard');
     } else {
-      const errorData = await response.json();
-      error.value = errorData.message || 'Login failed. Please try again.';
+      error.value = 'Login failed. Please check your credentials.';
     }
   } catch (err) {
     error.value = 'An error occurred while attempting to log in.';

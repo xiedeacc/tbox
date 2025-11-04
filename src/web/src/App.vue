@@ -17,7 +17,8 @@ const isAuthenticated = ref(!!localStorage.getItem('token'));
 const router = useRouter();
 
 const logout = () => {
-  localStorage.removeItem('auth');
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
   isAuthenticated.value = false;
   router.push('/login');
 };
