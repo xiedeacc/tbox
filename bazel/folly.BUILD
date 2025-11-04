@@ -80,6 +80,10 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     ],
 })
 
+DEFINES = GLOBAL_DEFINES
+
+LINKOPTS = GLOBAL_LINKOPTS
+
 cc_library(
     name = "MathOperation_AVX2",
     srcs = [
@@ -242,8 +246,8 @@ cc_library(
         "@platforms//cpu:aarch64": ["folly/external/aor/asmdefs.h"],
     }),
     copts = COPTS,
-    defines = [],
-    linkopts = GLOBAL_LINKOPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
         "@boost//:algorithm",

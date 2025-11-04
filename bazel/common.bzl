@@ -5,17 +5,17 @@ Wires OS+cpu_model config_settings to per-CPU feature flag lists.
 """
 
 load(
-    "@tbox//bazel/cpu:n105.bzl",
+    "//bazel/cpu:n105.bzl",
     "n105_cpu_instruction_features_gcc_clang",
     "n105_cpu_instruction_features_msvc",
 )
 load(
-    "@tbox//bazel/cpu:ryzen5.bzl",
+    "//bazel/cpu:ryzen5.bzl",
     "ryzen5_cpu_instruction_features_gcc_clang",
     "ryzen5_cpu_instruction_features_msvc",
 )
 load(
-    "@tbox//bazel/cpu:ryzen9.bzl",
+    "//bazel/cpu:ryzen9.bzl",
     "ryzen9_cpu_instruction_features_gcc_clang",
     "ryzen9_cpu_instruction_features_msvc",
 )
