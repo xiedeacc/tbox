@@ -27,7 +27,7 @@ COPTS_BASE = GLOBAL_COPTS + [
     "-include external/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/utils/s2n_prelude.h",
 ]
 
-COPTS_COMMON = COPTS_BASE + select({
+COPTS = COPTS_BASE + select({
     "@platforms//os:windows": [],
     "@platforms//os:linux": [
         "-fPIC",
@@ -37,45 +37,6 @@ COPTS_COMMON = COPTS_BASE + select({
         "-fPIC",
     ],
     "//conditions:default": [],
-}) + select({
-    # Base architecture flags
-    "@platforms//cpu:x86_64": [
-        "-march=x86-64",
-        "-mtune=generic",
-    ],
-    "@platforms//cpu:aarch64": [
-        "-march=armv8-a+crc+crypto",
-    ],
-    "//conditions:default": [],
-}) + select({
-    # CPU tier-specific extensions (x86_64 only)
-    "@tbox//bazel:cpu_model_ryzen9": [
-        "-msse4.2",
-        "-msse4.1",
-        "-mpclmul",
-        "-mavx2",
-        "-mavx512f",  # AVX-512 Foundation
-        "-mavx512vl",  # AVX-512 Vector Length (128/256-bit ops)
-        "-mavx512dq",  # AVX-512 Doubleword/Quadword
-        "-mvpclmulqdq",  # Vector PCLMULQDQ for carry-less multiplication
-    ],
-    "@tbox//bazel:cpu_model_ryzen5": [
-        "-msse4.2",
-        "-msse4.1",
-        "-mpclmul",
-        "-mavx2",
-    ],
-    "@tbox//bazel:cpu_model_n105": [],  # No CPU extensions - generic x86-64 only
-    "//conditions:default": [],
-})
-
-COPTS = COPTS_COMMON + select({
-    "@platforms//os:windows": [
-        "/std:c++17",
-    ],
-    "//conditions:default": [
-        "-std=c++17",
-    ],
 })
 
 LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
