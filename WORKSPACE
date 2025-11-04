@@ -772,7 +772,7 @@ http_archive(
     build_file = "//bazel:toolchains.BUILD",
     sha256 = "30546f20d6a16bf5de3a15eb63418a488f5317402b4907484b1521a7a4e2bc7c",
     strip_prefix = "linux-x86_64-gnu_sysroot",
-    urls = ["https://home.xiedeacc.com:444/files/linux-x86_64-gnu_sysroot.tar.gz"],
+    urls = ["https://blog.xiedeacc.com/files/linux-x86_64-gnu_sysroot.tar.gz"],
 )
 
 http_archive(
@@ -780,7 +780,7 @@ http_archive(
     build_file = "//bazel:toolchains.BUILD",
     sha256 = "16bfff2c7306118f2bebc6d8d35188768bf312e60cf3fc363e2ab8d96f53240e",
     strip_prefix = "linux-aarch64-gnu_sysroot",
-    urls = ["https://home.xiedeacc.com:444/files/linux-aarch64-gnu_sysroot.tar.gz"],
+    urls = ["https://blog.xiedeacc.com/files/linux-aarch64-gnu_sysroot.tar.gz"],
 )
 
 http_archive(
@@ -788,7 +788,7 @@ http_archive(
     build_file = "//bazel:toolchains.BUILD",
     sha256 = "a76ef46d1815d465cb2079825104aca507a230bc973477f4ce1e9d94a325d7e8",
     strip_prefix = "linux-aarch64-musl_sysroot",
-    urls = ["https://home.xiedeacc.com:444/files/linux-aarch64-musl_sysroot.tar.gz"],
+    urls = ["https://blog.xiedeacc.com/files/linux-aarch64-musl_sysroot.tar.gz"],
 )
 
 http_archive(
@@ -796,7 +796,7 @@ http_archive(
     build_file = "//bazel:cc_toolchain.BUILD",
     sha256 = "95e32680f2f439773edd85640e5072bab099c399506008298cd1251be2d2df39",
     strip_prefix = "clang18.1.8-linux-aarch64_sysroot",
-    urls = ["https://home.xiedeacc.com:444/files/clang18.1.8-linux-aarch64_sysroot.tar.gz"],
+    urls = ["https://blog.xiedeacc.com/files/clang18.1.8-linux-aarch64_sysroot.tar.gz"],
 )
 
 new_git_repository(
