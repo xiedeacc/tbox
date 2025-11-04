@@ -509,7 +509,7 @@ cc_library(
         ]),
         "//conditions:default": [],
     }),
-    copts = COPTS_COMMON,
+    copts = COPTS,
     includes = [
         "include",
     ],

@@ -1,4 +1,4 @@
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LOCAL_DEFINES")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LOCAL_DEFINES", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS")
 
 package(default_visibility = ["//visibility:public"])
 

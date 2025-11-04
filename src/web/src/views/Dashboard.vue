@@ -23,43 +23,15 @@ const generateRequestId = () => uuidv4();
 // Function to fetch data from the server
 const fetchServerData = async () => {
   try {
-    // Construct a request object with user credentials
-    const requestData = {
-      user: user.value,
-      token: token.value,
-      op: 5,
-      request_id: generateRequestId(),
-    };
+    // Simple GET to backend ServerHandler; Nginx/dev proxy will route to /server
+    const response = await fetch('/server', { method: 'GET' });
 
-    // Send a POST request to the server
-    const response = await fetch('https://ip.xiedeacc.com/proxygen/server', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestData),
-    });
-
-    // Check if the request was successful
     if (response.ok) {
-     const data = await response.json();
-
-      // Check if the `err_msg` contains a stringified JSON object
-      if (data.err_msg) {
-        try {
-          // Parse the stringified JSON inside err_msg
-          const parsedMsg = JSON.parse(data.err_msg);
-          ipAddrs.value = JSON.stringify(parsedMsg, null, 2); // Pretty-print the parsed JSON
-        } catch (parseError) {
-          // If parsing fails, display the raw message
-          ipAddrs.value = data.err_msg;
-        }
-      } else {
-        ipAddrs.value = JSON.stringify(data, null, 2); // Pretty-print the entire response if no err_msg exists
-      }
+      const data = await response.json();
+      // Expecting shape: { client_ip: "x.x.x.x" }
+      ipAddrs.value = JSON.stringify(data, null, 2);
     } else {
-      const errorData = await response.json();
-      error.value = errorData.message || 'Failed to fetch server data.';
+      error.value = 'Failed to fetch server data.';
     }
   } catch (err) {
     error.value = 'An error occurred while fetching server data.';

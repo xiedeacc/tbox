@@ -41,8 +41,8 @@ const login = async () => {
   };
 
   try {
-    // Send a POST request to the login endpoint
-    const response = await fetch('https://ip.xiedeacc.com/proxygen/user', {
+    // Send a POST request to the user endpoint (proxied by Nginx/dev server)
+    const response = await fetch('/user', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

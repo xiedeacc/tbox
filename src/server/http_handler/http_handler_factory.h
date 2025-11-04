@@ -10,29 +10,39 @@
 #include "proxygen/httpserver/RequestHandlerFactory.h"
 #include "glog/logging.h"
 #include "src/server/http_handler/default_handler.h"
-// #include "src/server/http_handler/server_handler.h"
+#include "src/server/http_handler/server_handler.h"
 #include "src/server/http_handler/user_handler.h"
 
 namespace tbox {
 namespace server {
 namespace http_handler {
 
+/**
+ * @brief Factory for creating HTTP request handlers based on URI path.
+ *
+ * Maps exact paths to concrete handlers:
+ * - "/user"   -> `UserHandler`
+ * - "/server" -> `ServerHandler`
+ * All other paths fall back to `DefaultHandler` which returns 404.
+ */
 class HTTPHandlerFactory : public proxygen::RequestHandlerFactory {
  public:
   void onServerStart(folly::EventBase*) noexcept override {}
 
   void onServerStop() noexcept override { LOG(INFO) << "HTTP server stopped"; }
 
+  /**
+   * @brief Select a handler for the incoming request based on path.
+   */
   proxygen::RequestHandler* onRequest(
       proxygen::RequestHandler*, proxygen::HTTPMessage* msg) noexcept override {
-        if (msg->getPath() == "/user") {
-          return new UserHandler();
-        // } else if (msg->getPath() == "/server") {
-        //   return new ServerHandler();
-        } else {
-          return new DefaultHandler();
-        }
-        return nullptr;
+    if (msg->getPath() == "/user") {
+      return new UserHandler();
+    } else if (msg->getPath() == "/server") {
+      return new ServerHandler();
+    } else {
+      return new DefaultHandler();
+    }
   }
 };
 

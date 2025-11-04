@@ -4,7 +4,7 @@ import { defineConfig } from 'vite'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [vue()],
-  base: '/web',
+  base: '/admin',
   server: {
     host: '0.0.0.0',
     proxy: {
@@ -13,14 +13,6 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/server': {
-        target: 'http://127.0.0.1:10003',
-        changeOrigin: true,
-      },
-      '/file': {
-        target: 'http://127.0.0.1:10003',
-        changeOrigin: true,
-      },
-      '/file_json': {
         target: 'http://127.0.0.1:10003',
         changeOrigin: true,
       },

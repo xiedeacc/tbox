@@ -39,28 +39,29 @@ print_success() {
     echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
 
+# SSH options (use key if available, otherwise rely on default identities)
+if [[ -f "${SSH_KEY}" ]]; then
+    SSH_OPTS=( -i "${SSH_KEY}" -o StrictHostKeyChecking=no )
+    # Fix SSH key permissions if needed
+    if [[ "$(stat -c %a "${SSH_KEY}")" != "600" ]]; then
+        print_status "Fixing SSH key permissions..."
+        chmod 600 "${SSH_KEY}"
+        print_success "SSH key permissions updated to 600"
+    fi
+else
+    SSH_OPTS=( -o StrictHostKeyChecking=no )
+    print_status "SSH key ${SSH_KEY} not found; using default SSH identities"
+fi
+
 # SSH helper function
 ssh_exec() {
-    ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no "${REMOTE_USER}@${REMOTE_HOST}" "$@"
+    ssh "${SSH_OPTS[@]}" "${REMOTE_USER}@${REMOTE_HOST}" "$@"
 }
 
-# SCP helper function  
+# SCP helper function
 scp_copy() {
-    scp -i "${SSH_KEY}" -o StrictHostKeyChecking=no "$@"
+    scp "${SSH_OPTS[@]}" "$@"
 }
-
-# Check if SSH key exists and fix permissions
-if [[ ! -f "${SSH_KEY}" ]]; then
-    print_error "SSH key not found: ${SSH_KEY}"
-    exit 1
-fi
-
-# Fix SSH key permissions if needed
-if [[ "$(stat -c %a "${SSH_KEY}")" != "600" ]]; then
-    print_status "Fixing SSH key permissions..."
-    chmod 600 "${SSH_KEY}"
-    print_success "SSH key permissions updated to 600"
-fi
 
 # Test SSH connection
 print_status "Testing SSH connection to ${REMOTE_HOST}..."
