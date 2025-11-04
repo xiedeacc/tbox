@@ -1,11 +1,82 @@
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "template_rule")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "template_rule")
 
 package(default_visibility = ["//visibility:public"])
 
-COPTS = GLOBAL_COPTS
+COPTS_BASE = GLOBAL_COPTS + [
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-auth/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-cal/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-compression/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-event-stream/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-http/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-io/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-mqtt/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-s3/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-sdkutils/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-checksums/include",
+    "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-c-common/generated/include",
+    "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-crt-cpp/generated/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/source",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/source/external/libcbor",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/aws-c-common/include",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/api",
+    "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/include",
+    "-include external/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/utils/s2n_prelude.h",
+]
 
-DEFINES = GLOBAL_DEFINES
+COPTS_COMMON = COPTS_BASE + select({
+    "@platforms//os:windows": [],
+    "@platforms//os:linux": [
+        "-fPIC",
+        "-D_GNU_SOURCE",
+    ],
+    "@platforms//os:osx": [
+        "-fPIC",
+    ],
+    "//conditions:default": [],
+}) + select({
+    # Base architecture flags
+    "@platforms//cpu:x86_64": [
+        "-march=x86-64",
+        "-mtune=generic",
+    ],
+    "@platforms//cpu:aarch64": [
+        "-march=armv8-a+crc+crypto",
+    ],
+    "//conditions:default": [],
+}) + select({
+    # CPU tier-specific extensions (x86_64 only)
+    "@tbox//bazel:cpu_model_ryzen9": [
+        "-msse4.2",
+        "-msse4.1",
+        "-mpclmul",
+        "-mavx2",
+        "-mavx512f",  # AVX-512 Foundation
+        "-mavx512vl",  # AVX-512 Vector Length (128/256-bit ops)
+        "-mavx512dq",  # AVX-512 Doubleword/Quadword
+        "-mvpclmulqdq",  # Vector PCLMULQDQ for carry-less multiplication
+    ],
+    "@tbox//bazel:cpu_model_ryzen5": [
+        "-msse4.2",
+        "-msse4.1",
+        "-mpclmul",
+        "-mavx2",
+    ],
+    "@tbox//bazel:cpu_model_n105": [],  # No CPU extensions - generic x86-64 only
+    "//conditions:default": [],
+})
+
+COPTS = COPTS_COMMON + select({
+    "@platforms//os:windows": [
+        "/std:c++17",
+    ],
+    "//conditions:default": [
+        "-std=c++17",
+    ],
+})
 
 LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "AWS_SDK_VERSION_MAJOR=1",
@@ -40,7 +111,7 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "//conditions:default": [],
 }) + select({
     # CPU tier-specific defines (x86_64 only)
-    "@tbox//bazel:x86_64_feature_large": [
+    "@tbox//bazel:cpu_model_ryzen9": [
         "AWS_HAVE_AVX2_INTRINSICS",
         "AWS_HAVE_MM256_EXTRACT_EPI64",
         "AWS_HAVE_AVX512_INTRINSICS",
@@ -48,14 +119,15 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
         "AWS_USE_CPU_EXTENSIONS",
         "USE_SIMD_ENCODING",  # Enable SIMD base64 encoding
     ],
-    "@tbox//bazel:x86_64_feature_medium": [
+    "@tbox//bazel:cpu_model_ryzen5": [
         "AWS_HAVE_AVX2_INTRINSICS",
         "AWS_HAVE_MM256_EXTRACT_EPI64",
         "AWS_HAVE_CLMUL",
         "AWS_USE_CPU_EXTENSIONS",
         "USE_SIMD_ENCODING",  # Enable SIMD base64 encoding
     ],
-    "@tbox//bazel:x86_64_feature_small": [],  # No CPU extensions for small tier - use generic implementations
+    "@tbox//bazel:cpu_model_n105": [],
+    "//conditions:default": [],
 }) + select({
     "@platforms//os:windows": [
         "WIN32",
@@ -88,7 +160,29 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "//conditions:default": [],
 })
 
-LINKOPTS = GLOBAL_LINKOPTS
+LINKOPTS = GLOBAL_LINKOPTS + select({
+    "@platforms//os:windows": [
+        "ws2_32.lib",
+        "bcrypt.lib",
+        "crypt32.lib",
+        "iphlpapi.lib",
+        "userenv.lib",
+        "version.lib",
+        "wininet.lib",
+        "winmm.lib",
+        "wldap32.lib",
+    ],
+    "@platforms//os:linux": [
+        "-lpthread",
+        "-lrt",
+        "-ldl",
+    ],
+    "@platforms//os:osx": [
+        "-framework Security",
+        "-framework CoreFoundation",
+    ],
+    "//conditions:default": [],
+})
 
 write_file(
     name = "config_h_in",
@@ -152,19 +246,25 @@ template_rule(
             "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
         },
     }) | select({
-        "@tbox//bazel:x86_64_feature_large": {
+        "@tbox//bazel:cpu_model_ryzen9": {
             "{{AVX2_INTRINSICS}}": "#define AWS_HAVE_AVX2_INTRINSICS",
             "{{MM256_EXTRACT}}": "#define AWS_HAVE_MM256_EXTRACT_EPI64",
             "{{CLMUL}}": "#define AWS_HAVE_CLMUL",
             "{{USE_CPU_EXTENSIONS}}": "#define AWS_USE_CPU_EXTENSIONS",
         },
-        "@tbox//bazel:x86_64_feature_medium": {
+        "@tbox//bazel:cpu_model_ryzen5": {
             "{{AVX2_INTRINSICS}}": "#define AWS_HAVE_AVX2_INTRINSICS",
             "{{MM256_EXTRACT}}": "#define AWS_HAVE_MM256_EXTRACT_EPI64",
             "{{CLMUL}}": "#define AWS_HAVE_CLMUL",
             "{{USE_CPU_EXTENSIONS}}": "#define AWS_USE_CPU_EXTENSIONS",
         },
-        "@tbox//bazel:x86_64_feature_small": {
+        "@tbox//bazel:cpu_model_n105": {
+            "{{AVX2_INTRINSICS}}": "/* #undef AWS_HAVE_AVX2_INTRINSICS */",
+            "{{MM256_EXTRACT}}": "/* #undef AWS_HAVE_MM256_EXTRACT_EPI64 */",
+            "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
+            "{{USE_CPU_EXTENSIONS}}": "/* #undef AWS_USE_CPU_EXTENSIONS */",
+        },
+        "//conditions:default": {
             "{{AVX2_INTRINSICS}}": "/* #undef AWS_HAVE_AVX2_INTRINSICS */",
             "{{MM256_EXTRACT}}": "/* #undef AWS_HAVE_MM256_EXTRACT_EPI64 */",
             "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
@@ -344,7 +444,7 @@ cc_library(
         "//conditions:default": [],
     }) + select({
         # CPU tier-specific sources: Intel optimizations for medium/large tiers
-        "@tbox//bazel:x86_64_feature_large": glob(
+        "@tbox//bazel:cpu_model_ryzen9": glob(
             [
                 "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
@@ -354,7 +454,7 @@ cc_library(
                 "crt/aws-crt-cpp/crt/aws-checksums/source/intel/cpuid.c",
             ],
         ),
-        "@tbox//bazel:x86_64_feature_medium": glob(
+        "@tbox//bazel:cpu_model_ryzen5": glob(
             [
                 "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
@@ -362,11 +462,15 @@ cc_library(
             exclude = [
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/msvc/**",
                 "crt/aws-crt-cpp/crt/aws-checksums/source/intel/cpuid.c",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/encoding_avx2.c",
                 "crt/aws-crt-cpp/crt/aws-checksums/source/intel/crc32c_sse42_avx512.c",
             ],
         ),
-        "@tbox//bazel:x86_64_feature_small": [
-            # For small tier, add generic cpuid and minimal CPU stubs
+        "@tbox//bazel:cpu_model_n105": [
+            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",
+            "@tbox//bazel:aws_cpu_stubs_small.c",
+        ],
+        "//conditions:default": [
             "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",
             "@tbox//bazel:aws_cpu_stubs_small.c",
         ],
@@ -444,8 +548,7 @@ cc_library(
         ]),
         "//conditions:default": [],
     }),
-    copts = COPTS,
-    defines = DEFINES,
+    copts = COPTS_COMMON,
     includes = [
         "include",
     ],
@@ -479,7 +582,6 @@ cc_library(
         ],
     ),
     copts = COPTS,
-    defines = DEFINES,
     includes = [
         "include",
     ],
@@ -552,7 +654,6 @@ cc_library(
         "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-c-common/generated/include",
         "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-crt-cpp/generated/include",
     ],
-    defines = DEFINES,
     includes = [
         "crt/aws-crt-cpp/crt/aws-c-cal/include",
         "crt/aws-crt-cpp/crt/aws-c-common/include",
@@ -582,7 +683,6 @@ cc_library(
         "src/aws-cpp-sdk-access-management/include/**/*.hpp",
     ]),
     copts = COPTS,
-    defines = DEFINES,
     includes = [
         "include",
         "src/aws-cpp-sdk-access-management/include",
@@ -607,7 +707,6 @@ cc_library(
         "src/aws-cpp-sdk-identity-management/include/**/*.hpp",
     ]),
     copts = COPTS,
-    defines = DEFINES,
     includes = [
         "include",
         "src/aws-cpp-sdk-identity-management/include",
@@ -632,7 +731,6 @@ cc_library(
         "generated/src/aws-cpp-sdk-ec2/include/**/*.hpp",
     ]),
     copts = COPTS,
-    defines = DEFINES,
     includes = [
         "generated/src/aws-cpp-sdk-ec2/include",
         "include",
@@ -655,7 +753,6 @@ cc_library(
         "generated/src/aws-cpp-sdk-iam/include/**/*.hpp",
     ]),
     copts = COPTS,
-    defines = DEFINES,
     includes = [
         "generated/src/aws-cpp-sdk-iam/include",
         "include",
@@ -678,7 +775,6 @@ cc_library(
         "generated/src/aws-cpp-sdk-elasticloadbalancing/include/**/*.hpp",
     ]),
     copts = COPTS,
-    defines = DEFINES,
     includes = [
         "generated/src/aws-cpp-sdk-elasticloadbalancing/include",
         "include",
@@ -701,7 +797,6 @@ cc_library(
         "generated/src/aws-cpp-sdk-route53/include/**/*.hpp",
     ]),
     copts = COPTS,
-    defines = DEFINES,
     includes = [
         "generated/src/aws-cpp-sdk-route53/include",
         "include",
@@ -724,7 +819,6 @@ cc_library(
         "generated/src/aws-cpp-sdk-ssm/include/**/*.hpp",
     ]),
     copts = COPTS,
-    defines = DEFINES,
     includes = [
         "generated/src/aws-cpp-sdk-ssm/include",
         "include",
@@ -747,7 +841,6 @@ cc_library(
         "generated/src/aws-cpp-sdk-secretsmanager/include/**/*.hpp",
     ]),
     copts = COPTS,
-    defines = DEFINES,
     includes = [
         "generated/src/aws-cpp-sdk-secretsmanager/include",
         "include",
@@ -770,7 +863,6 @@ cc_library(
         "generated/src/aws-cpp-sdk-cognito-identity/include/**/*.hpp",
     ]),
     copts = COPTS,
-    defines = DEFINES,
     includes = [
         "generated/src/aws-cpp-sdk-cognito-identity/include",
         "include",
@@ -793,7 +885,6 @@ cc_library(
         "generated/src/aws-cpp-sdk-sts/include/**/*.hpp",
     ]),
     copts = COPTS,
-    defines = DEFINES,
     includes = [
         "generated/src/aws-cpp-sdk-sts/include",
         "include",

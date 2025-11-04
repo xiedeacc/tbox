@@ -125,8 +125,6 @@ build:linux --host_copt='-g'
 build:linux --host_copt='-O2'
 build:linux --host_copt='-Wall'
 build:linux --host_cxxopt='-std=c++17'
-# Default CPU feature tier for x86_64 Linux builds
-build:linux --define=cpu_feature=x86_64_medium
 #build:linux --workspace_status_command=bazel/workspace_status.sh
 
 build:android --noenable_platform_specific_config

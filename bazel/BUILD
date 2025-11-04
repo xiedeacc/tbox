@@ -29,6 +29,29 @@ config_setting(
 )
 
 config_setting(
+    name = "cpu_model_n105",
+    define_values = {"cpu_model": "n105"},
+)
+
+config_setting(
+    name = "cpu_model_ryzen5",
+    define_values = {"cpu_model": "ryzen5"},
+)
+
+config_setting(
+    name = "cpu_model_ryzen9",
+    define_values = {"cpu_model": "ryzen9"},
+)
+
+config_setting(
+    name = "osx_ryzen9",
+    constraint_values = [
+        "@platforms//os:osx",
+    ],
+    define_values = {"cpu_model": "ryzen9"},
+)
+
+config_setting(
     name = "linux_n105",
     constraint_values = [
         "@platforms//os:linux",

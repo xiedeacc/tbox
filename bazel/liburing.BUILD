@@ -1,4 +1,5 @@
 package(default_visibility = ["//visibility:public"])
+load("@tbox//bazel:common.bzl", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS")
 
 COPTS = [
     "-g",
@@ -35,6 +36,10 @@ LOCAL_DEFINES = [
     "CONFIG_HAVE_ARRAY_BOUNDS",
     "CONFIG_HAVE_FANOTIFY",
 ]
+
+DEFINES = GLOBAL_DEFINES
+
+LINKOPTS = GLOBAL_LINKOPTS
 
 cc_library(
     name = "private_header",
