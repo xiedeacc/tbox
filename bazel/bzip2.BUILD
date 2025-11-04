@@ -79,6 +79,7 @@ cc_library(
     ],
     hdrs = ["bzlib.h"],
     copts = COPTS,
+    defines = DEFINES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
 )
@@ -87,6 +88,7 @@ cc_binary(
     name = "bzip2",
     srcs = ["bzip2.c"],
     copts = COPTS,
+    defines = DEFINES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":libbzip2"],
@@ -96,6 +98,7 @@ cc_binary(
     name = "bzip2recover",
     srcs = ["bzip2recover.c"],
     copts = COPTS,
+    defines = DEFINES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":libbzip2"],

@@ -26,6 +26,18 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "//conditions:default": [],
 })
 
+LINKOPTS = GLOBAL_LINKOPTS + select({
+    "@platforms//os:windows": [],
+    "//conditions:default": [],
+}) + select({
+    "@platforms//os:linux": [],
+    "@platforms//os:osx": [],
+    "@platforms//os:windows": [],
+    "//conditions:default": [],
+})
+
+DEFINES = GLOBAL_DEFINES
+
 copy_file(
     name = "config_h_generic",
     src = "src/config.h.generic",
@@ -81,7 +93,9 @@ cc_library(
     ],
     copts = COPTS,
     defines = ["PCRE2_STATIC"],
+    defines = DEFINES,
     includes = ["src"],
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     strip_include_prefix = "src",
 )
@@ -89,5 +103,9 @@ cc_library(
 cc_binary(
     name = "pcre2demo",
     srcs = ["src/pcre2demo.c"],
+    copts = COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
     deps = [":pcre2"],
 )

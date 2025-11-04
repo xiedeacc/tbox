@@ -1,4 +1,4 @@
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LOCAL_DEFINES")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 load("@tbox//bazel:rules_fbthrift.bzl", "fbthrift_cpp_gen")
 
 package(default_visibility = ["//visibility:public"])
@@ -55,6 +55,10 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + select({
     "//conditions:default": [],
 })
 
+DEFINES = GLOBAL_DEFINES
+
+LINKOPTS = GLOBAL_LINKOPTS
+
 fbthrift_cpp_gen(
     name = "fb303_core_thrift_cpp",
     srcs = ["fb303/thrift/fb303_core.thrift"],
@@ -85,6 +89,8 @@ cc_library(
     ),
     hdrs = [":fb303_core_thrift_cpp"] + glob(["fb303/**/*.h"]),
     copts = COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
         "@fbthrift",

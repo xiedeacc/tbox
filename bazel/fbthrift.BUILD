@@ -65,10 +65,15 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
     "//conditions:default": [],
 })
 
+DEFINES = GLOBAL_DEFINES
+
 cc_binary(
     name = "compiler_generate_build_templates",
     srcs = ["thrift/compiler/generate/build_templates.cc"],
     copts = COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
 )
 
 genrule(
@@ -120,6 +125,8 @@ cc_library(
         "thrift/compiler/sema/ast_validator.h",
     ],
     copts = COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
         ":compiler_ast",
@@ -167,6 +174,8 @@ cc_library(
         "thrift/compiler/parse/**/*.h",
     ]),
     copts = COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
         ":compiler",
@@ -204,6 +213,8 @@ cc_library(
         "thrift/compiler/lib/**/*.h",
     ]),
     copts = COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
         ":compiler_ast",
@@ -241,6 +252,8 @@ cc_library(
         "thrift/compiler/ast/*.h",
     ]),
     copts = COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
         "@com_googlesource_code_re2//:re2",
@@ -269,6 +282,8 @@ cc_library(
         "thrift/compiler/detail/mustache/**/*.h",
     ]),
     copts = COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
         "@com_googlesource_code_re2//:re2",
@@ -283,6 +298,7 @@ cc_binary(
     name = "thrift1",
     srcs = ["thrift/compiler/main.cc"],
     copts = COPTS,
+    defines = DEFINES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
@@ -534,6 +550,12 @@ cc_library(
             "thrift/**/*Test.cpp",
         ],
     ) + [
+        "thrift/conformance/cpp2/Any.cpp",
+        "thrift/conformance/cpp2/AnyRef.cpp",
+        "thrift/conformance/cpp2/AnyRegistry.cpp",
+        "thrift/conformance/cpp2/AnySerializer.cpp",
+        "thrift/conformance/cpp2/Protocol.cpp",
+        "thrift/conformance/cpp2/ThriftTypeInfo.cpp",
         "thrift/lib/cpp2/async/AsyncClient.cpp",
         "thrift/lib/cpp2/async/AsyncProcessor.cpp",
         "thrift/lib/cpp2/async/AsyncProcessorHelper.cpp",
@@ -563,12 +585,6 @@ cc_library(
         "thrift/lib/cpp2/async/ServerRequestData.cpp",
         "thrift/lib/cpp2/async/ServerSinkBridge.cpp",
         "thrift/lib/cpp2/async/ThreadBoundAdaptorChannel.cpp",
-        "thrift/conformance/cpp2/Any.cpp",
-        "thrift/conformance/cpp2/AnyRef.cpp",
-        "thrift/conformance/cpp2/AnyRegistry.cpp",
-        "thrift/conformance/cpp2/AnySerializer.cpp",
-        "thrift/conformance/cpp2/Protocol.cpp",
-        "thrift/conformance/cpp2/ThriftTypeInfo.cpp",
     ],
     hdrs = [
         "thrift/conformance/cpp2/Any.h",
@@ -595,6 +611,8 @@ cc_library(
         ],
     ),
     copts = COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
         "@fatal",

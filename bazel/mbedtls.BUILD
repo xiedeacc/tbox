@@ -47,7 +47,11 @@ cc_library(
 cc_library(
     name = "mbedtls_default_config",
     hdrs = ["include/mbedtls/mbedtls_config.h"],
+    copts = COPTS,
+    defines = DEFINES,
     includes = ["include"],
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
 )
 
 label_flag(
@@ -63,7 +67,7 @@ cc_binary(
         "@platforms//os:macos": ["-all_load"],
         "//conditions:default": [],
     }),
-    local_defines = LOCAL_DEFINES,
     linkshared = True,
+    local_defines = LOCAL_DEFINES,
     deps = [":mbedtls"],
 )

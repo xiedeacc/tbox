@@ -65,6 +65,18 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + select({
     "//conditions:default": [],
 })
 
+LINKOPTS = GLOBAL_LINKOPTS + select({
+    "@platforms//os:windows": [],
+    "//conditions:default": [],
+}) + select({
+    "@platforms//os:linux": [],
+    "@platforms//os:osx": [],
+    "@platforms//os:windows": [],
+    "//conditions:default": [],
+})
+
+DEFINES = GLOBAL_DEFINES
+
 sh_binary(
     name = "gen_HTTPCommonHeaders_sh",
     srcs = ["proxygen/lib/http/gen_HTTPCommonHeaders.sh"],
@@ -154,6 +166,8 @@ cc_library(
     }),
     hdrs = glob(["proxygen/**/*.h"]),
     copts = COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
         "@c-ares",

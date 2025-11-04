@@ -50,6 +50,10 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + select({
     "//conditions:default": [],
 })
 
+DEFINES = GLOBAL_DEFINES
+
+LINKOPTS = GLOBAL_LINKOPTS
+
 cc_library(
     name = "fizz",
     srcs = glob(
@@ -68,6 +72,8 @@ cc_library(
         ["fizz/**/*.h"],
     ),
     copts = COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
         "@double-conversion//:double-conversion",

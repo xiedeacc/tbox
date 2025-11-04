@@ -40,12 +40,12 @@ DEFINES = GLOBAL_DEFINES
 
 cc_library(
     name = "tinyxml2",
-    srcs = glob([
+    srcs = [
         "tinyxml2.cpp",
-    ]),
-    hdrs = glob([
+    ],
+    hdrs = [
         "tinyxml2.h",
-    ]),
+    ],
     copts = COPTS,
     defines = DEFINES,
     linkopts = LINKOPTS,

@@ -93,6 +93,8 @@ cc_library(
         "@platforms//cpu:x86_64": ["-mavx"],
         "@platforms//cpu:aarch64": [],
     }),
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
 )
@@ -107,6 +109,8 @@ cc_library(
         "@platforms//cpu:x86_64": ["-mno-avx"],
         "@platforms//cpu:aarch64": [],
     }),
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
 )
@@ -123,6 +127,8 @@ cc_library(
         "@platforms//cpu:x86_64": ["-mpclmul"],
         "@platforms//cpu:aarch64": [],
     }),
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
 )
@@ -136,6 +142,8 @@ cc_library(
         "@platforms//cpu:x86_64": ["-mpclmul"],
         "@platforms//cpu:aarch64": [],
     }),
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
 )
@@ -149,6 +157,8 @@ cc_library(
         "@platforms//cpu:x86_64": ["-msse4.2"],
         "@platforms//cpu:aarch64": [],
     }),
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
 )
@@ -169,6 +179,8 @@ cc_library(
         "//conditions:default": [],
     }),
     copts = COPTS + ["-x assembler-with-cpp"],
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES + select({
         "@platforms//cpu:x86_64": [],
         "@platforms//cpu:aarch64": [

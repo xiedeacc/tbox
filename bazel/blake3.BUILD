@@ -23,6 +23,8 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
     "//conditions:default": [],
 })
 
+DEFINES = GLOBAL_DEFINES
+
 cc_library(
     name = "blake3",
     srcs = select({
@@ -56,6 +58,7 @@ cc_library(
         "c/blake3_impl.h",
     ],
     copts = COPTS,
+    defines = DEFINES,
     includes = ["include"],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,

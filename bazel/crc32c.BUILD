@@ -1,13 +1,48 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
-load("@tbox//bazel:common.bzl", "template_rule")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 
 package(default_visibility = ["//visibility:public"])
 
+COPTS = GLOBAL_COPTS + select({
+    "@platforms//os:windows": [
+        "/std:c11",
+    ],
+    "//conditions:default": [
+        "-std=c11",
+    ],
+}) + select({
+    "@platforms//os:linux": [
+        "-fPIC",
+    ],
+    "@platforms//os:osx": [
+        "-fPIC",
+    ],
+    "@platforms//os:windows": [],
+    "//conditions:default": [],
+})
+
+LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
+    "CJSON_EXPORT_SYMBOLS",
+    "CJSON_IMPORT_SYMBOLS",
+] + select({
+    "@platforms//os:windows": [
+        "_CRT_SECURE_NO_WARNINGS",
+    ],
+    "//conditions:default": [],
+})
+
+LINKOPTS = GLOBAL_LINKOPTS + select({
+    "@platforms//os:windows": [],
+    "@platforms//os:linux": [],
+    "@platforms//os:osx": [],
+    "//conditions:default": [],
+})
+
+DEFINES = GLOBAL_DEFINES
 
 crc32c_arm64_srcs = [
     "src/crc32c_arm64.cc",
 ]
-
 
 crc32c_sse42_srcs = [
     "src/crc32c_sse42.cc",
@@ -102,7 +137,10 @@ cc_library(
     name = "crc32c",
     srcs = crc32c_srcs + crc32c_sse42_srcs + crc32c_arm64_srcs,
     hdrs = crc32c_hdrs + ["crc32c/crc32c_config.h"],
-    copts = crc32c_copts,
+    copts = COPTS + crc32c_copts,
+    defines = DEFINES,
     includes = ["include"],
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
     deps = [],
 )

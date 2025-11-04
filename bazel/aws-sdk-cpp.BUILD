@@ -1,9 +1,11 @@
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "template_rule")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "template_rule")
 
 package(default_visibility = ["//visibility:public"])
 
 COPTS = GLOBAL_COPTS
+
+DEFINES = GLOBAL_DEFINES
 
 LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "AWS_SDK_VERSION_MAJOR=1",
@@ -477,6 +479,7 @@ cc_library(
         ],
     ),
     copts = COPTS,
+    defines = DEFINES,
     includes = [
         "include",
     ],
@@ -549,6 +552,7 @@ cc_library(
         "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-c-common/generated/include",
         "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-crt-cpp/generated/include",
     ],
+    defines = DEFINES,
     includes = [
         "crt/aws-crt-cpp/crt/aws-c-cal/include",
         "crt/aws-crt-cpp/crt/aws-c-common/include",
@@ -578,6 +582,7 @@ cc_library(
         "src/aws-cpp-sdk-access-management/include/**/*.hpp",
     ]),
     copts = COPTS,
+    defines = DEFINES,
     includes = [
         "include",
         "src/aws-cpp-sdk-access-management/include",
@@ -602,6 +607,7 @@ cc_library(
         "src/aws-cpp-sdk-identity-management/include/**/*.hpp",
     ]),
     copts = COPTS,
+    defines = DEFINES,
     includes = [
         "include",
         "src/aws-cpp-sdk-identity-management/include",
@@ -626,6 +632,7 @@ cc_library(
         "generated/src/aws-cpp-sdk-ec2/include/**/*.hpp",
     ]),
     copts = COPTS,
+    defines = DEFINES,
     includes = [
         "generated/src/aws-cpp-sdk-ec2/include",
         "include",
@@ -648,6 +655,7 @@ cc_library(
         "generated/src/aws-cpp-sdk-iam/include/**/*.hpp",
     ]),
     copts = COPTS,
+    defines = DEFINES,
     includes = [
         "generated/src/aws-cpp-sdk-iam/include",
         "include",
@@ -670,6 +678,7 @@ cc_library(
         "generated/src/aws-cpp-sdk-elasticloadbalancing/include/**/*.hpp",
     ]),
     copts = COPTS,
+    defines = DEFINES,
     includes = [
         "generated/src/aws-cpp-sdk-elasticloadbalancing/include",
         "include",
@@ -692,6 +701,7 @@ cc_library(
         "generated/src/aws-cpp-sdk-route53/include/**/*.hpp",
     ]),
     copts = COPTS,
+    defines = DEFINES,
     includes = [
         "generated/src/aws-cpp-sdk-route53/include",
         "include",
@@ -714,6 +724,7 @@ cc_library(
         "generated/src/aws-cpp-sdk-ssm/include/**/*.hpp",
     ]),
     copts = COPTS,
+    defines = DEFINES,
     includes = [
         "generated/src/aws-cpp-sdk-ssm/include",
         "include",
@@ -736,6 +747,7 @@ cc_library(
         "generated/src/aws-cpp-sdk-secretsmanager/include/**/*.hpp",
     ]),
     copts = COPTS,
+    defines = DEFINES,
     includes = [
         "generated/src/aws-cpp-sdk-secretsmanager/include",
         "include",
@@ -758,6 +770,7 @@ cc_library(
         "generated/src/aws-cpp-sdk-cognito-identity/include/**/*.hpp",
     ]),
     copts = COPTS,
+    defines = DEFINES,
     includes = [
         "generated/src/aws-cpp-sdk-cognito-identity/include",
         "include",
@@ -780,6 +793,7 @@ cc_library(
         "generated/src/aws-cpp-sdk-sts/include/**/*.hpp",
     ]),
     copts = COPTS,
+    defines = DEFINES,
     includes = [
         "generated/src/aws-cpp-sdk-sts/include",
         "include",

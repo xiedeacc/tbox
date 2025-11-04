@@ -1,6 +1,38 @@
-load("@tbox//bazel:common.bzl", "template_rule")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 
 package(default_visibility = ["//visibility:public"])
+
+COPTS = GLOBAL_COPTS + select({
+    "@platforms//os:windows": [],
+    "//conditions:default": [],
+}) + select({
+    "@platforms//os:linux": [],
+    "@platforms//os:osx": [],
+    "@platforms//os:windows": [],
+    "//conditions:default": [],
+})
+
+DEFINES = GLOBAL_DEFINES
+
+LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + select({
+    "@platforms//os:windows": [],
+    "//conditions:default": [],
+}) + select({
+    "@platforms//os:linux": [],
+    "@platforms//os:osx": [],
+    "@platforms//os:windows": [],
+    "//conditions:default": [],
+})
+
+LINKOPTS = GLOBAL_LINKOPTS + select({
+    "@platforms//os:windows": [],
+    "//conditions:default": [],
+}) + select({
+    "@platforms//os:linux": [],
+    "@platforms//os:osx": [],
+    "@platforms//os:windows": [],
+    "//conditions:default": [],
+})
 
 cc_library(
     name = "iberty",
@@ -83,7 +115,7 @@ cc_library(
     ]) + [
         "include/dwarf2.def",
     ],
-    copts = select({
+    copts = COPTS + select({
         "@platforms//os:windows": [
             "/I$(GENDIR)/external/libiberty/libiberty",
             "/Iexternal/libiberty/include",
@@ -94,7 +126,9 @@ cc_library(
             "-Iexternal/libiberty/include",
         ],
     }),
-    local_defines = [
+    defines = DEFINES,
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES + [
         "HAVE_CONFIG_H",
         "_GNU_SOURCE",
     ],

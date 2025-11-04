@@ -214,6 +214,18 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "//conditions:default": [],
 })
 
+DEFINES = GLOBAL_DEFINES
+
+LINKOPTS = GLOBAL_LINKOPTS + select({
+    "@platforms//os:windows": [],
+    "//conditions:default": [],
+}) + select({
+    "@platforms//os:linux": [],
+    "@platforms//os:osx": [],
+    "@platforms//os:windows": [],
+    "//conditions:default": [],
+})
+
 cc_library(
     name = "utils",
     srcs = [
@@ -225,6 +237,8 @@ cc_library(
         "src/libsodium/include/sodium/private/*.h",
     ]),
     copts = COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
 )
 
@@ -342,7 +356,8 @@ cc_library(
         "src/libsodium/crypto_scalarmult/curve25519/sandy2x/*.S",
     ]),
     copts = COPTS,
-    defines = ["SODIUM_STATIC"],
+    defines = DEFINES + ["SODIUM_STATIC"],
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":utils"],
 )
@@ -361,6 +376,8 @@ cc_library(
             "-mrdrnd",
         ],
     }) + COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
 )
@@ -382,6 +399,8 @@ cc_library(
             "-msse2",
         ],
     }) + COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
 )
 
@@ -402,6 +421,8 @@ cc_library(
             "-mssse3",
         ],
     }) + COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
 )
@@ -423,6 +444,8 @@ cc_library(
             "-mssse3",
         ],
     }) + COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
 )
@@ -447,6 +470,8 @@ cc_library(
             "-mpclmul",
         ],
     }) + COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
 )
@@ -467,6 +492,8 @@ cc_library(
             "-msse4.1",
         ],
     }) + COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
 )
@@ -492,6 +519,8 @@ cc_library(
             "-mavx2",
         ],
     }) + COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
 )
@@ -515,6 +544,8 @@ cc_library(
             "-mavx512f",
         ],
     }) + COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
 )
@@ -537,6 +568,8 @@ cc_library(
             "-mssse3",
         ],
     }) + COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
         ":aesni",

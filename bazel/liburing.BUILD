@@ -69,6 +69,8 @@ cc_library(
         "src/include/**/*.h",
     ]),
     copts = COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES + select({
         "@platforms//cpu:x86_64": [],
         "@platforms//cpu:aarch64": [],
@@ -100,6 +102,8 @@ cc_library(
         "src/include/**/*.h",
     ]),
     copts = COPTS,
+    defines = DEFINES,
+    linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES + select({
         "@platforms//cpu:x86_64": [],
         "@platforms//cpu:aarch64": [],

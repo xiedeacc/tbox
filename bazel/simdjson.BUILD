@@ -36,10 +36,13 @@ cc_library(
     name = "simdjson",
     srcs = ["singleheader/simdjson.cpp"],
     hdrs = ["singleheader/simdjson.h"],
-    copts = [
+    copts = COPTS + [
         "-O3",
         "-DNDEBUG",
         "-DSIMDJSON_AVX512_ALLOWED=0",
     ],
+    defines = DEFINES,
     includes = ["singleheader"],
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
 )
