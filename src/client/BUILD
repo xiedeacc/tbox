@@ -250,5 +250,6 @@ cc_binary(
         "@openssl//:crypto",
         "@openssl//:ssl",
         "@xz//:lzma",
+        "@mimalloc//:mimalloc",
     ],
 )

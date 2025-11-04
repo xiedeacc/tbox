@@ -103,7 +103,6 @@ cc_library(
             [
                 "src/x86_64/L*.c",
                 "src/x86_64/G*.c",
-                "src/x86_64/is_fpreg.c",
                 "src/x86_64/regname.c",
                 "src/x86_64/getcontext.S",
                 "src/x86_64/longjmp.S",
@@ -118,12 +117,13 @@ cc_library(
                 "src/x86_64/Gos-qnx.c",
                 "src/x86_64/Los-qnx.c",
             ],
-        ),
+        ) + [
+            "src/x86_64/is_fpreg.c",
+        ],
         "@platforms//cpu:aarch64": glob(
             [
                 "src/aarch64/L*.c",
                 "src/aarch64/G*.c",
-                "src/aarch64/is_fpreg.c",
                 "src/aarch64/regname.c",
                 "src/aarch64/getcontext.S",
                 "src/aarch64/longjmp.S",
@@ -138,7 +138,9 @@ cc_library(
                 "src/aarch64/Gos-qnx.c",
                 "src/aarch64/Los-qnx.c",
             ],
-        ),
+        ) + [
+            "src/aarch64/is_fpreg.c",
+        ],
     }),
     hdrs = [
         "include/compiler.h",

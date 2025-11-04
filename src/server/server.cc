@@ -5,8 +5,6 @@
 
 #include <signal.h>
 
-// #include "gperftools/profiler.h"
-
 #include "folly/init/Init.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
@@ -58,7 +56,6 @@ void RegisterSignalHandler() {
 }
 
 int main(int argc, char** argv) {
-  // ProfilerStart("tbox_profile");
   LOG(INFO) << "Server initializing ...";
 
   gflags::ParseCommandLineFlags(&argc, &argv, false);
@@ -137,6 +134,5 @@ int main(int argc, char** argv) {
 
   LOG(INFO) << "Server shutdown complete";
 
-  // ProfilerStop();
   return 0;
 }

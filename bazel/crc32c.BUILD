@@ -3,23 +3,17 @@ load("@tbox//bazel:common.bzl", "template_rule")
 
 package(default_visibility = ["//visibility:public"])
 
-crc32c_arm64_HDRS = [
-    "src/crc32c_arm64.h",
-]
 
-crc32c_arm64_SRCS = [
+crc32c_arm64_srcs = [
     "src/crc32c_arm64.cc",
 ]
 
-crc32c_sse42_HDRS = [
-    "src/crc32c_sse42.h",
-]
 
-crc32c_sse42_SRCS = [
+crc32c_sse42_srcs = [
     "src/crc32c_sse42.cc",
 ]
 
-crc32c_HDRS = [
+crc32c_hdrs = [
     "src/crc32c_arm64.h",
     "src/crc32c_arm64_check.h",
     "src/crc32c_internal.h",
@@ -31,7 +25,7 @@ crc32c_HDRS = [
     "include/crc32c/crc32c.h",
 ]
 
-crc32c_SRCS = [
+crc32c_srcs = [
     "src/crc32c_portable.cc",
     "src/crc32c.cc",
 ]
@@ -106,8 +100,8 @@ template_rule(
 
 cc_library(
     name = "crc32c",
-    srcs = crc32c_SRCS + crc32c_sse42_SRCS + crc32c_arm64_SRCS,
-    hdrs = crc32c_HDRS + ["crc32c/crc32c_config.h"],
+    srcs = crc32c_srcs + crc32c_sse42_srcs + crc32c_arm64_srcs,
+    hdrs = crc32c_hdrs + ["crc32c/crc32c_config.h"],
     copts = crc32c_copts,
     includes = ["include"],
     deps = [],

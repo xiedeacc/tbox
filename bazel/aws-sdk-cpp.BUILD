@@ -57,7 +57,7 @@ COPTS_COMMON = COPTS_BASE + select({
     "//conditions:default": [],
 }) + select({
     # CPU tier-specific extensions (x86_64 only)
-    "@tbox//bazel:x64_large": [
+    "@tbox//bazel:x86_64_feature_large": [
         "-msse4.2",
         "-msse4.1",
         "-mpclmul",
@@ -67,13 +67,13 @@ COPTS_COMMON = COPTS_BASE + select({
         "-mavx512dq",  # AVX-512 Doubleword/Quadword
         "-mvpclmulqdq",  # Vector PCLMULQDQ for carry-less multiplication
     ],
-    "@tbox//bazel:x64_medium": [
+    "@tbox//bazel:x86_64_feature_medium": [
         "-msse4.2",
         "-msse4.1",
         "-mpclmul",
         "-mavx2",
     ],
-    "@tbox//bazel:x64_small": [],  # No CPU extensions - generic x86-64 only
+    "@tbox//bazel:x86_64_feature_small": [],  # No CPU extensions - generic x86-64 only
 })
 
 COPTS = COPTS_COMMON + select({
@@ -118,7 +118,7 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "//conditions:default": [],
 }) + select({
     # CPU tier-specific defines (x86_64 only)
-    "@tbox//bazel:x64_large": [
+    "@tbox//bazel:x86_64_feature_large": [
         "AWS_HAVE_AVX2_INTRINSICS",
         "AWS_HAVE_MM256_EXTRACT_EPI64",
         "AWS_HAVE_AVX512_INTRINSICS",
@@ -126,14 +126,14 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
         "AWS_USE_CPU_EXTENSIONS",
         "USE_SIMD_ENCODING",  # Enable SIMD base64 encoding
     ],
-    "@tbox//bazel:x64_medium": [
+    "@tbox//bazel:x86_64_feature_medium": [
         "AWS_HAVE_AVX2_INTRINSICS",
         "AWS_HAVE_MM256_EXTRACT_EPI64",
         "AWS_HAVE_CLMUL",
         "AWS_USE_CPU_EXTENSIONS",
         "USE_SIMD_ENCODING",  # Enable SIMD base64 encoding
     ],
-    "@tbox//bazel:x64_small": [],  # No CPU extensions for small tier - use generic implementations
+    "@tbox//bazel:x86_64_feature_small": [],  # No CPU extensions for small tier - use generic implementations
 }) + select({
     "@platforms//os:windows": [
         "WIN32",
@@ -252,19 +252,19 @@ template_rule(
             "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
         },
     }) | select({
-        "@tbox//bazel:x64_large": {
+        "@tbox//bazel:x86_64_feature_large": {
             "{{AVX2_INTRINSICS}}": "#define AWS_HAVE_AVX2_INTRINSICS",
             "{{MM256_EXTRACT}}": "#define AWS_HAVE_MM256_EXTRACT_EPI64",
             "{{CLMUL}}": "#define AWS_HAVE_CLMUL",
             "{{USE_CPU_EXTENSIONS}}": "#define AWS_USE_CPU_EXTENSIONS",
         },
-        "@tbox//bazel:x64_medium": {
+        "@tbox//bazel:x86_64_feature_medium": {
             "{{AVX2_INTRINSICS}}": "#define AWS_HAVE_AVX2_INTRINSICS",
             "{{MM256_EXTRACT}}": "#define AWS_HAVE_MM256_EXTRACT_EPI64",
             "{{CLMUL}}": "#define AWS_HAVE_CLMUL",
             "{{USE_CPU_EXTENSIONS}}": "#define AWS_USE_CPU_EXTENSIONS",
         },
-        "@tbox//bazel:x64_small": {
+        "@tbox//bazel:x86_64_feature_small": {
             "{{AVX2_INTRINSICS}}": "/* #undef AWS_HAVE_AVX2_INTRINSICS */",
             "{{MM256_EXTRACT}}": "/* #undef AWS_HAVE_MM256_EXTRACT_EPI64 */",
             "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
@@ -444,7 +444,7 @@ cc_library(
         "//conditions:default": [],
     }) + select({
         # CPU tier-specific sources: Intel optimizations for medium/large tiers
-        "@tbox//bazel:x64_large": glob(
+        "@tbox//bazel:x86_64_feature_large": glob(
             [
                 "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
@@ -454,7 +454,7 @@ cc_library(
                 "crt/aws-crt-cpp/crt/aws-checksums/source/intel/cpuid.c",
             ],
         ),
-        "@tbox//bazel:x64_medium": glob(
+        "@tbox//bazel:x86_64_feature_medium": glob(
             [
                 "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
@@ -462,11 +462,10 @@ cc_library(
             exclude = [
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/msvc/**",
                 "crt/aws-crt-cpp/crt/aws-checksums/source/intel/cpuid.c",
-                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/encoding_avx2.c",
                 "crt/aws-crt-cpp/crt/aws-checksums/source/intel/crc32c_sse42_avx512.c",
             ],
         ),
-        "@tbox//bazel:x64_small": [
+        "@tbox//bazel:x86_64_feature_small": [
             # For small tier, add generic cpuid and minimal CPU stubs
             "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",
             "@tbox//bazel:aws_cpu_stubs_small.c",

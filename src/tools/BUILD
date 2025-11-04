@@ -8,7 +8,10 @@ cpplint()
 cc_binary(
     name = "gen_large_json_file",
     srcs = ["gen_large_json_file.cc"],
-    deps = ["//src/util"],
+    deps = [
+        "//src/util",
+        "@mimalloc//:mimalloc",
+    ],
 )
 
 cc_binary(
@@ -33,5 +36,6 @@ cc_binary(
     deps = [
         "@aws-sdk-cpp//:aws-cpp-sdk-core",
         "@aws-sdk-cpp//:aws-cpp-sdk-route53",
+        "@mimalloc//:mimalloc",
     ],
 )

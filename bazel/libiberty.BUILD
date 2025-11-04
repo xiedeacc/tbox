@@ -80,8 +80,9 @@ cc_library(
     ] + glob([
         "libiberty/*.h",
         "include/*.h",
+    ]) + [
         "include/dwarf2.def",
-    ]),
+    ],
     copts = select({
         "@platforms//os:windows": [
             "/I$(GENDIR)/external/libiberty/libiberty",

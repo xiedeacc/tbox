@@ -65,7 +65,7 @@ if [ -z "$JAVA_HOME" ]; then
 fi
 
 # Build with small tier (no AVX2) for NAS devices (typically Celeron/Atom CPUs)
-if ! bazel build //src/client:tbox_client --define=cpu_tier=small; then
+if ! bazel build //src/client:tbox_client --define=cpu_feature=small; then
     print_error "Failed to build client binary"
     exit 1
 fi

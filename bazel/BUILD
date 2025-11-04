@@ -29,18 +29,51 @@ config_setting(
 )
 
 config_setting(
-    name = "x64_small",
-    define_values = {"cpu_tier": "small"},
+    name = "linux_n105",
+    constraint_values = [
+        "@platforms//os:linux",
+    ],
+    define_values = {"cpu_model": "n105"},
 )
 
 config_setting(
-    name = "x64_medium",
-    define_values = {"cpu_tier": "medium"},
+    name = "linux_ryzen5",
+    constraint_values = [
+        "@platforms//os:linux",
+    ],
+    define_values = {"cpu_model": "ryzen5"},
 )
 
 config_setting(
-    name = "x64_large",
-    define_values = {"cpu_tier": "large"},
+    name = "linux_ryzen9",
+    constraint_values = [
+        "@platforms//os:linux",
+    ],
+    define_values = {"cpu_model": "ryzen9"},
+)
+
+config_setting(
+    name = "windows_n105",
+    constraint_values = [
+        "@platforms//os:windows",
+    ],
+    define_values = {"cpu_model": "n105"},
+)
+
+config_setting(
+    name = "windows_ryzen5",
+    constraint_values = [
+        "@platforms//os:windows",
+    ],
+    define_values = {"cpu_model": "ryzen5"},
+)
+
+config_setting(
+    name = "windows_ryzen9",
+    constraint_values = [
+        "@platforms//os:windows",
+    ],
+    define_values = {"cpu_model": "ryzen9"},
 )
 
 config_setting(
@@ -137,14 +170,4 @@ platform(
         "@platforms//os:osx",
         "@platforms//cpu:aarch64",
     ],
-)
-
-config_setting(
-    name = "jemalloc",
-    define_values = {"profiling_type": "jemalloc"},
-)
-
-config_setting(
-    name = "tcmalloc",
-    define_values = {"profiling_type": "tcmalloc"},
 )

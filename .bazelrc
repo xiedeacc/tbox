@@ -6,22 +6,11 @@ common --enable_platform_specific_config
 ######################### attention #########################
 # 1. pprof.out generated in bazel test sandbox
 # 2. go install github.com/google/pprof@latest
-# 3. tcmalloc not support windows
 
 test:cpplint --test_tag_filters='cpplint'
 test:cpplint --build_tests_only
 test:unit_test --test_tag_filters='-cpplint'
 
-test:unit_test_tcmalloc --define='profiling_type=tcmalloc'
-test:unit_test_tcmalloc --test_env='CPUPROFILE=pprof.out'
-test:unit_test_tcmalloc --test_env='PPROF_PATH=/root/src/go/bin/pprof'
-test:unit_test_tcmalloc --copt='-g'
-
-test:unit_test_jemalloc --define='profiling_type=jemalloc'
-test:unit_test_jemalloc --test_env='CPUPROFILE=pprof.out'
-test:unit_test_jemalloc --test_env='PPROF_PATH=/usr/local/bin/pprof'
-test:unit_test_jemalloc --test_env='MALLOC_CONF=prof_leak:true,prof:true,prof_active:true,lg_prof_interval:20,lg_prof_sample:17,prof_prefix:jeprof.out,prof_final:true'
-test:unit_test_jemalloc --copt='-g'
 
 coverage --test_tag_filters=-cpplint
 coverage --copt=-fprofile-instr-generate
@@ -120,7 +109,6 @@ build:macos --copt='-g'
 build:macos --copt='-O2'
 build:macos --copt='-Wall'
 build:macos --cxxopt='-std=c++17'
-build:macos --cxxopt=-D_GLIBCXX_USE_CXX11_ABI=1
 build:macos --host_copt='-mmacosx-version-min=10.15'
 build:macos --host_copt='-g'
 build:macos --host_copt='-O2'
@@ -133,20 +121,17 @@ build:linux --copt='-g'
 build:linux --copt='-O2'
 build:linux --copt='-Wall'
 build:linux --cxxopt='-std=c++17'
-build:linux --cxxopt=-D_GLIBCXX_USE_CXX11_ABI=1
 build:linux --host_copt='-g'
 build:linux --host_copt='-O2'
 build:linux --host_copt='-Wall'
 build:linux --host_cxxopt='-std=c++17'
-build:linux --host_cxxopt=-D_GLIBCXX_USE_CXX11_ABI=1
-build:linux --define=cpu_tier=medium
+# Default CPU feature tier for x86_64 Linux builds
+build:linux --define=cpu_feature=x86_64_medium
 #build:linux --workspace_status_command=bazel/workspace_status.sh
 
 build:android --noenable_platform_specific_config
 build:ios --noenable_platform_specific_config
 
-build:tcmalloc --define='profiling_type=tcmalloc'
-build:jemalloc --define='profiling_type=jemalloc'
 ################# cross compiling ###############
 
 build:openwrt_aarch64 --platforms='//bazel:linux_aarch64_platform'

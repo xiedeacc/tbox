@@ -37,16 +37,19 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
     "//conditions:default": [],
 })
 
+DEFINES = GLOBAL_DEFINES
+
 cc_library(
     name = "cjson",
-    srcs = glob([
+    srcs = [
         "cJSON.c",
-    ]),
-    hdrs = glob([
+    ],
+    hdrs = [
         "cJSON.h",
         "cJSON_Utils.h",
-    ]),
+    ],
     copts = COPTS,
+    defines = DEFINES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
 )
@@ -56,4 +59,4 @@ alias(
     name = "cjson_lib",
     actual = ":cjson",
     visibility = ["//visibility:public"],
-) 
+)

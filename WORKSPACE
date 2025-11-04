@@ -421,23 +421,10 @@ new_git_repository(
 )
 
 new_git_repository(
-    name = "jemalloc",
-    build_file = "//bazel:jemalloc.BUILD",
-    commit = "8dc97b11089be6d58a52009ea3da610bf90331d3",
-    remote = "git@github.com:jemalloc/jemalloc.git",
-)
-
-new_git_repository(
-    name = "tcmalloc",
-    commit = "bd13fb84b359f6cdc7e0d393b91226dbb904bf75",
-    remote = "git@github.com:google/tcmalloc.git",
-)
-
-new_git_repository(
-    name = "gperftools",
-    build_file = "//bazel:gperftools.BUILD",
-    commit = "285908e8c7cfa98659127a23532c060f8dcbd148",
-    remote = "git@github.com:gperftools/gperftools.git",
+    name = "mimalloc",
+    build_file = "//bazel:mimalloc.BUILD",
+    remote = "git@github.com:microsoft/mimalloc.git",
+    tag = "v3.0.10",
 )
 
 new_git_repository(
@@ -650,8 +637,6 @@ http_archive(
     urls = ["https://sqlite.org/2024/sqlite-amalgamation-3460100.zip"],
 )
 
-
-
 new_git_repository(
     name = "blake3",
     build_file = "//bazel:blake3.BUILD",
@@ -669,9 +654,9 @@ new_git_repository(
 # )
 
 new_local_repository(
-name = "aws-sdk-cpp",
-build_file = "//bazel:aws-sdk-cpp.BUILD",
-path = "../aws-sdk-cpp",
+    name = "aws-sdk-cpp",
+    build_file = "//bazel:aws-sdk-cpp.BUILD",
+    path = "../aws-sdk-cpp",
 )
 
 #################### java ####################

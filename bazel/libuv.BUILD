@@ -67,16 +67,18 @@ cc_library(
         "include/uv/tree.h",
         "include/uv/version.h",
     ] + glob(["src/*.h"]) + select({
-        "@platforms//os:windows": glob([
+        "@platforms//os:windows": [
             "include/uv/win.h",
+        ] + glob([
             "src/win/*.h",
         ]),
-        "@platforms//os:osx": glob([
+        "@platforms//os:osx": [
             "include/uv/darwin.h",
+        ] + [
             "include/uv/posix.h",
             "include/uv/unix.h",
             "src/unix/darwin-stub.h",
-        ]),
+        ],
         "//conditions:default": [
             "include/uv/linux.h",
             "include/uv/posix.h",

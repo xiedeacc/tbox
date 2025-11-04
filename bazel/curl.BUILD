@@ -1,6 +1,5 @@
 #https://github.com/tensorflow/tensorflow/blob/51d480498b07346b8b6e2ee3fbd3dc486f60ed96/third_party/curl.BUILD
 #https://github.com/googleapis/google-cloud-cpp/blob/main/bazel/curl.BUILD
-load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LOCAL_DEFINES", "template_rule")
 

@@ -24,7 +24,6 @@ COPTS = GLOBAL_COPTS + select({
     "//conditions:default": [],
 })
 
-DEFINES = GLOBAL_DEFINES
 
 LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + select({
     "@platforms//os:windows": [],

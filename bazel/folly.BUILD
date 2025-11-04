@@ -272,10 +272,6 @@ cc_library(
         "@openssl",
         "@zstd",
     ] + select({
-        "@tbox//bazel:jemalloc": ["@jemalloc"],
-        "@tbox//bazel:tcmalloc": ["@tcmalloc//tcmalloc"],
-        "//conditions:default": [],
-    }) + select({
         "@platforms//os:windows": [],
         "@platforms//os:osx": [
             "@libiberty//:iberty",
@@ -329,7 +325,7 @@ genrule(
         "#define FOLLY_HAVE_LIBGFLAGS 1",
         "#define FOLLY_GFLAGS_NAMESPACE gflags",
         "#define FOLLY_HAVE_LIBGLOG 1",
-        "#define FOLLY_USE_JEMALLOC 0",
+        "/* #undef FOLLY_USE_JEMALLOC */",
         "#if __has_include(<features.h>)",
         "#include <features.h>",
         "#endif",
@@ -377,11 +373,7 @@ template_rule(
     name = "folly-config_h",
     src = ":folly-config_h_in",
     out = "folly/folly-config.h",
-    substitutions = select({
-        "@tbox//bazel:jemalloc": {"#define FOLLY_USE_JEMALLOC 0": "#define FOLLY_USE_JEMALLOC 1"},
-        "@tbox//bazel:tcmalloc": {"#define FOLLY_USE_JEMALLOC 0": ""},
-        "//conditions:default": {"#define FOLLY_USE_JEMALLOC 0": ""},
-    }) | select({
+    substitutions = {} | select({
         "@tbox//bazel:linux_aarch64": {
             "#define FOLLY_HAVE_SWAPCONTEXT 1": "",
             "#define FOLLY_HAVE_BACKTRACE 1": "",
