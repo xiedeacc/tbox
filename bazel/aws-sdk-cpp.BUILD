@@ -408,6 +408,7 @@ cc_library(
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/darwin/**",
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/linux/**",
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/windows/**",
+                "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",
             ],
         ),
         "//conditions:default": [],
@@ -440,7 +441,9 @@ cc_library(
             "@tbox//bazel:aws_cpu_stubs_small.c",
         ],
         "@tbox//bazel:cpu_model_neoverse11": [
-            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/cpuid.c",
+            # Use generic cpuid for ARM as this submodule layout lacks arch/arm/cpuid.c
+            "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",
+            "@tbox//bazel:aws_cpu_stubs_small.c",
         ],
         "//conditions:default": [
             "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",

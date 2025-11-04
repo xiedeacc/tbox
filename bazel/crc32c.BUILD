@@ -5,10 +5,10 @@ package(default_visibility = ["//visibility:public"])
 
 COPTS = GLOBAL_COPTS + select({
     "@platforms//os:windows": [
-        "/std:c11",
+        "/std:c++17",
     ],
     "//conditions:default": [
-        "-std=c11",
+        "-std=c++17",
     ],
 }) + select({
     "@platforms//os:linux": [
