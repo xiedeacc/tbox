@@ -18,7 +18,8 @@ namespace {
 
 // Helper to validate IPv4 address format
 bool IsValidIPv4(const std::string& ip) {
-  if (ip == "unknown") return true;  // Special case
+  if (ip == "unknown")
+    return true;  // Special case
   try {
     folly::IPAddress addr(ip);
     return addr.isV4();
@@ -84,15 +85,13 @@ TEST(Util, GetLocalIPv4Addresses) {
 
   // All addresses should be valid IPv4
   for (const auto& addr : addresses) {
-    EXPECT_TRUE(IsValidIPv4(addr))
-        << "Invalid IPv4 address: " << addr;
+    EXPECT_TRUE(IsValidIPv4(addr)) << "Invalid IPv4 address: " << addr;
   }
 
   // No loopback addresses should be present (except "unknown")
   for (const auto& addr : addresses) {
     if (addr != "unknown") {
-      EXPECT_FALSE(IsLoopback(addr))
-          << "Loopback address found: " << addr;
+      EXPECT_FALSE(IsLoopback(addr)) << "Loopback address found: " << addr;
     }
   }
 
@@ -115,20 +114,17 @@ TEST(Util, GetLocalIPv6Addresses) {
 
   // All addresses should be valid IPv6
   for (const auto& addr : addresses) {
-    EXPECT_TRUE(IsValidIPv6(addr))
-        << "Invalid IPv6 address: " << addr;
+    EXPECT_TRUE(IsValidIPv6(addr)) << "Invalid IPv6 address: " << addr;
   }
 
   // No loopback addresses should be present
   for (const auto& addr : addresses) {
-    EXPECT_FALSE(IsLoopback(addr))
-        << "Loopback address found: " << addr;
+    EXPECT_FALSE(IsLoopback(addr)) << "Loopback address found: " << addr;
   }
 
   // No link-local addresses should be present
   for (const auto& addr : addresses) {
-    EXPECT_FALSE(IsLinkLocal(addr))
-        << "Link-local address found: " << addr;
+    EXPECT_FALSE(IsLinkLocal(addr)) << "Link-local address found: " << addr;
   }
 
   // No duplicates
@@ -177,26 +173,22 @@ TEST(Util, GetPublicIPv6Addresses) {
 
   // All addresses should be valid IPv6
   for (const auto& addr : addresses) {
-    EXPECT_TRUE(IsValidIPv6(addr))
-        << "Invalid IPv6 address: " << addr;
+    EXPECT_TRUE(IsValidIPv6(addr)) << "Invalid IPv6 address: " << addr;
   }
 
   // No loopback addresses should be present
   for (const auto& addr : addresses) {
-    EXPECT_FALSE(IsLoopback(addr))
-        << "Loopback address found: " << addr;
+    EXPECT_FALSE(IsLoopback(addr)) << "Loopback address found: " << addr;
   }
 
   // No link-local addresses should be present
   for (const auto& addr : addresses) {
-    EXPECT_FALSE(IsLinkLocal(addr))
-        << "Link-local address found: " << addr;
+    EXPECT_FALSE(IsLinkLocal(addr)) << "Link-local address found: " << addr;
   }
 
   // No private addresses should be present
   for (const auto& addr : addresses) {
-    EXPECT_FALSE(IsPrivate(addr))
-        << "Private address found: " << addr;
+    EXPECT_FALSE(IsPrivate(addr)) << "Private address found: " << addr;
   }
 
   // No duplicates
@@ -226,8 +218,7 @@ TEST(Util, ResolveDomainToIPv6_Google) {
 
     // All addresses should be valid IPv6
     for (const auto& addr : addresses) {
-      EXPECT_TRUE(IsValidIPv6(addr))
-          << "Invalid IPv6 address: " << addr;
+      EXPECT_TRUE(IsValidIPv6(addr)) << "Invalid IPv6 address: " << addr;
       LOG(INFO) << "  - " << addr;
     }
   } else {
@@ -274,6 +265,40 @@ TEST(Util, ResolveDomainToIPv6_EmptyDomain) {
   EXPECT_TRUE(addresses.empty())
       << "Empty domain should not resolve to any addresses";
   LOG(INFO) << "Empty domain correctly returned 0 addresses";
+}
+
+TEST(Util, SHA256) {
+  std::string content;
+  std::string out;
+  content =
+      R"(A cyclic redundancy check (CRC) is an error-detecting code used to detect data corruption. When sending data, short checksum is generated based on data content and sent along with data. When receiving data, checksum is generated again and compared with sent checksum. If the two are equal, then there is no data corruption. The CRC-32 algorithm itself converts a variable-length string into an 8-character string.)";
+  Util::SHA256(content, &out);
+  EXPECT_EQ(out,
+            "3f5d419c0386a26df1c75d0d1c488506fb641b33cebaa2a4917127ae33030b31");
+}
+
+TEST(Util, Blake3) {
+  std::string content;
+  std::string out;
+  content =
+      R"(A cyclic redundancy check (CRC) is an error-detecting code used to detect data corruption. When sending data, short checksum is generated based on data content and sent along with data. When receiving data, checksum is generated again and compared with sent checksum. If the two are equal, then there is no data corruption. The CRC-32 algorithm itself converts a variable-length string into an 8-character string.)";
+  Util::Blake3(content, &out);
+  EXPECT_EQ(out,
+            "9b12d05351596e6851917bc73dcaf39eb12a27a196e56d38492ed730a60edf8e");
+}
+
+TEST(Util, HashPassword) {
+  std::string salt = "452c0306730b0f3ac3086d4f62effc20";
+  std::string standard_hashed_password =
+      "e64de2fcaef0b98d035c3c241e4f8fda32f3b09067ef0f1b1706869a54f9d3b7";
+
+  std::string hashed_password;
+  if (!Util::HashPassword(Util::SHA256("admin"), salt, &hashed_password)) {
+    LOG(INFO) << "error";
+  }
+  LOG(INFO) << hashed_password;
+
+  EXPECT_EQ(standard_hashed_password, hashed_password);
 }
 
 }  // namespace util
