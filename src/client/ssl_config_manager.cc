@@ -701,15 +701,20 @@ std::string SSLConfigManager::GetRemotePrivateKeyHash() {
       if (response.err_code() == tbox::proto::ErrCode::Success) {
         // Private key hash should be in the message field
         if (!response.message().empty()) {
-        return response.message();
+          return response.message();
+        } else {
+          LOG(WARNING) << "Remote private key hash response empty - no message field";
+        }
       } else {
-        LOG(WARNING) << "Remote private key hash response empty - no message field";
+        LOG(INFO) << "Failed to get remote private key hash - gRPC status: " 
+                  << (status.ok() ? "OK" : "FAILED")
+                  << ", error: " << status.error_message()
+                  << ", response error code: " << static_cast<int>(response.err_code());
       }
     } else {
       LOG(INFO) << "Failed to get remote private key hash - gRPC status: " 
                 << (status.ok() ? "OK" : "FAILED")
-                << ", error: " << status.error_message()
-                << ", response error code: " << static_cast<int>(response.err_code());
+                << ", error: " << status.error_message();
     }
   } catch (const std::exception& e) {
     LOG(ERROR) << "Exception getting remote private key hash: " << e.what();
@@ -770,23 +775,28 @@ bool SSLConfigManager::FetchAndStorePrivateKey(const std::string& key_path) {
         std::string private_key_content = response.private_key();
         
         if (!private_key_content.empty()) {
-        // Write private key to file
-        if (WriteFileContent(key_path, private_key_content)) {
-          // Set restrictive permissions for private key (600 = rw-------)
-          SetFilePermissions(key_path, 0600);
-          LOG(INFO) << "Successfully fetched and stored private key: " << key_path;
-          return true;
+          // Write private key to file
+          if (WriteFileContent(key_path, private_key_content)) {
+            // Set restrictive permissions for private key (600 = rw-------)
+            SetFilePermissions(key_path, 0600);
+            LOG(INFO) << "Successfully fetched and stored private key: " << key_path;
+            return true;
+          } else {
+            LOG(ERROR) << "Failed to write private key to: " << key_path;
+          }
         } else {
-          LOG(ERROR) << "Failed to write private key to: " << key_path;
+          LOG(ERROR) << "Empty private key content received from server";
         }
       } else {
-        LOG(ERROR) << "Empty private key content received from server";
+        LOG(WARNING) << "Failed to fetch private key from server - gRPC status: " 
+                     << (status.ok() ? "OK" : "FAILED")
+                     << ", error: " << status.error_message()
+                     << ", response error code: " << static_cast<int>(response.err_code());
       }
     } else {
       LOG(WARNING) << "Failed to fetch private key from server - gRPC status: " 
                    << (status.ok() ? "OK" : "FAILED")
-                   << ", error: " << status.error_message()
-                   << ", response error code: " << static_cast<int>(response.err_code());
+                   << ", error: " << status.error_message();
     }
   } catch (const std::exception& e) {
     LOG(ERROR) << "Exception fetching private key: " << e.what();
