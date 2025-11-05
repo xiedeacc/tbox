@@ -62,9 +62,13 @@ class CertOpHandler : public async_grpc::RpcHandler<CertOpMethod> {
     }
 
     Send(std::move(res));
+    // For NORMAL_RPC, Send() already finishes the RPC, so no need to call
+    // Finish() here
   }
 
-  void OnReadsDone() override { Finish(grpc::Status::OK); }
+  // For NORMAL_RPC, OnReadsDone() is called immediately after OnRequest(),
+  // but Send() already handles finishing the RPC, so this can be empty
+  void OnReadsDone() override {}
 };
 
 }  // namespace grpc_handler
