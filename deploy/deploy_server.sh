@@ -39,6 +39,21 @@ print_success() {
     echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
 
+# Function to format remote host for SSH/SCP (wrap IPv6 in brackets)
+format_remote_host() {
+    local host="$1"
+    # Check if it's an IPv6 address (contains colons and no dots)
+    if [[ "$host" == *:* && "$host" != *.* ]]; then
+        # IPv6 address - wrap in brackets
+        echo "[${host}]"
+    else
+        # IPv4 address or hostname - use as-is
+        echo "$host"
+    fi
+}
+
+REMOTE_HOST_FORMATTED=$(format_remote_host "${REMOTE_HOST}")
+
 # SSH options (use key if available, otherwise rely on default identities)
 if [[ -f "${SSH_KEY}" ]]; then
     SSH_OPTS=( -i "${SSH_KEY}" -o StrictHostKeyChecking=no )
@@ -55,7 +70,7 @@ fi
 
 # SSH helper function
 ssh_exec() {
-    ssh "${SSH_OPTS[@]}" "${REMOTE_USER}@${REMOTE_HOST}" "$@"
+    ssh "${SSH_OPTS[@]}" "${REMOTE_USER}@${REMOTE_HOST_FORMATTED}" "$@"
 }
 
 # SCP helper function
@@ -67,7 +82,7 @@ scp_copy() {
 scp_file() {
     local src="$1"
     local dest="$2"
-    scp "${SSH_OPTS[@]}" "$src" "${REMOTE_USER}@${REMOTE_HOST}:$dest"
+    scp "${SSH_OPTS[@]}" "$src" "${REMOTE_USER}@${REMOTE_HOST_FORMATTED}:$dest"
 }
 
 
@@ -192,20 +207,20 @@ SCP_CMD="scp"
 if [[ ${#SSH_OPTS[@]} -gt 0 ]]; then
     SCP_CMD="${SCP_CMD} ${SSH_OPTS[*]}"
 fi
-SCP_CMD="${SCP_CMD} ${TEMP_BINARY} ${REMOTE_USER}@${REMOTE_HOST}:/tmp/${BINARY_NAME}"
+SCP_CMD="${SCP_CMD} ${TEMP_BINARY} ${REMOTE_USER}@${REMOTE_HOST_FORMATTED}:/tmp/${BINARY_NAME}"
 print_status "Executing: ${SCP_CMD}"
-scp_copy "$TEMP_BINARY" "${REMOTE_USER}@${REMOTE_HOST}:/tmp/${BINARY_NAME}"
+scp_copy "$TEMP_BINARY" "${REMOTE_USER}@${REMOTE_HOST_FORMATTED}:/tmp/${BINARY_NAME}"
 print_success "Binary uploaded to /tmp on remote host"
 
 # Copy configuration file to remote host
 print_status "Copying configuration file to remote host..."
-scp_copy conf/server_config.json "${REMOTE_USER}@${REMOTE_HOST}:/tmp/server_config.json"
+scp_copy conf/server_config.json "${REMOTE_USER}@${REMOTE_HOST_FORMATTED}:/tmp/server_config.json"
 ssh_exec "sudo mv /tmp/server_config.json ${CONF_DIR}/server_config.json"
 print_success "Configuration file installed on remote host"
 
 # Copy and install systemd service file
 print_status "Installing systemd service file on remote host..."
-scp_copy deploy/tbox_server.service "${REMOTE_USER}@${REMOTE_HOST}:/tmp/tbox_server.service"
+scp_copy deploy/tbox_server.service "${REMOTE_USER}@${REMOTE_HOST_FORMATTED}:/tmp/tbox_server.service"
 ssh_exec "sudo mv /tmp/tbox_server.service /etc/systemd/system/"
 print_success "Service file installed on remote host"
 
@@ -457,14 +472,14 @@ print_status "Data directory: ${DATA_DIR}"
 print_status "Service name: ${SERVICE_NAME}"
 echo
 print_status "Useful remote commands:"
-echo "  - Check tbox status: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl status ${SERVICE_NAME}'"
-echo "  - View tbox logs: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST} 'sudo journalctl -u ${SERVICE_NAME} -f'"
-echo "  - Stop tbox service: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl stop ${SERVICE_NAME}'"
-echo "  - Start tbox service: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl start ${SERVICE_NAME}'"
-echo "  - Restart tbox service: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl restart ${SERVICE_NAME}'"
-echo "  - Check shadowsocks status: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl status shadowsocks-server'"
-echo "  - View shadowsocks logs: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST} 'sudo journalctl -u shadowsocks-server -f'"
-echo "  - Restart shadowsocks: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl restart shadowsocks-server'"
-echo "  - Check vlmcsd status: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl status vlmcsd'"
-echo "  - View vlmcsd logs: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST} 'sudo journalctl -u vlmcsd -f'"
-echo "  - Restart vlmcsd: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl restart vlmcsd'"
+echo "  - Check tbox status: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST_FORMATTED} 'sudo systemctl status ${SERVICE_NAME}'"
+echo "  - View tbox logs: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST_FORMATTED} 'sudo journalctl -u ${SERVICE_NAME} -f'"
+echo "  - Stop tbox service: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST_FORMATTED} 'sudo systemctl stop ${SERVICE_NAME}'"
+echo "  - Start tbox service: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST_FORMATTED} 'sudo systemctl start ${SERVICE_NAME}'"
+echo "  - Restart tbox service: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST_FORMATTED} 'sudo systemctl restart ${SERVICE_NAME}'"
+echo "  - Check shadowsocks status: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST_FORMATTED} 'sudo systemctl status shadowsocks-server'"
+echo "  - View shadowsocks logs: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST_FORMATTED} 'sudo journalctl -u shadowsocks-server -f'"
+echo "  - Restart shadowsocks: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST_FORMATTED} 'sudo systemctl restart shadowsocks-server'"
+echo "  - Check vlmcsd status: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST_FORMATTED} 'sudo systemctl status vlmcsd'"
+echo "  - View vlmcsd logs: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST_FORMATTED} 'sudo journalctl -u vlmcsd -f'"
+echo "  - Restart vlmcsd: ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST_FORMATTED} 'sudo systemctl restart vlmcsd'"
