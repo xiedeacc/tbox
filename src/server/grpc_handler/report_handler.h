@@ -98,12 +98,6 @@ class ReportOpHandler : public async_grpc::RpcHandler<ReportOpMethod> {
         case proto::OpCode::OP_GET_PUBLIC_IPV6:
           HandleGetPublicIPv6(req, res.get());
           break;
-        case proto::OpCode::OP_GET_PRIVATE_KEY_HASH:
-          HandleGetPrivateKeyHash(req, res.get());
-          break;
-        case proto::OpCode::OP_GET_PRIVATE_KEY:
-          HandleGetPrivateKey(req, res.get());
-          break;
         default:
           res->set_err_code(proto::ErrCode::Fail);
           res->set_message("Invalid operation code for Report");
@@ -307,53 +301,6 @@ class ReportOpHandler : public async_grpc::RpcHandler<ReportOpMethod> {
       res->set_err_code(proto::ErrCode::Fail);
       res->set_message("No IPv6 address found for client");
       LOG(WARNING) << "No IPv6 address found for client IP: " << client_ip;
-    }
-  }
-
-  /// @brief Handle OP_GET_PRIVATE_KEY_HASH - Return SHA256 hash of private key
-  void HandleGetPrivateKeyHash(const proto::ReportRequest& req,
-                               proto::ReportResponse* res) {
-    // Get SHA256 hash of the private key file
-    std::string key_path =
-        "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/xiedeacc.com.key";
-    std::string command =
-        "openssl dgst -sha256 " + key_path + " 2>/dev/null | awk '{print $2}'";
-    std::string hash_result = ExecuteCommand(command);
-
-    // Remove any trailing whitespace
-    hash_result.erase(hash_result.find_last_not_of(" \t\r\n") + 1);
-
-    if (!hash_result.empty()) {
-      res->set_err_code(proto::ErrCode::Success);
-      res->add_client_ip(hash_result);  // Return hash in client_ip field
-      res->set_message("Private key hash: " + hash_result.substr(0, 16) +
-                       "...");
-      LOG(INFO) << "Sent private key hash: " << hash_result.substr(0, 16)
-                << "...";
-    } else {
-      res->set_err_code(proto::ErrCode::Fail);
-      res->set_message("Failed to calculate private key hash");
-      LOG(ERROR) << "Failed to calculate hash for private key: " << key_path;
-    }
-  }
-
-  /// @brief Handle OP_GET_PRIVATE_KEY - Return private key content
-  void HandleGetPrivateKey(const proto::ReportRequest& req,
-                           proto::ReportResponse* res) {
-    // Read private key file content
-    std::string key_path =
-        "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/xiedeacc.com.key";
-    std::string private_key_content = ReadFileContent(key_path);
-
-    if (!private_key_content.empty()) {
-      res->set_err_code(proto::ErrCode::Success);
-      res->set_message(private_key_content);  // Return key in message field
-      LOG(INFO) << "Sent private key content (" << private_key_content.length()
-                << " bytes)";
-    } else {
-      res->set_err_code(proto::ErrCode::Fail);
-      res->set_message("Failed to read private key");
-      LOG(ERROR) << "Failed to read private key from: " << key_path;
     }
   }
 

@@ -12,14 +12,6 @@ namespace tbox {
 namespace server {
 namespace grpc_handler {
 
-struct EC2OpMethod {
-  static constexpr const char* MethodName() {
-    return "/tbox.proto.TBOXService/EC2Op";
-  }
-  using IncomingType = tbox::proto::EC2Request;
-  using OutgoingType = tbox::proto::EC2Response;
-};
-
 struct ReportOpMethod {
   static constexpr const char* MethodName() {
     return "/tbox.proto.TBOXService/ReportOp";
@@ -42,6 +34,14 @@ struct CertOpMethod {
   }
   using IncomingType = tbox::proto::CertRequest;
   using OutgoingType = tbox::proto::CertResponse;
+};
+
+struct ServerOpMethod {
+  static constexpr const char* MethodName() {
+    return "/tbox.proto.TBOXService/ServerOp";
+  }
+  using IncomingType = tbox::proto::ServerRequest;
+  using OutgoingType = tbox::proto::ServerResponse;
 };
 
 }  // namespace grpc_handler

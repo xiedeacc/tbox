@@ -72,6 +72,19 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "cert_manager",
+    srcs = ["cert_manager.cc"],
+    hdrs = ["cert_manager.h"],
+    copts = COPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        "//src/util",
+        "@com_github_glog_glog//:glog",
+        "@folly",
+    ],
+)
+
 cc_test(
     name = "config_manager_test",
     srcs = [

@@ -14,6 +14,9 @@ service TBOXService {
 
   // Certificate management operations
   rpc CertOp(CertRequest) returns (CertResponse) {}
+
+  // Server operations (server info, EC2 management)
+  rpc ServerOp(ServerRequest) returns (ServerResponse) {}
 }
 
 // OpCode enum for WebSocket message operations
@@ -57,6 +60,9 @@ enum OpCode {
   OP_GET_CA_CERT_HASH = 20;
   OP_GET_FULLCHAIN_CERT = 21;
   OP_GET_CA_CERT = 22;
+
+  // Server information operations
+  OP_SERVER_INFO = 23;
 }
 
 
@@ -124,4 +130,38 @@ message CertResponse {
   string private_key = 3;     // PEM encoded private key
   string ca_certificate = 4;  // PEM encoded CA certificate
   string message = 5;         // Additional information or error message
+}
+
+// Request message for server operations
+message ServerRequest {
+  string request_id = 1;
+  OpCode op = 2;
+  string token = 3;
+  // EC2 specific fields
+  string instance_id = 4;     // The EC2 instance ID (for EC2 operations)
+  string region = 5;          // AWS region (optional, for EC2 operations)
+}
+
+// Response message for server operations
+message ServerResponse {
+  ErrCode err_code = 1;
+  string message = 2;         // Additional information or error message
+  // Server info fields
+  string server_ip = 3;       // Server's IP address
+  string current_client_ip = 4; // Current client's IP address
+  int32 total_registered_clients = 5; // Total number of registered clients
+  repeated ClientInfo registered_clients = 6; // All registered clients
+  // EC2 specific fields
+  string instance_id = 7;     // The EC2 instance ID (for EC2 operations)
+  string instance_status = 8; // Instance status (for EC2 operations)
+}
+
+// Client information for server response
+message ClientInfo {
+  string client_id = 1;
+  repeated string ipv4_addresses = 2;
+  repeated string ipv6_addresses = 3;
+  string client_info = 4;
+  string last_report_time = 5;
+  string client_timestamp = 6;
 }

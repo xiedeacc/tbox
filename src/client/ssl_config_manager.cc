@@ -17,6 +17,7 @@
 
 #include "glog/logging.h"
 #include "src/async_grpc/client.h"
+#include "src/util/util.h"
 #include "src/async_grpc/common/time.h"
 #include "src/client/authentication_manager.h"
 #include "src/impl/config_manager.h"
@@ -98,16 +99,16 @@ void SSLConfigManager::MonitorCertificate() {
 
       LOG(INFO) << "Checking and updating tbox certificate";
       // Check and update tbox certificate
-      // bool tbox_updated = UpdateTboxCertificate();
+      bool tbox_updated = UpdateTboxCertificate();
 
       // Check and update nginx certificates
       bool nginx_updated = UpdateNginxCertificates();
 
-      // if (tbox_updated || nginx_updated) {
-      //   LOG(INFO) << "Certificate update completed - tbox: "
-      //             << (tbox_updated ? "updated" : "unchanged")
-      //             << ", nginx: " << (nginx_updated ? "updated" : "unchanged");
-      // } 
+      if (tbox_updated || nginx_updated) {
+        LOG(INFO) << "Certificate update completed - tbox: "
+                  << (tbox_updated ? "updated" : "unchanged")
+                  << ", nginx: " << (nginx_updated ? "updated" : "unchanged");
+      } 
     } catch (const std::exception& e) {
       LOG(ERROR) << "Error in certificate monitoring: " << e.what();
     }
@@ -115,94 +116,6 @@ void SSLConfigManager::MonitorCertificate() {
     std::this_thread::sleep_for(std::chrono::seconds(5));
   }
   LOG(INFO) << "SSL Config Manager stopped";
-}
-
-bool SSLConfigManager::HasCertificateChanged() {
-  std::string remote_fingerprint = GetRemoteCertificateFingerprint();
-  std::string local_fingerprint = GetLocalCertificateFingerprint();
-
-  if (remote_fingerprint.empty()) {
-    LOG(WARNING) << "Could not get remote certificate fingerprint";
-    return false;
-  }
-
-  bool changed = (remote_fingerprint != local_fingerprint);
-  if (changed) {
-    LOG(INFO) << "Certificate fingerprint changed. Remote: "
-              << remote_fingerprint << ", Local: " << local_fingerprint;
-  }
-
-  return changed;
-}
-
-std::string SSLConfigManager::GetRemoteCertificateFingerprint() {
-  auto config = util::ConfigManager::Instance();
-
-  // Extract domain from server_addr (remove https:// prefix)
-  std::string server_addr = config->ServerAddr();
-  std::string domain = server_addr;
-
-  // Remove protocol prefix if present
-  size_t protocol_pos = domain.find("://");
-  if (protocol_pos != std::string::npos) {
-    domain = domain.substr(protocol_pos + 3);
-  }
-
-  // Remove port if present
-  size_t port_pos = domain.find(":");
-  if (port_pos != std::string::npos) {
-    domain = domain.substr(0, port_pos);
-  }
-
-  // Use openssl command to get certificate fingerprint from remote server
-  std::string command =
-      "echo | openssl s_client -connect " + domain + ":443 -servername " +
-      domain + " 2>/dev/null | openssl x509 -fingerprint -noout -sha256";
-
-  std::string result = ExecuteCommand(command);
-
-  // Extract fingerprint from output (format: "SHA256 Fingerprint=XX:XX:...")
-  size_t pos = result.find("SHA256 Fingerprint=");
-  if (pos != std::string::npos) {
-    return result.substr(pos + 19);  // 19 = length of "SHA256 Fingerprint="
-  }
-
-  return "";
-}
-
-std::string SSLConfigManager::GetLocalCertificateFingerprint() {
-  auto config = util::ConfigManager::Instance();
-
-  std::string local_cert_path = config->LocalCertPath();
-  if (local_cert_path.empty()) {
-    local_cert_path = "conf/xiedeacc.com.ca.cer";  // Default fallback
-  }
-
-  if (!std::filesystem::exists(local_cert_path)) {
-    LOG(INFO) << "Local certificate file does not exist: " << local_cert_path;
-    return "";
-  }
-
-  // Calculate fingerprint of local certificate file
-  std::string command = "openssl x509 -in " + local_cert_path +
-                        " -fingerprint -noout -sha256 2>/dev/null";
-
-  std::string result = ExecuteCommand(command);
-
-  // Extract fingerprint from output
-  size_t pos = result.find("SHA256 Fingerprint=");
-  if (pos != std::string::npos) {
-    return result.substr(pos + 19);
-  }
-
-  return "";
-}
-
-void SSLConfigManager::UpdateLocalCertificate(const std::string& cert_content) {
-  // For now, we just update the fingerprint. The actual certificate content
-  // will be fetched from the cert handler
-  LOG(INFO) << "Local certificate fingerprint updated: "
-            << cert_content.substr(0, 20) << "...";
 }
 
 bool SSLConfigManager::FetchAndStoreCertificates() {

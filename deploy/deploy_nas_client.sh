@@ -19,7 +19,7 @@ SERVICE_USER="tbox"
 WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # NAS deployment parameters (pre-configured)
-REMOTE_HOST="192.168.3.101"
+REMOTE_HOST="2408:8256:3105:8f90:9a6e:e8ff:fe28:dea3"
 REMOTE_PORT="10022"
 REMOTE_USER="root"
 

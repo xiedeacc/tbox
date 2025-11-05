@@ -13,8 +13,8 @@
 #include "src/async_grpc/server.h"
 #include "src/impl/config_manager.h"
 #include "src/server/grpc_handler/cert_handler.h"
-#include "src/server/grpc_handler/ec2_handler.h"
 #include "src/server/grpc_handler/report_handler.h"
+#include "src/server/grpc_handler/server_handler.h"
 #include "src/server/grpc_handler/user_handler.h"
 #include "src/server/server_context.h"
 
@@ -36,11 +36,11 @@ class GrpcServer final {
         util::ConfigManager::Instance()->EventThreads());
 
     // Register handlers
-    server_builder.RegisterHandler<tbox::server::grpc_handler::EC2OpHandler>();
     server_builder
         .RegisterHandler<tbox::server::grpc_handler::ReportOpHandler>();
     server_builder.RegisterHandler<tbox::server::grpc_handler::UserHandler>();
     server_builder.RegisterHandler<tbox::server::grpc_handler::CertOpHandler>();
+    server_builder.RegisterHandler<tbox::server::grpc_handler::ServerOpHandler>();
 
     server_ = server_builder.Build();
     server_->SetExecutionContext(server_context);

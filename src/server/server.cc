@@ -10,6 +10,7 @@
 #include "glog/logging.h"
 #include "src/impl/config_manager.h"
 #include "src/impl/ddns_manager.h"
+#include "src/impl/cert_manager.h"
 #include "src/impl/user_manager.h"
 #include "src/server/grpc_server_impl.h"
 #include "src/server/http_server_impl.h"
@@ -19,6 +20,7 @@
 tbox::server::HttpServer* http_server_ptr = nullptr;
 tbox::server::GrpcServer* grpc_server_ptr = nullptr;
 tbox::impl::DDNSManager* ddns_manager_ptr = nullptr;
+tbox::impl::CertManager* cert_manager_ptr = nullptr;
 bool shutdown_required = false;
 std::mutex mutex;
 std::condition_variable cv;
@@ -37,6 +39,12 @@ void ShutdownCheckingThread(void) {
   if (ddns_manager_ptr && ddns_manager_ptr->IsRunning()) {
     ddns_manager_ptr->Stop();
     LOG(INFO) << "DDNS manager stopped";
+  }
+
+  // Stop certificate manager
+  if (cert_manager_ptr && cert_manager_ptr->IsRunning()) {
+    cert_manager_ptr->Stop();
+    LOG(INFO) << "Certificate manager stopped";
   }
 
   if (http_server_ptr) {
@@ -97,6 +105,21 @@ int main(int argc, char** argv) {
     }
   } else {
     LOG(WARNING) << "Failed to initialize DDNS manager, continuing without it";
+  }
+
+  // Initialize certificate manager singleton
+  auto cert_manager = tbox::impl::CertManager::Instance();
+  if (cert_manager->Init()) {
+    LOG(INFO) << "Certificate manager initialized";
+    cert_manager_ptr = cert_manager.get();
+
+    // Start certificate manager
+    if (!cert_manager->IsRunning()) {
+      cert_manager->Start();
+      LOG(INFO) << "Certificate manager started";
+    }
+  } else {
+    LOG(WARNING) << "Failed to initialize certificate manager, continuing without it";
   }
 
   RegisterSignalHandler();

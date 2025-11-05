@@ -92,9 +92,9 @@ cc_library(
     ],
     hdrs = [
         "cert_handler.h",
-        "ec2_handler.h",
         "meta.h",
         "report_handler.h",
+        "server_handler.h",
         "user_handler.h",
     ],
     copts = COPTS,
@@ -110,15 +110,3 @@ cc_library(
     ],
 )
 
-cc_test(
-    name = "ec2_handler_test",
-    srcs = ["ec2_handler_test.cc"],
-    copts = COPTS,
-    linkopts = LINKOPTS,
-    local_defines = LOCAL_DEFINES,
-    deps = [
-        ":grpc_handler",
-        "//src/proto:cc_service",
-        "@com_google_googletest//:gtest_main",
-    ],
-)

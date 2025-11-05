@@ -61,17 +61,6 @@ class SSLConfigManager {
   // Monitor certificate changes every 5 seconds
   void MonitorCertificate();
 
-  // Check if remote certificate has changed
-  bool HasCertificateChanged();
-
-  // Get remote certificate information
-  std::string GetRemoteCertificateFingerprint();
-
-  // Read local certificate fingerprint
-  std::string GetLocalCertificateFingerprint();
-
-  // Update local certificate file
-  void UpdateLocalCertificate(const std::string& cert_content);
 
   // Fetch new certificates from server
   bool FetchAndStoreCertificates();

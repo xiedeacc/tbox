@@ -142,6 +142,7 @@ cc_binary(
         ":http_server_impl",
         ":server_context",
         "//src/impl:ddns_manager",
+        "//src/impl:cert_manager",
         "//src/impl:user_manager",
         "//src/proto:cc_grpc_service",
         "//src/server/http_handler",
