@@ -122,6 +122,30 @@ class SSLConfigManager {
   // Check and update private key if needed
   bool UpdatePrivateKey(const std::string& key_path);
 
+  // Get SHA256 hash of remote fullchain certificate
+  std::string GetRemoteFullchainCertHash();
+
+  // Get SHA256 hash of local fullchain certificate
+  std::string GetLocalFullchainCertHash(const std::string& cert_path);
+
+  // Fetch fullchain certificate from server and store locally
+  bool FetchAndStoreFullchainCert(const std::string& cert_path);
+
+  // Check and update fullchain certificate if needed
+  bool UpdateFullchainCertificate(const std::string& cert_path);
+
+  // Get SHA256 hash of remote CA certificate
+  std::string GetRemoteCACertHash();
+
+  // Get SHA256 hash of local CA certificate
+  std::string GetLocalCACertHash(const std::string& cert_path);
+
+  // Fetch CA certificate from server and store locally
+  bool FetchAndStoreCACert(const std::string& cert_path);
+
+  // Check and update CA certificate if needed
+  bool UpdateCACertificate(const std::string& cert_path);
+
   static std::shared_ptr<SSLConfigManager> instance_;
   static std::mutex instance_mutex_;
 

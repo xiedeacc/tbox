@@ -51,6 +51,12 @@ enum OpCode {
   // Private key operations  
   OP_GET_PRIVATE_KEY_HASH = 17;
   OP_GET_PRIVATE_KEY = 18;
+  
+  // Certificate hash operations
+  OP_GET_FULLCHAIN_CERT_HASH = 19;
+  OP_GET_CA_CERT_HASH = 20;
+  OP_GET_FULLCHAIN_CERT = 21;
+  OP_GET_CA_CERT = 22;
 }
 
 

@@ -578,18 +578,6 @@ bool SSLConfigManager::UpdateNginxCertificates() {
     nginx_ssl_path = "/etc/nginx/ssl";
   }
   
-  // Get remote certificate chain
-  std::string remote_chain = GetRemoteCertificateChain();
-  if (remote_chain.empty()) {
-    LOG(WARNING) << "Failed to get remote certificate chain";
-    return false;
-  }
-  
-  CertificateChain cert_chain = ParseCertificateChain(remote_chain);
-  if (cert_chain.server_cert.empty() || cert_chain.fullchain.empty()) {
-    LOG(WARNING) << "Invalid certificate chain from remote server";
-    return false;
-  }
   
   // Create nginx SSL directory if it doesn't exist
   if (!std::filesystem::exists(nginx_ssl_path)) {
@@ -604,24 +592,16 @@ bool SSLConfigManager::UpdateNginxCertificates() {
   std::string fullchain_path = nginx_ssl_path + "/xiedeacc.com.fullchain.cer";
   std::string key_path = nginx_ssl_path + "/xiedeacc.com.key";
   
-  // Update CA certificate
-  std::string local_ca_cert = ReadFileContent(ca_cert_path);
-  if (!AreCertificatesEqual(local_ca_cert, cert_chain.root_cert)) {
-    LOG(INFO) << "Nginx CA certificate differs from remote, updating...";
-    if (WriteFileContent(ca_cert_path, cert_chain.root_cert)) {
-      SetFilePermissions(ca_cert_path, 0644);
-      updated = true;
-    }
+  // Update CA certificate using hash comparison
+  bool ca_updated = UpdateCACertificate(ca_cert_path);
+  if (ca_updated) {
+    updated = true;
   }
   
-  // Update fullchain certificate
-  std::string local_fullchain = ReadFileContent(fullchain_path);
-  if (!AreCertificatesEqual(local_fullchain, cert_chain.fullchain)) {
-    LOG(INFO) << "Nginx fullchain certificate differs from remote, updating...";
-    if (WriteFileContent(fullchain_path, cert_chain.fullchain)) {
-      SetFilePermissions(fullchain_path, 0644);
-      updated = true;
-    }
+  // Update fullchain certificate using hash comparison
+  bool fullchain_updated = UpdateFullchainCertificate(fullchain_path);
+  if (fullchain_updated) {
+    updated = true;
   }
   
   // Check and update private key
@@ -848,6 +828,374 @@ bool SSLConfigManager::UpdatePrivateKey(const std::string& key_path) {
     return FetchAndStorePrivateKey(key_path);
   } else {
     LOG(INFO) << "Private key is up to date";
+    return false; // No update needed
+  }
+}
+
+std::string SSLConfigManager::GetRemoteFullchainCertHash() {
+  if (!config_) {
+    LOG(ERROR) << "Configuration not available";
+    return "";
+  }
+
+  // Additional safety check for channel
+  if (!channel_) {
+    LOG(WARNING) << "No gRPC channel available for SSL config manager";
+    return "";
+  }
+
+  auto auth_manager = client::AuthenticationManager::Instance();
+  if (!auth_manager) {
+    LOG(ERROR) << "Authentication manager not available";
+    return "";
+  }
+  
+  if (!auth_manager->IsAuthenticated()) {
+    LOG(WARNING) << "Not authenticated, cannot get remote fullchain certificate hash";
+    return "";
+  }
+
+  try {
+    tbox::proto::ReportRequest request;
+    request.set_request_id(util::Util::UUID());
+    request.set_op(tbox::proto::OpCode::OP_GET_FULLCHAIN_CERT_HASH);
+    request.set_token(auth_manager->GetToken());
+    request.set_client_id(util::ConfigManager::Instance()->ClientId());
+
+    grpc::Status status;
+    tbox::proto::ReportResponse response;
+    
+    // Use the main channel for this request with additional safety checks
+    auto stub = tbox::proto::TBOXService::NewStub(channel_);
+    if (!stub) {
+      LOG(ERROR) << "Failed to create gRPC stub";
+      return "";
+    }
+    
+    grpc::ClientContext context;
+    // Set timeout to prevent hanging
+    context.set_deadline(std::chrono::system_clock::now() + 
+                        std::chrono::seconds(10));
+    
+    status = stub->ReportOp(&context, request, &response);
+
+    if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
+      // Fullchain certificate hash should be in the first client_ip field
+      if (response.client_ip_size() > 0) {
+        return response.client_ip(0);
+      } else {
+        LOG(WARNING) << "Remote fullchain certificate hash response empty - no client_ip field";
+      }
+    } else {
+      LOG(WARNING) << "Failed to get remote fullchain certificate hash - gRPC status: " 
+                   << (status.ok() ? "OK" : "FAILED")
+                   << ", error: " << status.error_message()
+                   << ", response error code: " << static_cast<int>(response.err_code());
+    }
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "Exception getting remote fullchain certificate hash: " << e.what();
+  }
+
+  return "";
+}
+
+std::string SSLConfigManager::GetLocalFullchainCertHash(const std::string& cert_path) {
+  if (!std::filesystem::exists(cert_path)) {
+    return "";  // File doesn't exist, return empty hash
+  }
+  
+  std::string command = "openssl dgst -sha256 " + cert_path + " 2>/dev/null | awk '{print $2}'";
+  std::string result = ExecuteCommand(command);
+  
+  // Remove any trailing whitespace
+  result.erase(result.find_last_not_of(" \t\r\n") + 1);
+  
+  return result;
+}
+
+bool SSLConfigManager::FetchAndStoreFullchainCert(const std::string& cert_path) {
+  if (!config_) {
+    LOG(ERROR) << "Configuration not available";
+    return false;
+  }
+
+  // Additional safety check for channel
+  if (!channel_) {
+    LOG(WARNING) << "No gRPC channel available for SSL config manager";
+    return false;
+  }
+
+  auto auth_manager = client::AuthenticationManager::Instance();
+  if (!auth_manager) {
+    LOG(ERROR) << "Authentication manager not available";
+    return false;
+  }
+  
+  if (!auth_manager->IsAuthenticated()) {
+    LOG(WARNING) << "Not authenticated, cannot fetch fullchain certificate";
+    return false;
+  }
+
+  try {
+    tbox::proto::ReportRequest request;
+    request.set_request_id(util::Util::UUID());
+    request.set_op(tbox::proto::OpCode::OP_GET_FULLCHAIN_CERT);
+    request.set_token(auth_manager->GetToken());
+    request.set_client_id(util::ConfigManager::Instance()->ClientId());
+
+    grpc::Status status;
+    tbox::proto::ReportResponse response;
+    
+    // Use the main channel for this request with additional safety checks
+    auto stub = tbox::proto::TBOXService::NewStub(channel_);
+    if (!stub) {
+      LOG(ERROR) << "Failed to create gRPC stub";
+      return false;
+    }
+    
+    grpc::ClientContext context;
+    // Set timeout to prevent hanging
+    context.set_deadline(std::chrono::system_clock::now() + 
+                        std::chrono::seconds(10));
+    
+    status = stub->ReportOp(&context, request, &response);
+
+    if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
+      // Fullchain certificate content should be in message field
+      std::string cert_content = response.message();
+      
+      if (!cert_content.empty()) {
+        // Write fullchain certificate to file
+        if (WriteFileContent(cert_path, cert_content)) {
+          // Set read permissions for certificate (644 = rw-r--r--)
+          SetFilePermissions(cert_path, 0644);
+          LOG(INFO) << "Successfully wrote " << cert_content.length() 
+                    << " bytes to: " << cert_path;
+          return true;
+        } else {
+          LOG(ERROR) << "Failed to write fullchain certificate to: " << cert_path;
+        }
+      } else {
+        LOG(ERROR) << "Empty fullchain certificate content received from server";
+      }
+    } else {
+      LOG(WARNING) << "Failed to fetch fullchain certificate from server - gRPC status: " 
+                   << (status.ok() ? "OK" : "FAILED")
+                   << ", error: " << status.error_message()
+                   << ", response error code: " << static_cast<int>(response.err_code());
+    }
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "Exception fetching fullchain certificate: " << e.what();
+  }
+
+  return false;
+}
+
+bool SSLConfigManager::UpdateFullchainCertificate(const std::string& cert_path) {
+  // Get remote fullchain certificate hash
+  std::string remote_hash = GetRemoteFullchainCertHash();
+  if (remote_hash.empty()) {
+    LOG(WARNING) << "Could not get remote fullchain certificate hash";
+    return false;
+  }
+
+  // Get local fullchain certificate hash
+  std::string local_hash = GetLocalFullchainCertHash(cert_path);
+
+  // Compare hashes
+  if (local_hash != remote_hash) {
+    LOG(INFO) << "Fullchain certificate differs from server (local: " 
+              << (local_hash.empty() ? "missing" : local_hash.substr(0, 16) + "...")
+              << ", remote: " << remote_hash.substr(0, 16) + "...), updating..."; 
+    
+    // Fetch and store the updated fullchain certificate
+    return FetchAndStoreFullchainCert(cert_path);
+  } else {
+    LOG(INFO) << "Fullchain certificate is up to date";
+    return false; // No update needed
+  }
+}
+
+std::string SSLConfigManager::GetRemoteCACertHash() {
+  if (!config_) {
+    LOG(ERROR) << "Configuration not available";
+    return "";
+  }
+
+  // Additional safety check for channel
+  if (!channel_) {
+    LOG(WARNING) << "No gRPC channel available for SSL config manager";
+    return "";
+  }
+
+  auto auth_manager = client::AuthenticationManager::Instance();
+  if (!auth_manager) {
+    LOG(ERROR) << "Authentication manager not available";
+    return "";
+  }
+  
+  if (!auth_manager->IsAuthenticated()) {
+    LOG(WARNING) << "Not authenticated, cannot get remote CA certificate hash";
+    return "";
+  }
+
+  try {
+    tbox::proto::ReportRequest request;
+    request.set_request_id(util::Util::UUID());
+    request.set_op(tbox::proto::OpCode::OP_GET_CA_CERT_HASH);
+    request.set_token(auth_manager->GetToken());
+    request.set_client_id(util::ConfigManager::Instance()->ClientId());
+
+    grpc::Status status;
+    tbox::proto::ReportResponse response;
+    
+    // Use the main channel for this request with additional safety checks
+    auto stub = tbox::proto::TBOXService::NewStub(channel_);
+    if (!stub) {
+      LOG(ERROR) << "Failed to create gRPC stub";
+      return "";
+    }
+    
+    grpc::ClientContext context;
+    // Set timeout to prevent hanging
+    context.set_deadline(std::chrono::system_clock::now() + 
+                        std::chrono::seconds(10));
+    
+    status = stub->ReportOp(&context, request, &response);
+
+    if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
+      // CA certificate hash should be in the first client_ip field
+      if (response.client_ip_size() > 0) {
+        return response.client_ip(0);
+      } else {
+        LOG(WARNING) << "Remote CA certificate hash response empty - no client_ip field";
+      }
+    } else {
+      LOG(WARNING) << "Failed to get remote CA certificate hash - gRPC status: " 
+                   << (status.ok() ? "OK" : "FAILED")
+                   << ", error: " << status.error_message()
+                   << ", response error code: " << static_cast<int>(response.err_code());
+    }
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "Exception getting remote CA certificate hash: " << e.what();
+  }
+
+  return "";
+}
+
+std::string SSLConfigManager::GetLocalCACertHash(const std::string& cert_path) {
+  if (!std::filesystem::exists(cert_path)) {
+    return "";  // File doesn't exist, return empty hash
+  }
+  
+  std::string command = "openssl dgst -sha256 " + cert_path + " 2>/dev/null | awk '{print $2}'";
+  std::string result = ExecuteCommand(command);
+  
+  // Remove any trailing whitespace
+  result.erase(result.find_last_not_of(" \t\r\n") + 1);
+  
+  return result;
+}
+
+bool SSLConfigManager::FetchAndStoreCACert(const std::string& cert_path) {
+  if (!config_) {
+    LOG(ERROR) << "Configuration not available";
+    return false;
+  }
+
+  // Additional safety check for channel
+  if (!channel_) {
+    LOG(WARNING) << "No gRPC channel available for SSL config manager";
+    return false;
+  }
+
+  auto auth_manager = client::AuthenticationManager::Instance();
+  if (!auth_manager) {
+    LOG(ERROR) << "Authentication manager not available";
+    return false;
+  }
+  
+  if (!auth_manager->IsAuthenticated()) {
+    LOG(WARNING) << "Not authenticated, cannot fetch CA certificate";
+    return false;
+  }
+
+  try {
+    tbox::proto::ReportRequest request;
+    request.set_request_id(util::Util::UUID());
+    request.set_op(tbox::proto::OpCode::OP_GET_CA_CERT);
+    request.set_token(auth_manager->GetToken());
+    request.set_client_id(util::ConfigManager::Instance()->ClientId());
+
+    grpc::Status status;
+    tbox::proto::ReportResponse response;
+    
+    // Use the main channel for this request with additional safety checks
+    auto stub = tbox::proto::TBOXService::NewStub(channel_);
+    if (!stub) {
+      LOG(ERROR) << "Failed to create gRPC stub";
+      return false;
+    }
+    
+    grpc::ClientContext context;
+    // Set timeout to prevent hanging
+    context.set_deadline(std::chrono::system_clock::now() + 
+                        std::chrono::seconds(10));
+    
+    status = stub->ReportOp(&context, request, &response);
+
+    if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
+      // CA certificate content should be in message field
+      std::string cert_content = response.message();
+      
+      if (!cert_content.empty()) {
+        // Write CA certificate to file
+        if (WriteFileContent(cert_path, cert_content)) {
+          // Set read permissions for certificate (644 = rw-r--r--)
+          SetFilePermissions(cert_path, 0644);
+          LOG(INFO) << "Successfully wrote " << cert_content.length() 
+                    << " bytes to: " << cert_path;
+          return true;
+        } else {
+          LOG(ERROR) << "Failed to write CA certificate to: " << cert_path;
+        }
+      } else {
+        LOG(ERROR) << "Empty CA certificate content received from server";
+      }
+    } else {
+      LOG(WARNING) << "Failed to fetch CA certificate from server - gRPC status: " 
+                   << (status.ok() ? "OK" : "FAILED")
+                   << ", error: " << status.error_message()
+                   << ", response error code: " << static_cast<int>(response.err_code());
+    }
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "Exception fetching CA certificate: " << e.what();
+  }
+
+  return false;
+}
+
+bool SSLConfigManager::UpdateCACertificate(const std::string& cert_path) {
+  // Get remote CA certificate hash
+  std::string remote_hash = GetRemoteCACertHash();
+  if (remote_hash.empty()) {
+    LOG(WARNING) << "Could not get remote CA certificate hash";
+    return false;
+  }
+
+  // Get local CA certificate hash
+  std::string local_hash = GetLocalCACertHash(cert_path);
+
+  // Compare hashes
+  if (local_hash != remote_hash) {
+    LOG(INFO) << "CA certificate differs from server (local: " 
+              << (local_hash.empty() ? "missing" : local_hash.substr(0, 16) + "...")
+              << ", remote: " << remote_hash.substr(0, 16) + "...), updating..."; 
+    
+    // Fetch and store the updated CA certificate
+    return FetchAndStoreCACert(cert_path);
+  } else {
+    LOG(INFO) << "CA certificate is up to date";
     return false; // No update needed
   }
 }

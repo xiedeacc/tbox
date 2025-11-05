@@ -104,6 +104,18 @@ class ReportOpHandler : public async_grpc::RpcHandler<ReportOpMethod> {
         case proto::OpCode::OP_GET_PRIVATE_KEY:
           HandleGetPrivateKey(req, res.get());
           break;
+        case proto::OpCode::OP_GET_FULLCHAIN_CERT_HASH:
+          HandleGetFullchainCertHash(req, res.get());
+          break;
+        case proto::OpCode::OP_GET_CA_CERT_HASH:
+          HandleGetCACertHash(req, res.get());
+          break;
+        case proto::OpCode::OP_GET_FULLCHAIN_CERT:
+          HandleGetFullchainCert(req, res.get());
+          break;
+        case proto::OpCode::OP_GET_CA_CERT:
+          HandleGetCACert(req, res.get());
+          break;
         default:
           res->set_err_code(proto::ErrCode::Fail);
           res->set_message("Invalid operation code for Report");
@@ -348,6 +360,84 @@ class ReportOpHandler : public async_grpc::RpcHandler<ReportOpMethod> {
       res->set_err_code(proto::ErrCode::Fail);
       res->set_message("Failed to read private key");
       LOG(ERROR) << "Failed to read private key from: " << key_path;
+    }
+  }
+
+  /// @brief Handle OP_GET_FULLCHAIN_CERT_HASH - Return SHA256 hash of fullchain certificate
+  void HandleGetFullchainCertHash(const proto::ReportRequest& req,
+                                  proto::ReportResponse* res) {
+    std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/fullchain.cer";
+    std::string command = "openssl dgst -sha256 " + cert_path + " 2>/dev/null | awk '{print $2}'";
+    std::string hash_result = ExecuteCommand(command);
+    
+    // Remove any trailing whitespace
+    hash_result.erase(hash_result.find_last_not_of(" \t\r\n") + 1);
+    
+    if (!hash_result.empty()) {
+      res->set_err_code(proto::ErrCode::Success);
+      res->add_client_ip(hash_result);  // Return hash in client_ip field
+      res->set_message("Fullchain certificate hash: " + hash_result.substr(0, 16) + "...");
+      LOG(INFO) << "Sent fullchain certificate hash: " << hash_result.substr(0, 16) << "...";
+    } else {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to calculate fullchain certificate hash");
+      LOG(ERROR) << "Failed to calculate hash for fullchain certificate: " << cert_path;
+    }
+  }
+
+  /// @brief Handle OP_GET_CA_CERT_HASH - Return SHA256 hash of CA certificate  
+  void HandleGetCACertHash(const proto::ReportRequest& req,
+                          proto::ReportResponse* res) {
+    std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/ca.cer";
+    std::string command = "openssl dgst -sha256 " + cert_path + " 2>/dev/null | awk '{print $2}'";
+    std::string hash_result = ExecuteCommand(command);
+    
+    // Remove any trailing whitespace
+    hash_result.erase(hash_result.find_last_not_of(" \t\r\n") + 1);
+    
+    if (!hash_result.empty()) {
+      res->set_err_code(proto::ErrCode::Success);
+      res->add_client_ip(hash_result);  // Return hash in client_ip field
+      res->set_message("CA certificate hash: " + hash_result.substr(0, 16) + "...");
+      LOG(INFO) << "Sent CA certificate hash: " << hash_result.substr(0, 16) << "...";
+    } else {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to calculate CA certificate hash");
+      LOG(ERROR) << "Failed to calculate hash for CA certificate: " << cert_path;
+    }
+  }
+
+  /// @brief Handle OP_GET_FULLCHAIN_CERT - Return fullchain certificate content
+  void HandleGetFullchainCert(const proto::ReportRequest& req,
+                             proto::ReportResponse* res) {
+    std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/fullchain.cer";
+    std::string cert_content = ReadFileContent(cert_path);
+    
+    if (!cert_content.empty()) {
+      res->set_err_code(proto::ErrCode::Success);
+      res->set_message(cert_content);  // Return certificate in message field
+      LOG(INFO) << "Sent fullchain certificate content (" << cert_content.length() << " bytes)";
+    } else {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to read fullchain certificate");
+      LOG(ERROR) << "Failed to read fullchain certificate from: " << cert_path;
+    }
+  }
+
+  /// @brief Handle OP_GET_CA_CERT - Return CA certificate content
+  void HandleGetCACert(const proto::ReportRequest& req,
+                      proto::ReportResponse* res) {
+    std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/ca.cer";
+    std::string cert_content = ReadFileContent(cert_path);
+    
+    if (!cert_content.empty()) {
+      res->set_err_code(proto::ErrCode::Success);
+      res->set_message(cert_content);  // Return certificate in message field
+      LOG(INFO) << "Sent CA certificate content (" << cert_content.length() << " bytes)";
+    } else {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to read CA certificate");
+      LOG(ERROR) << "Failed to read CA certificate from: " << cert_path;
     }
   }
 
