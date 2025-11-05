@@ -8,8 +8,11 @@
 
 #include <mutex>
 #include <sstream>
+#include <vector>
 
 #include "aws/core/Aws.h"
+#include "folly/IPAddress.h"
+#include "src/util/util.h"
 #include "aws/core/client/ClientConfiguration.h"
 #include "aws/ec2/EC2Client.h"
 #include "aws/ec2/model/StartInstancesRequest.h"
@@ -98,23 +101,102 @@ class ServerHandler : public proxygen::RequestHandler {
     return "server_info";
   }
 
-  /// @brief Get server's IP address
+  /// @brief Get server's public IP addresses (IPv4 and IPv6)
   std::string GetServerIPAddress() {
-    // Try to get server IP using hostname
-    std::string command = "hostname -I | awk '{print $1}'";
+    std::vector<std::string> public_ips;
+    
+    // Try to get public IPv4 from AWS metadata service (for EC2 instances)
+    std::string public_ipv4 = GetAWSPublicIPv4();
+    if (!public_ipv4.empty()) {
+      public_ips.push_back(public_ipv4);
+    }
+    
+    // Get public IPv6 addresses using utility function
+    std::vector<std::string> ipv6_addresses = util::Util::GetPublicIPv6Addresses();
+    for (const auto& ipv6 : ipv6_addresses) {
+      public_ips.push_back(ipv6);
+    }
+    
+    // If AWS metadata didn't work for IPv4, fall back to external service detection
+    if (public_ipv4.empty()) {
+      std::string external_ip = GetExternalPublicIP();
+      if (!external_ip.empty()) {
+        // Only add if it's not already in the list (avoid duplicates)
+        bool already_exists = false;
+        for (const auto& existing_ip : public_ips) {
+          if (existing_ip == external_ip) {
+            already_exists = true;
+            break;
+          }
+        }
+        if (!already_exists) {
+          public_ips.push_back(external_ip);
+        }
+      }
+    }
+    
+    // Return comma-separated list of public IPs, or "unknown" if none found
+    if (public_ips.empty()) {
+      return "unknown";
+    }
+    
+    std::string result;
+    for (size_t i = 0; i < public_ips.size(); ++i) {
+      if (i > 0) result += ", ";
+      result += public_ips[i];
+    }
+    return result;
+  }
+
+  /// @brief Get public IPv4 address from AWS metadata service
+  std::string GetAWSPublicIPv4() {
+    // AWS metadata service endpoint for public IPv4
+    std::string command = "curl -s --max-time 3 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null";
     std::string result = ExecuteCommand(command);
     
     // Remove any trailing whitespace
     result.erase(result.find_last_not_of(" \t\r\n") + 1);
     
-    if (result.empty()) {
-      // Fallback method - get IP from network interface
-      command = "ip route get 8.8.8.8 | awk '{print $7; exit}'";
-      result = ExecuteCommand(command);
-      result.erase(result.find_last_not_of(" \t\r\n") + 1);
+    // Validate it's actually an IPv4 address
+    try {
+      if (!result.empty() && result.find("404") == std::string::npos) {
+        folly::IPAddress ip_addr(result);
+        if (ip_addr.isV4()) {
+          return result;
+        }
+      }
+    } catch (const std::exception& e) {
+      // Invalid IP, ignore
     }
+    return "";
+  }
+
+
+  /// @brief Get public IP address using external service (fallback)
+  std::string GetExternalPublicIP() {
+    // Try multiple external services for reliability
+    std::vector<std::string> services = {
+      "curl -s --max-time 5 https://checkip.amazonaws.com 2>/dev/null",
+      "curl -s --max-time 5 https://ipinfo.io/ip 2>/dev/null",
+      "curl -s --max-time 5 https://api.ipify.org 2>/dev/null"
+    };
     
-    return result.empty() ? "unknown" : result;
+    for (const auto& command : services) {
+      std::string result = ExecuteCommand(command);
+      result.erase(result.find_last_not_of(" \t\r\n") + 1);
+      
+      // Validate it's a valid IP address
+      try {
+        if (!result.empty() && result.size() < 50) {  // Reasonable IP length check
+          folly::IPAddress ip_addr(result);
+          return result;
+        }
+      } catch (const std::exception& e) {
+        // Try next service
+        continue;
+      }
+    }
+    return "";
   }
 
   /// @brief Execute shell command and return output

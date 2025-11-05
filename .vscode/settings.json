@@ -105,6 +105,7 @@
         "print": "cpp",
         "charconv": "cpp",
         "numbers": "cpp",
-        "execution": "cpp"
+        "execution": "cpp",
+        "*.inc": "cpp"
     }
 }
