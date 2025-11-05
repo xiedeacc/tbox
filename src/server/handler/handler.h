@@ -6,6 +6,7 @@
 #ifndef TBOX_SERVER_HANDLER_PROXY_H
 #define TBOX_SERVER_HANDLER_PROXY_H
 
+#include <fstream>
 #include <utility>
 
 #include "aws/core/Aws.h"
@@ -15,6 +16,7 @@
 #include "aws/route53/model/ChangeResourceRecordSetsRequest.h"
 #include "aws/route53/model/ResourceRecord.h"
 #include "aws/route53/model/ResourceRecordSet.h"
+#include "glog/logging.h"
 #include "src/impl/session_manager.h"
 #include "src/impl/user_manager.h"
 #include "src/proto/service.pb.h"
@@ -176,6 +178,89 @@ class Handler {
     } else {
       res->set_err_code(proto::ErrCode::Success);
     }
+  }
+
+  /**
+   * @brief Handle certificate operations.
+   *
+   * @param req Certificate request containing operation details
+   * @param res Certificate response to populate
+   */
+  static void CertOpHandle(const proto::CertRequest& req,
+                           proto::CertResponse* res) {
+    LOG(INFO) << "Certificate request for domain: " << req.domain();
+
+    try {
+      if (req.op() == proto::OpCode::OP_CERT_GET) {
+        HandleGetCertificate(req, res);
+      } else {
+        res->set_err_code(proto::ErrCode::Fail);
+        res->set_message("Invalid operation code for certificate management");
+        LOG(ERROR) << "Invalid operation code: " << req.op();
+      }
+    } catch (const std::exception& e) {
+      LOG(ERROR) << "Certificate operation failed: " << e.what();
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message(std::string("Operation failed: ") + e.what());
+    }
+  }
+
+ private:
+  /**
+   * @brief Handle certificate retrieval operation.
+   *
+   * @param req Certificate request
+   * @param res Certificate response to populate
+   */
+  static void HandleGetCertificate(const proto::CertRequest& req,
+                                   proto::CertResponse* res) {
+    const std::string cert_base_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc";
+
+    // Read certificate files
+    std::string cert_content =
+        ReadFileContent(cert_base_path + "/xiedeacc.com.cer");
+    std::string key_content =
+        ReadFileContent(cert_base_path + "/xiedeacc.com.key");
+    std::string ca_content = ReadFileContent(cert_base_path + "/ca.cer");
+
+    if (cert_content.empty() || key_content.empty() || ca_content.empty()) {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to read certificate files");
+      LOG(ERROR) << "Failed to read certificate files from: " << cert_base_path;
+      return;
+    }
+
+    res->set_err_code(proto::ErrCode::Success);
+    res->set_certificate(cert_content);
+    res->set_private_key(key_content);
+    res->set_ca_certificate(ca_content);
+    res->set_message("Certificate retrieved successfully");
+
+    LOG(INFO) << "Successfully retrieved certificate for domain: "
+              << req.domain();
+  }
+
+  /**
+   * @brief Read content from a file.
+   *
+   * @param file_path Path to the file to read
+   * @return File content as string, empty if file cannot be read
+   */
+  static std::string ReadFileContent(const std::string& file_path) {
+    std::ifstream file(file_path);
+    if (!file.is_open()) {
+      LOG(ERROR) << "Failed to open file: " << file_path;
+      return "";
+    }
+
+    std::string content;
+    std::string line;
+    while (std::getline(file, line)) {
+      content += line + "\n";
+    }
+    file.close();
+
+    return content;
   }
 };
 

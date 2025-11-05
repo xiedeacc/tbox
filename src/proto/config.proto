@@ -31,4 +31,11 @@ message BaseConfig {
   string aws_access_key_id = 16;
   string aws_secret_access_key = 17;
   string aws_region = 18;
+
+  // Certificate update flag
+  bool update_certs = 19;
+
+  // Certificate paths
+  string local_cert_path = 20;
+  string nginx_ssl_path = 21;
 }

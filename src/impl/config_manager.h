@@ -162,6 +162,30 @@ class ConfigManager {
   }
 
   /**
+   * @brief Get certificate update flag.
+   * @return true if certificate updates are enabled, false otherwise.
+   */
+  bool UpdateCerts() const { return base_config_.update_certs(); }
+
+  /**
+   * @brief Get local certificate path.
+   * @return Local certificate path string.
+   */
+  std::string LocalCertPath() const { return base_config_.local_cert_path(); }
+
+  /**
+   * @brief Get nginx SSL path.
+   * @return Nginx SSL directory path string.
+   */
+  std::string NginxSslPath() const { return base_config_.nginx_ssl_path(); }
+
+  /**
+   * @brief Get base configuration object.
+   * @return Reference to base configuration.
+   */
+  const tbox::proto::BaseConfig& GetBaseConfig() const { return base_config_; }
+
+  /**
    * @brief Convert configuration to JSON string.
    * @return JSON representation of configuration.
    */

@@ -67,9 +67,18 @@ bool GrpcClient::Init() {
     channel_creds = grpc::InsecureChannelCredentials();
     LOG(INFO) << "Using insecure gRPC channel (HTTP/2)";
   } else {
-    // Load SSL certificate
+    // Load SSL certificate using configuration path
     auto ssl_config_manager = SSLConfigManager::Instance();
-    std::string ca_cert_path = "/conf/xiedeacc.com.ca.cer";
+
+    // Update SSL config manager with current configuration
+    ssl_config_manager->UpdateConfig(config_manager->GetBaseConfig());
+
+    // Get certificate path from configuration
+    std::string ca_cert_path = config_manager->LocalCertPath();
+    if (ca_cert_path.empty()) {
+      ca_cert_path = "conf/xiedeacc.com.ca.cer";  // Default fallback
+    }
+
     std::string ca_cert = ssl_config_manager->LoadCACert(ca_cert_path);
     if (ca_cert.empty()) {
       LOG(ERROR) << "Failed to load CA certificate from: " << ca_cert_path;
@@ -81,8 +90,8 @@ bool GrpcClient::Init() {
     ssl_opts.pem_root_certs = ca_cert;
     channel_creds = grpc::SslCredentials(ssl_opts);
 
-    // Configure SSL-specific arguments - removed override to use native certificate validation
-    // std::string ssl_target_name = "xiedeacc.com";
+    // Configure SSL-specific arguments - removed override to use native
+    // certificate validation std::string ssl_target_name = "xiedeacc.com";
     // args.SetSslTargetNameOverride(ssl_target_name);
     // args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, ssl_target_name);
     LOG(INFO) << "Using secure gRPC channel (HTTPS)";
