@@ -428,8 +428,9 @@ ReportManager::CreateIPv4Stub() {
     creds = grpc::InsecureChannelCredentials();
   } else {
     auto ssl_config_manager = SSLConfigManager::Instance();
+    auto config_manager = util::ConfigManager::Instance();
     std::string ca_cert =
-        ssl_config_manager->LoadCACert("/conf/xiedeacc.com.ca.cer");
+        ssl_config_manager->LoadCACert(config_manager->LocalCertPath());
     if (ca_cert.empty()) {
       LOG(WARNING) << "Failed to load CA cert for IPv4 stub";
       return nullptr;
@@ -499,8 +500,9 @@ ReportManager::CreateIPv6Stub() {
     creds = grpc::InsecureChannelCredentials();
   } else {
     auto ssl_config_manager = SSLConfigManager::Instance();
+    auto config_manager = util::ConfigManager::Instance();
     std::string ca_cert =
-        ssl_config_manager->LoadCACert("/conf/xiedeacc.com.ca.cer");
+        ssl_config_manager->LoadCACert(config_manager->LocalCertPath());
     if (ca_cert.empty()) {
       LOG(WARNING) << "Failed to load CA cert for IPv6 stub";
       return nullptr;
