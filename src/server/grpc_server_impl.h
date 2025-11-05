@@ -12,6 +12,7 @@
 #include "absl/strings/str_cat.h"
 #include "src/async_grpc/server.h"
 #include "src/impl/config_manager.h"
+#include "src/server/grpc_handler/cert_handler.h"
 #include "src/server/grpc_handler/ec2_handler.h"
 #include "src/server/grpc_handler/report_handler.h"
 #include "src/server/grpc_handler/user_handler.h"
@@ -39,6 +40,7 @@ class GrpcServer final {
     server_builder
         .RegisterHandler<tbox::server::grpc_handler::ReportOpHandler>();
     server_builder.RegisterHandler<tbox::server::grpc_handler::UserHandler>();
+    server_builder.RegisterHandler<tbox::server::grpc_handler::CertOpHandler>();
 
     server_ = server_builder.Build();
     server_->SetExecutionContext(server_context);
