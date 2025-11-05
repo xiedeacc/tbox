@@ -19,7 +19,7 @@ SERVICE_USER="tbox"
 WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # NAS deployment parameters (pre-configured)
-REMOTE_HOST="192.168.3.101"
+REMOTE_HOST="2408:8256:3105:8f91::b4f"
 REMOTE_PORT="10022"
 REMOTE_USER="root"
 
@@ -41,7 +41,19 @@ print_success() {
 # SSH/SCP command builders
 SSH_OPTS="-p ${REMOTE_PORT} -o StrictHostKeyChecking=no"
 SCP_OPTS="-P ${REMOTE_PORT} -o StrictHostKeyChecking=no"
-SSH_CMD="ssh ${SSH_OPTS} ${REMOTE_USER}@${REMOTE_HOST}"
+
+# Handle IPv6 addresses differently for SSH vs SCP
+if [[ "${REMOTE_HOST}" == *":"* ]]; then
+    # IPv6 address - SSH uses direct, SCP needs brackets
+    SSH_HOST="${REMOTE_HOST}"
+    SCP_HOST="[${REMOTE_HOST}]"
+else
+    # IPv4 address - use as-is for both
+    SSH_HOST="${REMOTE_HOST}"
+    SCP_HOST="${REMOTE_HOST}"
+fi
+
+SSH_CMD="ssh ${SSH_OPTS} ${REMOTE_USER}@${SSH_HOST}"
 SCP_CMD="scp ${SCP_OPTS}"
 
 # Execute command on remote
@@ -95,7 +107,7 @@ execute_cmd "mkdir -p ${BIN_DIR} ${CONF_DIR} ${LOG_DIR}"
 
 # Copy the binary
 print_status "Installing binary to ${BIN_DIR}/${BINARY_NAME}..."
-$SCP_CMD ${TEMP_BINARY} ${REMOTE_USER}@${REMOTE_HOST}:${BIN_DIR}/${BINARY_NAME}
+$SCP_CMD ${TEMP_BINARY} "${REMOTE_USER}@${SCP_HOST}:${BIN_DIR}/${BINARY_NAME}"
 execute_cmd "chmod +x ${BIN_DIR}/${BINARY_NAME}"
 print_success "Binary installed"
 
@@ -115,7 +127,7 @@ fi
 
 # Copy configuration file
 print_status "Installing configuration file..."
-$SCP_CMD conf/client_nas_config.json ${REMOTE_USER}@${REMOTE_HOST}:${CONF_DIR}/client_config.json
+$SCP_CMD conf/client_nas_config.json "${REMOTE_USER}@${SCP_HOST}:${CONF_DIR}/client_config.json"
 print_success "Configuration file installed"
 
 # Set ownership and permissions
@@ -125,7 +137,7 @@ print_success "Permissions set"
 
 # Install systemd service file
 print_status "Installing systemd service file..."
-$SCP_CMD deploy/tbox_client.service ${REMOTE_USER}@${REMOTE_HOST}:/etc/systemd/system/
+$SCP_CMD deploy/tbox_client.service "${REMOTE_USER}@${SCP_HOST}:/etc/systemd/system/"
 print_success "Service file installed"
 
 # Reload systemd and enable service

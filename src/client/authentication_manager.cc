@@ -36,8 +36,9 @@ bool AuthenticationManager::Login() {
   req.set_request_id(config->ClientId());
   req.set_op(tbox::proto::OpCode::OP_USER_LOGIN);
   req.set_user(config->User());
-  // Hash password with SHA-256 before sending to server
-  req.set_password(util::Util::SHA256(config->Password()));
+  // NOTICE: The password is hashed by sha256 in the client.
+  
+  req.set_password(config->Password());
 
   grpc::ClientContext context;
   auto status = stub_->UserOp(&context, req, &res);
