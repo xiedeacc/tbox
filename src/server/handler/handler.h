@@ -128,7 +128,7 @@ class Handler {
 
     // Read certificate files
     std::string cert_content =
-        ReadFileContent(cert_base_path + "/xiedeacc.com.cer");
+        ReadFileContent(cert_base_path + "/fullchain.cer");
     std::string key_content =
         ReadFileContent(cert_base_path + "/xiedeacc.com.key");
     std::string ca_content = ReadFileContent(cert_base_path + "/ca.cer");
