@@ -97,6 +97,9 @@ void SSLConfigManager::MonitorCertificate() {
   LOG(INFO) << "SSL config manager starting, waiting 5 seconds for system initialization...";
   std::this_thread::sleep_for(std::chrono::seconds(5));
   
+  int consecutive_failures = 0;
+  const int max_backoff_interval = 300; // 5 minutes maximum
+  
   while (running_.load()) {
     try {
       // Only proceed if we have a valid channel
@@ -116,13 +119,29 @@ void SSLConfigManager::MonitorCertificate() {
         LOG(INFO) << "Certificate update completed - tbox: " 
                   << (tbox_updated ? "updated" : "unchanged") 
                   << ", nginx: " << (nginx_updated ? "updated" : "unchanged");
+        consecutive_failures = 0; // Reset failure count on success
+      } else {
+        // If no updates happened, it might be due to server unavailability
+        // Only increment failures if we couldn't reach the server at all
+        if (!tbox_updated && !nginx_updated) {
+          consecutive_failures++;
+        }
       }
     } catch (const std::exception& e) {
       LOG(ERROR) << "Error in certificate monitoring: " << e.what();
+      consecutive_failures++;
     }
 
-    // Sleep for monitoring interval
-    std::this_thread::sleep_for(std::chrono::seconds(kMonitorIntervalSeconds));
+    // Implement exponential backoff for failed attempts
+    int sleep_interval = kMonitorIntervalSeconds;
+    if (consecutive_failures > 0) {
+      sleep_interval = std::min(kMonitorIntervalSeconds * (1 << std::min(consecutive_failures - 1, 6)), max_backoff_interval);
+      if (consecutive_failures == 1) {
+        LOG(INFO) << "Certificate server appears unavailable, reducing check frequency";
+      }
+    }
+    
+    std::this_thread::sleep_for(std::chrono::seconds(sleep_interval));
   }
 }
 
@@ -694,9 +713,9 @@ std::string SSLConfigManager::GetRemotePrivateKeyHash() {
     }
     
     grpc::ClientContext context;
-    // Set timeout to prevent hanging
+    // Set timeout to prevent hanging (extended for certificate operations)
     context.set_deadline(std::chrono::system_clock::now() + 
-                        std::chrono::seconds(10));
+                        std::chrono::seconds(30));
     
     status = stub->CertOp(&context, request, &response);
 
@@ -708,10 +727,10 @@ std::string SSLConfigManager::GetRemotePrivateKeyHash() {
         LOG(WARNING) << "Remote private key hash response empty - no message field";
       }
     } else {
-      LOG(WARNING) << "Failed to get remote private key hash - gRPC status: " 
-                   << (status.ok() ? "OK" : "FAILED")
-                   << ", error: " << status.error_message()
-                   << ", response error code: " << static_cast<int>(response.err_code());
+      LOG(INFO) << "Failed to get remote private key hash - gRPC status: " 
+                << (status.ok() ? "OK" : "FAILED")
+                << ", error: " << status.error_message()
+                << ", response error code: " << static_cast<int>(response.err_code());
     }
   } catch (const std::exception& e) {
     LOG(ERROR) << "Exception getting remote private key hash: " << e.what();
@@ -807,7 +826,7 @@ bool SSLConfigManager::UpdatePrivateKey(const std::string& key_path) {
   // Get remote private key hash
   std::string remote_hash = GetRemotePrivateKeyHash();
   if (remote_hash.empty()) {
-    LOG(WARNING) << "Could not get remote private key hash";
+    LOG(INFO) << "Could not get remote private key hash (server may be unavailable)";
     return false;
   }
 
@@ -868,9 +887,9 @@ std::string SSLConfigManager::GetRemoteFullchainCertHash() {
     }
     
     grpc::ClientContext context;
-    // Set timeout to prevent hanging
+    // Set timeout to prevent hanging (extended for certificate operations)
     context.set_deadline(std::chrono::system_clock::now() + 
-                        std::chrono::seconds(10));
+                        std::chrono::seconds(30));
     
     status = stub->CertOp(&context, request, &response);
 
@@ -882,10 +901,10 @@ std::string SSLConfigManager::GetRemoteFullchainCertHash() {
         LOG(WARNING) << "Remote fullchain certificate hash response empty - no message field";
       }
     } else {
-      LOG(WARNING) << "Failed to get remote fullchain certificate hash - gRPC status: " 
-                   << (status.ok() ? "OK" : "FAILED")
-                   << ", error: " << status.error_message()
-                   << ", response error code: " << static_cast<int>(response.err_code());
+      LOG(INFO) << "Failed to get remote fullchain certificate hash - gRPC status: " 
+                << (status.ok() ? "OK" : "FAILED")
+                << ", error: " << status.error_message()
+                << ", response error code: " << static_cast<int>(response.err_code());
     }
   } catch (const std::exception& e) {
     LOG(ERROR) << "Exception getting remote fullchain certificate hash: " << e.what();
@@ -950,9 +969,9 @@ bool SSLConfigManager::FetchAndStoreFullchainCert(const std::string& cert_path) 
     }
     
     grpc::ClientContext context;
-    // Set timeout to prevent hanging
+    // Set timeout to prevent hanging (extended for certificate operations)
     context.set_deadline(std::chrono::system_clock::now() + 
-                        std::chrono::seconds(10));
+                        std::chrono::seconds(30));
     
     status = stub->CertOp(&context, request, &response);
 
@@ -991,7 +1010,7 @@ bool SSLConfigManager::UpdateFullchainCertificate(const std::string& cert_path) 
   // Get remote fullchain certificate hash
   std::string remote_hash = GetRemoteFullchainCertHash();
   if (remote_hash.empty()) {
-    LOG(WARNING) << "Could not get remote fullchain certificate hash";
+    LOG(INFO) << "Could not get remote fullchain certificate hash (server may be unavailable)";
     return false;
   }
 
@@ -1052,9 +1071,9 @@ std::string SSLConfigManager::GetRemoteCACertHash() {
     }
     
     grpc::ClientContext context;
-    // Set timeout to prevent hanging
+    // Set timeout to prevent hanging (extended for certificate operations)
     context.set_deadline(std::chrono::system_clock::now() + 
-                        std::chrono::seconds(10));
+                        std::chrono::seconds(30));
     
     status = stub->CertOp(&context, request, &response);
 
@@ -1066,10 +1085,10 @@ std::string SSLConfigManager::GetRemoteCACertHash() {
         LOG(WARNING) << "Remote CA certificate hash response empty - no message field";
       }
     } else {
-      LOG(WARNING) << "Failed to get remote CA certificate hash - gRPC status: " 
-                   << (status.ok() ? "OK" : "FAILED")
-                   << ", error: " << status.error_message()
-                   << ", response error code: " << static_cast<int>(response.err_code());
+      LOG(INFO) << "Failed to get remote CA certificate hash - gRPC status: " 
+                << (status.ok() ? "OK" : "FAILED")
+                << ", error: " << status.error_message()
+                << ", response error code: " << static_cast<int>(response.err_code());
     }
   } catch (const std::exception& e) {
     LOG(ERROR) << "Exception getting remote CA certificate hash: " << e.what();
@@ -1134,9 +1153,9 @@ bool SSLConfigManager::FetchAndStoreCACert(const std::string& cert_path) {
     }
     
     grpc::ClientContext context;
-    // Set timeout to prevent hanging
+    // Set timeout to prevent hanging (extended for certificate operations)
     context.set_deadline(std::chrono::system_clock::now() + 
-                        std::chrono::seconds(10));
+                        std::chrono::seconds(30));
     
     status = stub->CertOp(&context, request, &response);
 
@@ -1175,7 +1194,7 @@ bool SSLConfigManager::UpdateCACertificate(const std::string& cert_path) {
   // Get remote CA certificate hash
   std::string remote_hash = GetRemoteCACertHash();
   if (remote_hash.empty()) {
-    LOG(WARNING) << "Could not get remote CA certificate hash";
+    LOG(INFO) << "Could not get remote CA certificate hash (server may be unavailable)";
     return false;
   }
 
