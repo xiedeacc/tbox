@@ -68,15 +68,13 @@ bool GrpcClient::Init() {
     LOG(INFO) << "Using insecure gRPC channel (HTTP/2)";
   } else {
     // Load SSL certificate using configuration path
-    auto ssl_config_manager = SSLConfigManager::Instance();
-    
     // Get certificate path from configuration
     std::string ca_cert_path = config_manager->LocalCertPath();
     if (ca_cert_path.empty()) {
       ca_cert_path = "conf/xiedeacc.com.ca.cer";  // Default fallback
     }
 
-    std::string ca_cert = ssl_config_manager->LoadCACert(ca_cert_path);
+    std::string ca_cert = SSLConfigManager::LoadCACert(ca_cert_path);
     if (ca_cert.empty()) {
       LOG(ERROR) << "Failed to load CA certificate from: " << ca_cert_path;
       return false;
@@ -153,8 +151,10 @@ bool GrpcClient::Init() {
 void GrpcClient::Start() {
   // Start SSL config manager (if certificate updates are enabled)
   auto ssl_config_manager = SSLConfigManager::Instance();
-  ssl_config_manager->Start();
-  LOG(INFO) << "SSL config manager started";
+  if (!ssl_config_manager->IsRunning()) {
+    ssl_config_manager->Start();
+    LOG(INFO) << "SSL config manager started";
+  }
 
   // Start report manager
   auto report_manager = ReportManager::Instance();
@@ -169,8 +169,10 @@ void GrpcClient::Stop() {
 
   // Stop SSL config manager
   auto ssl_config_manager = SSLConfigManager::Instance();
-  ssl_config_manager->Stop();
-  LOG(INFO) << "SSL config manager stopped";
+  if (ssl_config_manager->IsRunning()) {
+    ssl_config_manager->Stop();
+    LOG(INFO) << "SSL config manager stopped";
+  }
 
   // Stop report manager
   auto report_manager = ReportManager::Instance();

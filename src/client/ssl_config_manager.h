@@ -39,14 +39,20 @@ class SSLConfigManager {
   /// @note Thread-safe initialization.
   void Init(std::shared_ptr<grpc::Channel> channel);
 
-  /// @brief Load CA certificate from file path
-  std::string LoadCACert(const std::string& cert_path);
+  /// @brief Load CA certificate from file path (static utility)
+  /// @param cert_path Path to certificate file
+  /// @return Certificate content as string, empty if failed
+  static std::string LoadCACert(const std::string& cert_path);
 
   /// @brief Start the SSL certificate monitoring thread
   void Start();
 
   /// @brief Stop the SSL certificate monitoring thread
   void Stop();
+
+  /// @brief Check if the manager is running.
+  /// @return True if the monitoring thread is active, false otherwise.
+  bool IsRunning() const { return running_.load(); }
 
  private:
   friend class folly::Singleton<SSLConfigManager>;
@@ -75,8 +81,8 @@ class SSLConfigManager {
                              const std::string& key_content,
                              const std::string& ca_content);
 
-  // Read file content
-  std::string ReadFileContent(const std::string& file_path);
+  // Read file content (static utility)
+  static std::string ReadFileContent(const std::string& file_path);
 
   // Write file content
   bool WriteFileContent(const std::string& file_path,

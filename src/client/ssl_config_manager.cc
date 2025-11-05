@@ -1005,7 +1005,22 @@ std::string SSLConfigManager::GetRemoteCACertHash() {
 
     // Use async_grpc client like report_manager does
     grpc::Status status;
+<<<<<<< HEAD
     bool success = client.Write(request, &status);
+=======
+    tbox::proto::CertResponse response;
+    
+    // Use the cached stub for this request
+    if (!stub_) {
+      LOG(ERROR) << "gRPC stub not initialized";
+      return "";
+    }
+    
+    grpc::ClientContext context;
+
+    
+    status = stub_->CertOp(&context, request, &response);
+>>>>>>> fa0aae6 (update)
 
     if (success && status.ok()) {
       const auto& response = client.response();
