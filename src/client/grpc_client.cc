@@ -81,10 +81,10 @@ bool GrpcClient::Init() {
     ssl_opts.pem_root_certs = ca_cert;
     channel_creds = grpc::SslCredentials(ssl_opts);
 
-    // Configure SSL-specific arguments
-    std::string ssl_target_name = "xiedeacc.com";
-    args.SetSslTargetNameOverride(ssl_target_name);
-    args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, ssl_target_name);
+    // Configure SSL-specific arguments - removed override to use native certificate validation
+    // std::string ssl_target_name = "xiedeacc.com";
+    // args.SetSslTargetNameOverride(ssl_target_name);
+    // args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, ssl_target_name);
     LOG(INFO) << "Using secure gRPC channel (HTTPS)";
   }
 
