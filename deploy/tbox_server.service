@@ -6,8 +6,8 @@ Wants=network.target
 
 [Service]
 Type=simple
-User=tbox
-Group=tbox
+User=ubuntu
+Group=ubuntu
 WorkingDirectory=/usr/local/tbox
 ExecStart=/usr/local/tbox/bin/tbox_server
 ExecReload=/bin/kill -HUP $MAINPID

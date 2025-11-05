@@ -16,7 +16,7 @@ BIN_DIR="${INSTALL_DIR}/bin"
 CONF_DIR="${INSTALL_DIR}/conf"
 LOG_DIR="${INSTALL_DIR}/log"
 DATA_DIR="${INSTALL_DIR}/data"
-SERVICE_USER="root"
+SERVICE_USER="ubuntu"
 WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Remote deployment configuration
@@ -172,10 +172,14 @@ else
     cp bazel-bin/src/server/tbox_server "$TEMP_BINARY"
 fi
 
-# Create service user on remote host if it doesn't exist
-print_status "Creating service user on remote host if needed..."
-ssh_exec "sudo id ${SERVICE_USER} &>/dev/null || sudo useradd --system --shell /bin/false --home-dir ${INSTALL_DIR} --create-home ${SERVICE_USER}"
-print_success "Service user verified on remote host"
+# Verify service user exists on remote host
+print_status "Verifying service user ${SERVICE_USER} exists on remote host..."
+if ssh_exec "sudo id ${SERVICE_USER} &>/dev/null"; then
+    print_success "Service user ${SERVICE_USER} verified on remote host"
+else
+    print_error "Service user ${SERVICE_USER} does not exist on remote host"
+    exit 1
+fi
 
 # Create installation directories on remote host
 print_status "Creating installation directories on remote host..."
