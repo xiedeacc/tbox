@@ -1,0 +1,18 @@
+{
+    "servers": [
+        {
+            "server": "127.0.0.1",
+            "server_port": 1080,
+            "password": "qh6289@QHW",
+            "mode": "tcp_and_udp",
+            "fast_open": true,
+            "no_delay": true,
+            "timeout": 600,
+            "method": "aes-256-gcm",
+            "nofile": 10240,
+            "plugin": "/usr/local/bin/v2ray-plugin_linux_arm64",
+            "plugin_opts": "server;host=forsimple.youkechat.net;path=/sspath;loglevel=debug"
+        }
+    ]
+}
+

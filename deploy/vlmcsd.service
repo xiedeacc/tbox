@@ -1,0 +1,15 @@
+[Unit]
+Description=vlmcsd KMS Emulator
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/local/bin/vlmcsd -D
+ExecReload=/bin/kill -HUP $MAINPID
+PIDFile=/var/run/vlmcsd.pid
+User=nobody
+Group=nogroup
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

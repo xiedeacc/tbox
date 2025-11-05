@@ -26,3 +26,4 @@ logs/
 *.temp
 .DS_Store
 data/
+deploy/init_aws.sh

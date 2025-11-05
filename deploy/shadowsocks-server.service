@@ -1,0 +1,14 @@
+[Unit]
+Description=shadowsocks-rust server
+After=network-online.target
+
+[Service]
+Type=simple
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+DynamicUser=true
+ExecStart=/usr/local/bin/ssserver -c /etc/shadowsocks-rust/shadowsocks-server.json
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+[Install]
+WantedBy=multi-user.target
