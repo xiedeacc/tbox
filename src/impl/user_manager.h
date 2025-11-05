@@ -7,6 +7,7 @@
 #define TBOX_IMPL_USER_MANAGER_H
 
 #include <atomic>
+#include <cctype>
 #include <memory>
 #include <string>
 
@@ -23,7 +24,7 @@ namespace impl {
 
 /**
  * @brief User account manager.
- * 
+ *
  * Singleton class that manages user registration, login, logout, and password
  * management. Works with SqliteManager for persistence and SessionManager for
  * authentication tokens. Thread-safe singleton using folly::Singleton.
@@ -44,19 +45,15 @@ class UserManager final {
 
   /**
    * @brief Initialize user manager and database.
-   * 
+   *
    * Initializes SQLite database connection and creates preset user accounts.
-   * 
+   *
    * @return true if initialization successful, false otherwise.
    */
   bool Init() {
     if (!util::SqliteManager::Instance()->Init()) {
       return false;
     }
-
-    // Initialize preset user: tiger with password qh6288QHW
-    InitializePresetUser();
-
     return true;
   }
 
@@ -78,7 +75,7 @@ class UserManager final {
       return Err_User_invalid_name;
     }
 
-    if (password.size() > 64 || password.empty()) {
+    if (!IsHex64(password)) {
       return Err_User_invalid_passwd;
     }
 
@@ -176,7 +173,7 @@ class UserManager final {
       return Err_User_invalid_name;
     }
 
-    if (password.size() > 64 || password.empty()) {
+    if (!IsHex64(password)) {
       return Err_User_invalid_passwd;
     }
 
@@ -190,17 +187,14 @@ class UserManager final {
     sqlite3_bind_text(stmt, 1, user.c_str(), user.size(), SQLITE_STATIC);
 
     if (sqlite3_step(stmt) == SQLITE_ROW) {
-      std::string salt;
-      salt.reserve(util::Util::kSaltSize);
-      salt.append(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)),
-                  util::Util::kSaltSize);
-      std::string hashed_password;
-      hashed_password.reserve(util::Util::kDerivedKeySize);
-      hashed_password.append(
-          reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)),
-          util::Util::kDerivedKeySize);
+      const unsigned char* salt_text = sqlite3_column_text(stmt, 0);
+      const unsigned char* hash_text = sqlite3_column_text(stmt, 1);
+      std::string salt =
+          salt_text ? reinterpret_cast<const char*>(salt_text) : std::string();
+      std::string stored_hash =
+          hash_text ? reinterpret_cast<const char*>(hash_text) : std::string();
       sqlite3_finalize(stmt);
-      if (util::Util::VerifyPassword(password, salt, hashed_password)) {
+      if (util::Util::VerifyPassword(password, salt, stored_hash)) {
         *token = SessionManager::Instance()->GenerateToken(user);
         return Err_Success;
       } else {
@@ -242,11 +236,6 @@ class UserManager final {
     sqlite3_bind_text(stmt, 1, user.c_str(), user.size(), SQLITE_STATIC);
 
     if (sqlite3_step(stmt) == SQLITE_ROW) {
-      std::string hashed_password;
-      hashed_password.reserve(util::Util::kDerivedKeySize);
-      hashed_password.append(
-          reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)),
-          util::Util::kDerivedKeySize);
       sqlite3_finalize(stmt);
       return Err_User_exists;
     }
@@ -268,7 +257,7 @@ class UserManager final {
       return Err_User_invalid_name;
     }
 
-    if (password.size() > 64 || password.empty()) {
+    if (!IsHex64(password)) {
       return Err_User_invalid_passwd;
     }
 
@@ -309,38 +298,19 @@ class UserManager final {
 
  private:
   /**
-   * @brief Initialize preset user account.
-   * 
-   * Creates a preset user account with username "tiger" and
-   * password "qh6288QHW" if it doesn't already exist.
+   * @brief Validate a SHA-256 hex digest (64 hex characters).
    */
-  void InitializePresetUser() {
-    const std::string preset_user = "tiger";
-    const std::string preset_password = "qh6288QHW";
-
-    // Check if user already exists
-    int32_t exists_result = UserExists(preset_user);
-    if (exists_result == Err_User_exists) {
-      LOG(INFO) << "Preset user '" << preset_user << "' already exists";
-      return;
+  static bool IsHex64(const std::string& s) {
+    if (s.size() != 64) {
+      return false;
     }
-
-    // Register the preset user
-    std::string token;
-    int32_t result = UserRegister(preset_user, preset_password, &token);
-
-    if (result == Err_Success) {
-      LOG(INFO) << "Successfully initialized preset user '" << preset_user
-                << "'";
-    } else if (result == Err_User_exists) {
-      LOG(INFO) << "Preset user '" << preset_user
-                << "' already exists (concurrent registration)";
-    } else {
-      LOG(ERROR) << "Failed to initialize preset user '" << preset_user
-                 << "', error code: " << result;
+    for (char c : s) {
+      if (!std::isxdigit(static_cast<unsigned char>(c))) {
+        return false;
+      }
     }
+    return true;
   }
-
   std::atomic<bool> stop_ = false;
 };
 

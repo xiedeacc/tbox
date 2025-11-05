@@ -20,6 +20,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { v4 as uuidv4 } from 'uuid';  // Import uuid v4 generator
+import { sha256StringHex } from '@/utils/utils.js';
 
 // State for username, password, and error messages
 const user = ref('');
@@ -35,7 +36,7 @@ const login = async () => {
   // Construct a JSON object with the username, password, and a unique request_id
   const userCredentials = {
     user: user.value,
-    password: password.value,
+    password: sha256StringHex(password.value),
     // Use enum name so server JSON->proto maps reliably
     op: 'OP_USER_LOGIN',
     request_id: generateRequestId(), // Generate unique request ID for each login request

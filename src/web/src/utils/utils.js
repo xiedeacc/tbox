@@ -1,5 +1,10 @@
 import CryptoJS from 'crypto-js';
 
+export function sha256StringHex(input) {
+    const wordArray = CryptoJS.enc.Utf8.parse(input);
+    return CryptoJS.SHA256(wordArray).toString(CryptoJS.enc.Hex);
+}
+
 export function readChunkAsArrayBuffer(chunk) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();

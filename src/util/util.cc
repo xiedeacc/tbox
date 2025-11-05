@@ -589,7 +589,8 @@ string Util::GenerateSalt() {
       1) {
     throw std::runtime_error("Failed to generate random salt.");
   }
-  return salt;
+  // Store salt as hex string to align with oceanfile implementation
+  return Util::ToHexStr(salt);
 }
 
 bool Util::HashPassword(const string& password, const string& salt,
@@ -601,6 +602,8 @@ bool Util::HashPassword(const string& password, const string& salt,
                         reinterpret_cast<unsigned char*>(hash->data())) != 1) {
     return false;
   }
+  // Store derived key as hex string to align with oceanfile implementation
+  *hash = Util::ToHexStr(*hash);
   return true;
 }
 
@@ -972,7 +975,7 @@ std::vector<std::string> Util::GetPublicIPv6Addresses() {
   }
 
   IfAddrsGuard guard(ifaddrs_ptr);
-  
+
   // Store addresses with their prefix lengths for sorting
   // Use map to deduplicate: IP -> prefix length
   std::map<std::string, int> address_prefix_map;
@@ -999,9 +1002,10 @@ std::vector<std::string> Util::GetPublicIPv6Addresses() {
 
       // Calculate prefix length from netmask
       int prefix_len = 0;
-      if (ifa->ifa_netmask != nullptr && 
+      if (ifa->ifa_netmask != nullptr &&
           ifa->ifa_netmask->sa_family == AF_INET6) {
-        auto* netmask = reinterpret_cast<struct sockaddr_in6*>(ifa->ifa_netmask);
+        auto* netmask =
+            reinterpret_cast<struct sockaddr_in6*>(ifa->ifa_netmask);
         // Count the number of 1 bits in the netmask
         for (int i = 0; i < 16; ++i) {
           uint8_t byte = netmask->sin6_addr.s6_addr[i];
@@ -1014,7 +1018,7 @@ std::vector<std::string> Util::GetPublicIPv6Addresses() {
             }
           }
         }
-        done_counting:;
+      done_counting:;
       }
 
       // Store IP with its prefix length (keep longest if duplicate)

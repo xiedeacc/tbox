@@ -5,13 +5,27 @@
 
 #include "src/impl/user_manager.h"
 
+#include <unistd.h>
+
+#include <filesystem>
+
+#include "folly/init/Init.h"
 #include "gtest/gtest.h"
+#include "src/common/error.h"
 #include "src/util/util.h"
 
 namespace tbox {
 namespace impl {
 
 TEST(UserManager, UserExists) {
+  // Use a writable temp home dir for the test and ensure data dir exists
+  const auto tmp_root = std::filesystem::temp_directory_path() / "tbox_um_test";
+  std::error_code ec;
+  std::filesystem::remove_all(tmp_root, ec);
+  ASSERT_TRUE(std::filesystem::create_directories(tmp_root / "data"));
+  // Change CWD so Util::HomeDir() points to tmp_root
+  ASSERT_EQ(::chdir(tmp_root.string().c_str()), 0);
+
   EXPECT_EQ(UserManager::Instance()->Init(), true);
   std::string user = "admin";
   std::string plain_passwd = "admin";
