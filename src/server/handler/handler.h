@@ -6,8 +6,6 @@
 #ifndef TBOX_SERVER_HANDLER_PROXY_H
 #define TBOX_SERVER_HANDLER_PROXY_H
 
-#include <array>
-#include <cstdio>
 #include <fstream>
 #include <memory>
 #include <utility>
@@ -159,13 +157,10 @@ class Handler {
   static void HandleGetFullchainCertHash(const proto::ReportRequest& req,
                                          proto::ReportResponse* res) {
     std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/fullchain.cer";
-    std::string command = "openssl dgst -sha256 " + cert_path + " 2>/dev/null | awk '{print $2}'";
-    std::string hash_result = ExecuteCommand(command);
+    std::string hash_result;
+    bool success = util::Util::FileSHA256(cert_path, &hash_result);
     
-    // Remove any trailing whitespace
-    hash_result.erase(hash_result.find_last_not_of(" \t\r\n") + 1);
-    
-    if (!hash_result.empty()) {
+    if (success && !hash_result.empty()) {
       res->set_err_code(proto::ErrCode::Success);
       res->add_client_ip(hash_result);  // Return hash in client_ip field
       res->set_message("Fullchain certificate hash: " + hash_result.substr(0, 16) + "...");
@@ -183,13 +178,10 @@ class Handler {
   static void HandleGetFullchainCertHash(const proto::CertRequest& req,
                                          proto::CertResponse* res) {
     std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/fullchain.cer";
-    std::string command = "openssl dgst -sha256 " + cert_path + " 2>/dev/null | awk '{print $2}'";
-    std::string hash_result = ExecuteCommand(command);
+    std::string hash_result;
+    bool success = util::Util::FileSHA256(cert_path, &hash_result);
     
-    // Remove any trailing whitespace
-    hash_result.erase(hash_result.find_last_not_of(" \t\r\n") + 1);
-    
-    if (!hash_result.empty()) {
+    if (success && !hash_result.empty()) {
       res->set_err_code(proto::ErrCode::Success);
       res->set_message(hash_result);  // Return hash in message field
       LOG(INFO) << "Sent fullchain certificate hash: " << hash_result.substr(0, 16) << "...";
@@ -206,13 +198,10 @@ class Handler {
   static void HandleGetCACertHash(const proto::ReportRequest& req,
                                   proto::ReportResponse* res) {
     std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/ca.cer";
-    std::string command = "openssl dgst -sha256 " + cert_path + " 2>/dev/null | awk '{print $2}'";
-    std::string hash_result = ExecuteCommand(command);
+    std::string hash_result;
+    bool success = util::Util::FileSHA256(cert_path, &hash_result);
     
-    // Remove any trailing whitespace
-    hash_result.erase(hash_result.find_last_not_of(" \t\r\n") + 1);
-    
-    if (!hash_result.empty()) {
+    if (success && !hash_result.empty()) {
       res->set_err_code(proto::ErrCode::Success);
       res->add_client_ip(hash_result);  // Return hash in client_ip field
       res->set_message("CA certificate hash: " + hash_result.substr(0, 16) + "...");
@@ -230,13 +219,10 @@ class Handler {
   static void HandleGetCACertHash(const proto::CertRequest& req,
                                   proto::CertResponse* res) {
     std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/ca.cer";
-    std::string command = "openssl dgst -sha256 " + cert_path + " 2>/dev/null | awk '{print $2}'";
-    std::string hash_result = ExecuteCommand(command);
+    std::string hash_result;
+    bool success = util::Util::FileSHA256(cert_path, &hash_result);
     
-    // Remove any trailing whitespace
-    hash_result.erase(hash_result.find_last_not_of(" \t\r\n") + 1);
-    
-    if (!hash_result.empty()) {
+    if (success && !hash_result.empty()) {
       res->set_err_code(proto::ErrCode::Success);
       res->set_message(hash_result);  // Return hash in message field
       LOG(INFO) << "Sent CA certificate hash: " << hash_result.substr(0, 16) << "...";
@@ -332,13 +318,10 @@ class Handler {
                                       proto::ReportResponse* res) {
     // Get SHA256 hash of the private key file
     std::string key_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/xiedeacc.com.key";
-    std::string command = "openssl dgst -sha256 " + key_path + " 2>/dev/null | awk '{print $2}'";
-    std::string hash_result = ExecuteCommand(command);
+    std::string hash_result;
+    bool success = util::Util::FileSHA256(key_path, &hash_result);
     
-    // Remove any trailing whitespace
-    hash_result.erase(hash_result.find_last_not_of(" \t\r\n") + 1);
-    
-    if (!hash_result.empty()) {
+    if (success && !hash_result.empty()) {
       res->set_err_code(proto::ErrCode::Success);
       res->add_client_ip(hash_result);  // Return hash in client_ip field
       res->set_message("Private key hash: " + hash_result.substr(0, 16) + "...");
@@ -357,13 +340,10 @@ class Handler {
                                       proto::CertResponse* res) {
     // Get SHA256 hash of the private key file
     std::string key_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/xiedeacc.com.key";
-    std::string command = "openssl dgst -sha256 " + key_path + " 2>/dev/null | awk '{print $2}'";
-    std::string hash_result = ExecuteCommand(command);
+    std::string hash_result;
+    bool success = util::Util::FileSHA256(key_path, &hash_result);
     
-    // Remove any trailing whitespace
-    hash_result.erase(hash_result.find_last_not_of(" \t\r\n") + 1);
-    
-    if (!hash_result.empty()) {
+    if (success && !hash_result.empty()) {
       res->set_err_code(proto::ErrCode::Success);
       res->set_message(hash_result);  // Return hash in message field
       LOG(INFO) << "Sent private key hash: " << hash_result.substr(0, 16) << "...";
@@ -413,23 +393,6 @@ class Handler {
       res->set_message("Failed to read private key");
       LOG(ERROR) << "Failed to read private key from: " << key_path;
     }
-  }
-
-  /**
-   * @brief Execute shell command and return output
-   */
-  static std::string ExecuteCommand(const std::string& command) {
-    std::array<char, 128> buffer;
-    std::string result;
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(command.c_str(), "r"), pclose);
-    if (!pipe) {
-      LOG(ERROR) << "Failed to execute command: " << command;
-      return "";
-    }
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-      result += buffer.data();
-    }
-    return result;
   }
 
   /**

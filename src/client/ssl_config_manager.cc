@@ -727,14 +727,12 @@ std::string SSLConfigManager::GetLocalPrivateKeyHash(const std::string& key_path
   }
 
   // Calculate SHA256 hash of the private key file
-  std::string command = "openssl dgst -sha256 " + key_path + " 2>/dev/null | awk '{print $2}'";
-  std::string result = ExecuteCommand(command);
+  std::string result;
+  bool success = util::Util::FileSHA256(key_path, &result);
   
-  // Remove any trailing whitespace
-  result.erase(result.find_last_not_of(" \t\r\n") + 1);
-  
-  if (result.empty()) {
+  if (!success || result.empty()) {
     LOG(WARNING) << "Failed to calculate hash for local private key: " << key_path;
+    return "";
   } else {
     LOG(INFO) << "Local private key hash: " << result.substr(0, 16) << "...";
   }
