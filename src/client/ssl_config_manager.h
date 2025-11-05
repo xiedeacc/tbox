@@ -16,9 +16,11 @@
 #include <string>
 #include <thread>
 
+#include "folly/Singleton.h"
 #include "glog/logging.h"
 #include "grpcpp/grpcpp.h"
 #include "src/proto/config.pb.h"
+#include "src/proto/service.grpc.pb.h"
 #include "src/proto/service.pb.h"
 
 namespace tbox {
@@ -26,27 +28,30 @@ namespace client {
 
 class SSLConfigManager {
  public:
+  /// @brief Get singleton instance.
+  /// @return Shared pointer to SSLConfigManager instance.
   static std::shared_ptr<SSLConfigManager> Instance();
 
-  explicit SSLConfigManager(const proto::BaseConfig& config);
   ~SSLConfigManager();
 
-  // Update configuration
-  void UpdateConfig(const proto::BaseConfig& config);
+  /// @brief Initialize with gRPC channel.
+  /// @param channel Shared pointer to gRPC channel.
+  /// @note Thread-safe initialization.
+  void Init(std::shared_ptr<grpc::Channel> channel);
 
-  // Set gRPC channel for server communication
-  void SetChannel(std::shared_ptr<grpc::Channel> channel);
-
-  // Load CA certificate from file path
+  /// @brief Load CA certificate from file path
   std::string LoadCACert(const std::string& cert_path);
 
-  // Start the SSL certificate monitoring thread
+  /// @brief Start the SSL certificate monitoring thread
   void Start();
 
-  // Stop the SSL certificate monitoring thread
+  /// @brief Stop the SSL certificate monitoring thread
   void Stop();
 
  private:
+  friend class folly::Singleton<SSLConfigManager>;
+  SSLConfigManager();
+
   // Monitor certificate changes every 5 seconds
   void MonitorCertificate();
 
@@ -146,13 +151,10 @@ class SSLConfigManager {
   // Check and update CA certificate if needed
   bool UpdateCACertificate(const std::string& cert_path);
 
-  static std::shared_ptr<SSLConfigManager> instance_;
-  static std::mutex instance_mutex_;
-
-  const proto::BaseConfig* config_;
   std::atomic<bool> running_;
   std::unique_ptr<std::thread> monitor_thread_;
   std::shared_ptr<grpc::Channel> channel_;
+  mutable std::mutex init_mutex_;
 
   // Certificate monitoring configuration
   static constexpr int kMonitorIntervalSeconds = 5;

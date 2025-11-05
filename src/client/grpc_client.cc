@@ -69,9 +69,6 @@ bool GrpcClient::Init() {
   } else {
     // Load SSL certificate using configuration path
     auto ssl_config_manager = SSLConfigManager::Instance();
-
-    // Update SSL config manager with current configuration
-    ssl_config_manager->UpdateConfig(config_manager->GetBaseConfig());
     
     // Get certificate path from configuration
     std::string ca_cert_path = config_manager->LocalCertPath();
@@ -104,13 +101,6 @@ bool GrpcClient::Init() {
     return false;
   }
 
-  // Now set the channel for SSL config manager AFTER the channel is created
-  if (!use_http) {
-    auto ssl_config_manager = SSLConfigManager::Instance();
-    ssl_config_manager->SetChannel(channel_);
-    LOG(INFO) << "SSL config manager channel set successfully";
-  }
-
   stub_ = tbox::proto::TBOXService::NewStub(channel_);
   if (!stub_) {
     LOG(ERROR) << "Failed to create gRPC stub";
@@ -138,6 +128,13 @@ bool GrpcClient::Init() {
   auto auth_manager = AuthenticationManager::Instance();
   auth_manager->Init(stub_);
   LOG(INFO) << "Authentication manager initialized";
+
+  // Initialize SSL config manager (if certificate updates are enabled)
+  if (!use_http) {
+    auto ssl_config_manager = SSLConfigManager::Instance();
+    ssl_config_manager->Init(channel_);
+    LOG(INFO) << "SSL config manager initialized";
+  }
 
   // Initialize report manager singleton
   auto report_manager = ReportManager::Instance();

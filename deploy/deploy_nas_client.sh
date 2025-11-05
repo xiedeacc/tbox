@@ -63,7 +63,7 @@ execute_cmd() {
 
 # Stop existing service if running
 print_status "Stopping existing service if running..."
-execute_cmd "systemctl is-active --quiet ${SERVICE_NAME} && systemctl stop ${SERVICE_NAME} && echo 'Stopped ${SERVICE_NAME} service' || true"
+execute_cmd "timeout 3 systemctl stop ${SERVICE_NAME} 2>/dev/null && echo 'Stopped ${SERVICE_NAME} service' || echo 'Service not running or already stopped'"
 
 # Build client binary locally
 print_status "Building client binary (small tier - no AVX2 for NAS compatibility)..."
