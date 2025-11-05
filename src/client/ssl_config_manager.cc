@@ -678,14 +678,13 @@ std::string SSLConfigManager::GetRemotePrivateKeyHash() {
   }
 
   try {
-    tbox::proto::ReportRequest request;
+    tbox::proto::CertRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_PRIVATE_KEY_HASH);
     request.set_token(auth_manager->GetToken());
-    request.set_client_id(util::ConfigManager::Instance()->ClientId());
 
     grpc::Status status;
-    tbox::proto::ReportResponse response;
+    tbox::proto::CertResponse response;
     
     // Use the main channel for this request with additional safety checks
     auto stub = tbox::proto::TBOXService::NewStub(channel_);
@@ -699,14 +698,14 @@ std::string SSLConfigManager::GetRemotePrivateKeyHash() {
     context.set_deadline(std::chrono::system_clock::now() + 
                         std::chrono::seconds(10));
     
-    status = stub->ReportOp(&context, request, &response);
+    status = stub->CertOp(&context, request, &response);
 
     if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
-      // Private key hash should be in the first client_ip field
-      if (response.client_ip_size() > 0) {
-        return response.client_ip(0);
+      // Private key hash should be in the message field
+      if (!response.message().empty()) {
+        return response.message();
       } else {
-        LOG(WARNING) << "Remote private key hash response empty - no client_ip field";
+        LOG(WARNING) << "Remote private key hash response empty - no message field";
       }
     } else {
       LOG(WARNING) << "Failed to get remote private key hash - gRPC status: " 
@@ -756,30 +755,29 @@ bool SSLConfigManager::FetchAndStorePrivateKey(const std::string& key_path) {
   }
 
   try {
-    async_grpc::Client<tbox::server::grpc_handler::ReportOpMethod> client(channel_);
+    async_grpc::Client<tbox::server::grpc_handler::CertOpMethod> client(channel_);
 
-    tbox::proto::ReportRequest request;
+    tbox::proto::CertRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_PRIVATE_KEY);
     request.set_token(auth_manager->GetToken());
-    request.set_client_id(util::ConfigManager::Instance()->ClientId());
 
     grpc::Status status;
-    tbox::proto::ReportResponse response;
+    tbox::proto::CertResponse response;
     
     // Use the main channel for this request
     if (channel_) {
       auto stub = tbox::proto::TBOXService::NewStub(channel_);
       grpc::ClientContext context;
-      status = stub->ReportOp(&context, request, &response);
+      status = stub->CertOp(&context, request, &response);
     } else {
       LOG(ERROR) << "No gRPC channel available";
       return false;
     }
 
     if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
-      // Private key content should be in message field
-      std::string private_key_content = response.message();
+      // Private key content should be in private_key field
+      std::string private_key_content = response.private_key();
       
       if (!private_key_content.empty()) {
         // Write private key to file
@@ -856,14 +854,13 @@ std::string SSLConfigManager::GetRemoteFullchainCertHash() {
   }
 
   try {
-    tbox::proto::ReportRequest request;
+    tbox::proto::CertRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_FULLCHAIN_CERT_HASH);
     request.set_token(auth_manager->GetToken());
-    request.set_client_id(util::ConfigManager::Instance()->ClientId());
 
     grpc::Status status;
-    tbox::proto::ReportResponse response;
+    tbox::proto::CertResponse response;
     
     // Use the main channel for this request with additional safety checks
     auto stub = tbox::proto::TBOXService::NewStub(channel_);
@@ -877,14 +874,14 @@ std::string SSLConfigManager::GetRemoteFullchainCertHash() {
     context.set_deadline(std::chrono::system_clock::now() + 
                         std::chrono::seconds(10));
     
-    status = stub->ReportOp(&context, request, &response);
+    status = stub->CertOp(&context, request, &response);
 
     if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
-      // Fullchain certificate hash should be in the first client_ip field
-      if (response.client_ip_size() > 0) {
-        return response.client_ip(0);
+      // Fullchain certificate hash should be in the message field
+      if (!response.message().empty()) {
+        return response.message();
       } else {
-        LOG(WARNING) << "Remote fullchain certificate hash response empty - no client_ip field";
+        LOG(WARNING) << "Remote fullchain certificate hash response empty - no message field";
       }
     } else {
       LOG(WARNING) << "Failed to get remote fullchain certificate hash - gRPC status: " 
@@ -937,14 +934,13 @@ bool SSLConfigManager::FetchAndStoreFullchainCert(const std::string& cert_path) 
   }
 
   try {
-    tbox::proto::ReportRequest request;
+    tbox::proto::CertRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_FULLCHAIN_CERT);
     request.set_token(auth_manager->GetToken());
-    request.set_client_id(util::ConfigManager::Instance()->ClientId());
 
     grpc::Status status;
-    tbox::proto::ReportResponse response;
+    tbox::proto::CertResponse response;
     
     // Use the main channel for this request with additional safety checks
     auto stub = tbox::proto::TBOXService::NewStub(channel_);
@@ -958,11 +954,11 @@ bool SSLConfigManager::FetchAndStoreFullchainCert(const std::string& cert_path) 
     context.set_deadline(std::chrono::system_clock::now() + 
                         std::chrono::seconds(10));
     
-    status = stub->ReportOp(&context, request, &response);
+    status = stub->CertOp(&context, request, &response);
 
     if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
-      // Fullchain certificate content should be in message field
-      std::string cert_content = response.message();
+      // Fullchain certificate content should be in certificate field
+      std::string cert_content = response.certificate();
       
       if (!cert_content.empty()) {
         // Write fullchain certificate to file
@@ -1040,14 +1036,13 @@ std::string SSLConfigManager::GetRemoteCACertHash() {
   }
 
   try {
-    tbox::proto::ReportRequest request;
+    tbox::proto::CertRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_CA_CERT_HASH);
     request.set_token(auth_manager->GetToken());
-    request.set_client_id(util::ConfigManager::Instance()->ClientId());
 
     grpc::Status status;
-    tbox::proto::ReportResponse response;
+    tbox::proto::CertResponse response;
     
     // Use the main channel for this request with additional safety checks
     auto stub = tbox::proto::TBOXService::NewStub(channel_);
@@ -1061,14 +1056,14 @@ std::string SSLConfigManager::GetRemoteCACertHash() {
     context.set_deadline(std::chrono::system_clock::now() + 
                         std::chrono::seconds(10));
     
-    status = stub->ReportOp(&context, request, &response);
+    status = stub->CertOp(&context, request, &response);
 
     if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
-      // CA certificate hash should be in the first client_ip field
-      if (response.client_ip_size() > 0) {
-        return response.client_ip(0);
+      // CA certificate hash should be in the message field
+      if (!response.message().empty()) {
+        return response.message();
       } else {
-        LOG(WARNING) << "Remote CA certificate hash response empty - no client_ip field";
+        LOG(WARNING) << "Remote CA certificate hash response empty - no message field";
       }
     } else {
       LOG(WARNING) << "Failed to get remote CA certificate hash - gRPC status: " 
@@ -1121,14 +1116,13 @@ bool SSLConfigManager::FetchAndStoreCACert(const std::string& cert_path) {
   }
 
   try {
-    tbox::proto::ReportRequest request;
+    tbox::proto::CertRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_CA_CERT);
     request.set_token(auth_manager->GetToken());
-    request.set_client_id(util::ConfigManager::Instance()->ClientId());
 
     grpc::Status status;
-    tbox::proto::ReportResponse response;
+    tbox::proto::CertResponse response;
     
     // Use the main channel for this request with additional safety checks
     auto stub = tbox::proto::TBOXService::NewStub(channel_);
@@ -1142,11 +1136,11 @@ bool SSLConfigManager::FetchAndStoreCACert(const std::string& cert_path) {
     context.set_deadline(std::chrono::system_clock::now() + 
                         std::chrono::seconds(10));
     
-    status = stub->ReportOp(&context, request, &response);
+    status = stub->CertOp(&context, request, &response);
 
     if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
-      // CA certificate content should be in message field
-      std::string cert_content = response.message();
+      // CA certificate content should be in ca_certificate field
+      std::string cert_content = response.ca_certificate();
       
       if (!cert_content.empty()) {
         // Write CA certificate to file

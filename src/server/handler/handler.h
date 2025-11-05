@@ -6,7 +6,10 @@
 #ifndef TBOX_SERVER_HANDLER_PROXY_H
 #define TBOX_SERVER_HANDLER_PROXY_H
 
+#include <array>
+#include <cstdio>
 #include <fstream>
+#include <memory>
 #include <utility>
 
 #include "aws/core/Aws.h"
@@ -148,6 +151,285 @@ class Handler {
 
     LOG(INFO) << "Successfully retrieved certificate for domain: "
               << req.domain();
+  }
+
+  /**
+   * @brief Handle OP_GET_FULLCHAIN_CERT_HASH - Return SHA256 hash of fullchain certificate (ReportResponse)
+   */
+  static void HandleGetFullchainCertHash(const proto::ReportRequest& req,
+                                         proto::ReportResponse* res) {
+    std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/fullchain.cer";
+    std::string command = "openssl dgst -sha256 " + cert_path + " 2>/dev/null | awk '{print $2}'";
+    std::string hash_result = ExecuteCommand(command);
+    
+    // Remove any trailing whitespace
+    hash_result.erase(hash_result.find_last_not_of(" \t\r\n") + 1);
+    
+    if (!hash_result.empty()) {
+      res->set_err_code(proto::ErrCode::Success);
+      res->add_client_ip(hash_result);  // Return hash in client_ip field
+      res->set_message("Fullchain certificate hash: " + hash_result.substr(0, 16) + "...");
+      LOG(INFO) << "Sent fullchain certificate hash: " << hash_result.substr(0, 16) << "...";
+    } else {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to calculate fullchain certificate hash");
+      LOG(ERROR) << "Failed to calculate hash for fullchain certificate: " << cert_path;
+    }
+  }
+
+  /**
+   * @brief Handle OP_GET_FULLCHAIN_CERT_HASH - Return SHA256 hash of fullchain certificate (CertResponse)
+   */
+  static void HandleGetFullchainCertHash(const proto::CertRequest& req,
+                                         proto::CertResponse* res) {
+    std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/fullchain.cer";
+    std::string command = "openssl dgst -sha256 " + cert_path + " 2>/dev/null | awk '{print $2}'";
+    std::string hash_result = ExecuteCommand(command);
+    
+    // Remove any trailing whitespace
+    hash_result.erase(hash_result.find_last_not_of(" \t\r\n") + 1);
+    
+    if (!hash_result.empty()) {
+      res->set_err_code(proto::ErrCode::Success);
+      res->set_message(hash_result);  // Return hash in message field
+      LOG(INFO) << "Sent fullchain certificate hash: " << hash_result.substr(0, 16) << "...";
+    } else {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to calculate fullchain certificate hash");
+      LOG(ERROR) << "Failed to calculate hash for fullchain certificate: " << cert_path;
+    }
+  }
+
+  /**
+   * @brief Handle OP_GET_CA_CERT_HASH - Return SHA256 hash of CA certificate (ReportResponse)
+   */
+  static void HandleGetCACertHash(const proto::ReportRequest& req,
+                                  proto::ReportResponse* res) {
+    std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/ca.cer";
+    std::string command = "openssl dgst -sha256 " + cert_path + " 2>/dev/null | awk '{print $2}'";
+    std::string hash_result = ExecuteCommand(command);
+    
+    // Remove any trailing whitespace
+    hash_result.erase(hash_result.find_last_not_of(" \t\r\n") + 1);
+    
+    if (!hash_result.empty()) {
+      res->set_err_code(proto::ErrCode::Success);
+      res->add_client_ip(hash_result);  // Return hash in client_ip field
+      res->set_message("CA certificate hash: " + hash_result.substr(0, 16) + "...");
+      LOG(INFO) << "Sent CA certificate hash: " << hash_result.substr(0, 16) << "...";
+    } else {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to calculate CA certificate hash");
+      LOG(ERROR) << "Failed to calculate hash for CA certificate: " << cert_path;
+    }
+  }
+
+  /**
+   * @brief Handle OP_GET_CA_CERT_HASH - Return SHA256 hash of CA certificate (CertResponse)
+   */
+  static void HandleGetCACertHash(const proto::CertRequest& req,
+                                  proto::CertResponse* res) {
+    std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/ca.cer";
+    std::string command = "openssl dgst -sha256 " + cert_path + " 2>/dev/null | awk '{print $2}'";
+    std::string hash_result = ExecuteCommand(command);
+    
+    // Remove any trailing whitespace
+    hash_result.erase(hash_result.find_last_not_of(" \t\r\n") + 1);
+    
+    if (!hash_result.empty()) {
+      res->set_err_code(proto::ErrCode::Success);
+      res->set_message(hash_result);  // Return hash in message field
+      LOG(INFO) << "Sent CA certificate hash: " << hash_result.substr(0, 16) << "...";
+    } else {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to calculate CA certificate hash");
+      LOG(ERROR) << "Failed to calculate hash for CA certificate: " << cert_path;
+    }
+  }
+
+  /**
+   * @brief Handle OP_GET_FULLCHAIN_CERT - Return fullchain certificate content (ReportResponse)
+   */
+  static void HandleGetFullchainCert(const proto::ReportRequest& req,
+                                     proto::ReportResponse* res) {
+    std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/fullchain.cer";
+    std::string cert_content = ReadFileContent(cert_path);
+    
+    if (!cert_content.empty()) {
+      res->set_err_code(proto::ErrCode::Success);
+      res->set_message(cert_content);  // Return certificate in message field
+      LOG(INFO) << "Sent fullchain certificate content (" << cert_content.length() << " bytes)";
+    } else {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to read fullchain certificate");
+      LOG(ERROR) << "Failed to read fullchain certificate from: " << cert_path;
+    }
+  }
+
+  /**
+   * @brief Handle OP_GET_FULLCHAIN_CERT - Return fullchain certificate content (CertResponse)
+   */
+  static void HandleGetFullchainCert(const proto::CertRequest& req,
+                                     proto::CertResponse* res) {
+    std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/fullchain.cer";
+    std::string cert_content = ReadFileContent(cert_path);
+    
+    if (!cert_content.empty()) {
+      res->set_err_code(proto::ErrCode::Success);
+      res->set_certificate(cert_content);  // Return certificate in certificate field
+      res->set_message("Fullchain certificate retrieved successfully");
+      LOG(INFO) << "Sent fullchain certificate content (" << cert_content.length() << " bytes)";
+    } else {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to read fullchain certificate");
+      LOG(ERROR) << "Failed to read fullchain certificate from: " << cert_path;
+    }
+  }
+
+  /**
+   * @brief Handle OP_GET_CA_CERT - Return CA certificate content (ReportResponse)
+   */
+  static void HandleGetCACert(const proto::ReportRequest& req,
+                              proto::ReportResponse* res) {
+    std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/ca.cer";
+    std::string cert_content = ReadFileContent(cert_path);
+    
+    if (!cert_content.empty()) {
+      res->set_err_code(proto::ErrCode::Success);
+      res->set_message(cert_content);  // Return certificate in message field
+      LOG(INFO) << "Sent CA certificate content (" << cert_content.length() << " bytes)";
+    } else {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to read CA certificate");
+      LOG(ERROR) << "Failed to read CA certificate from: " << cert_path;
+    }
+  }
+
+  /**
+   * @brief Handle OP_GET_CA_CERT - Return CA certificate content (CertResponse)
+   */
+  static void HandleGetCACert(const proto::CertRequest& req,
+                              proto::CertResponse* res) {
+    std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/ca.cer";
+    std::string cert_content = ReadFileContent(cert_path);
+    
+    if (!cert_content.empty()) {
+      res->set_err_code(proto::ErrCode::Success);
+      res->set_ca_certificate(cert_content);  // Return certificate in ca_certificate field
+      res->set_message("CA certificate retrieved successfully");
+      LOG(INFO) << "Sent CA certificate content (" << cert_content.length() << " bytes)";
+    } else {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to read CA certificate");
+      LOG(ERROR) << "Failed to read CA certificate from: " << cert_path;
+    }
+  }
+
+  /**
+   * @brief Handle OP_GET_PRIVATE_KEY_HASH - Return SHA256 hash of private key (ReportResponse)
+   */
+  static void HandleGetPrivateKeyHash(const proto::ReportRequest& req,
+                                      proto::ReportResponse* res) {
+    // Get SHA256 hash of the private key file
+    std::string key_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/xiedeacc.com.key";
+    std::string command = "openssl dgst -sha256 " + key_path + " 2>/dev/null | awk '{print $2}'";
+    std::string hash_result = ExecuteCommand(command);
+    
+    // Remove any trailing whitespace
+    hash_result.erase(hash_result.find_last_not_of(" \t\r\n") + 1);
+    
+    if (!hash_result.empty()) {
+      res->set_err_code(proto::ErrCode::Success);
+      res->add_client_ip(hash_result);  // Return hash in client_ip field
+      res->set_message("Private key hash: " + hash_result.substr(0, 16) + "...");
+      LOG(INFO) << "Sent private key hash: " << hash_result.substr(0, 16) << "...";
+    } else {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to calculate private key hash");
+      LOG(ERROR) << "Failed to calculate hash for private key: " << key_path;
+    }
+  }
+
+  /**
+   * @brief Handle OP_GET_PRIVATE_KEY_HASH - Return SHA256 hash of private key (CertResponse)
+   */
+  static void HandleGetPrivateKeyHash(const proto::CertRequest& req,
+                                      proto::CertResponse* res) {
+    // Get SHA256 hash of the private key file
+    std::string key_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/xiedeacc.com.key";
+    std::string command = "openssl dgst -sha256 " + key_path + " 2>/dev/null | awk '{print $2}'";
+    std::string hash_result = ExecuteCommand(command);
+    
+    // Remove any trailing whitespace
+    hash_result.erase(hash_result.find_last_not_of(" \t\r\n") + 1);
+    
+    if (!hash_result.empty()) {
+      res->set_err_code(proto::ErrCode::Success);
+      res->set_message(hash_result);  // Return hash in message field
+      LOG(INFO) << "Sent private key hash: " << hash_result.substr(0, 16) << "...";
+    } else {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to calculate private key hash");
+      LOG(ERROR) << "Failed to calculate hash for private key: " << key_path;
+    }
+  }
+
+  /**
+   * @brief Handle OP_GET_PRIVATE_KEY - Return private key content (ReportResponse)
+   */
+  static void HandleGetPrivateKey(const proto::ReportRequest& req,
+                                  proto::ReportResponse* res) {
+    // Read private key file content
+    std::string key_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/xiedeacc.com.key";
+    std::string private_key_content = ReadFileContent(key_path);
+    
+    if (!private_key_content.empty()) {
+      res->set_err_code(proto::ErrCode::Success);
+      res->set_message(private_key_content);  // Return key in message field
+      LOG(INFO) << "Sent private key content (" << private_key_content.length() << " bytes)";
+    } else {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to read private key");
+      LOG(ERROR) << "Failed to read private key from: " << key_path;
+    }
+  }
+
+  /**
+   * @brief Handle OP_GET_PRIVATE_KEY - Return private key content (CertResponse)
+   */
+  static void HandleGetPrivateKey(const proto::CertRequest& req,
+                                  proto::CertResponse* res) {
+    // Read private key file content
+    std::string key_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/xiedeacc.com.key";
+    std::string private_key_content = ReadFileContent(key_path);
+    
+    if (!private_key_content.empty()) {
+      res->set_err_code(proto::ErrCode::Success);
+      res->set_private_key(private_key_content);  // Return key in private_key field
+      res->set_message("Private key retrieved successfully");
+      LOG(INFO) << "Sent private key content (" << private_key_content.length() << " bytes)";
+    } else {
+      res->set_err_code(proto::ErrCode::Fail);
+      res->set_message("Failed to read private key");
+      LOG(ERROR) << "Failed to read private key from: " << key_path;
+    }
+  }
+
+  /**
+   * @brief Execute shell command and return output
+   */
+  static std::string ExecuteCommand(const std::string& command) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(command.c_str(), "r"), pclose);
+    if (!pipe) {
+      LOG(ERROR) << "Failed to execute command: " << command;
+      return "";
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+      result += buffer.data();
+    }
+    return result;
   }
 
   /**

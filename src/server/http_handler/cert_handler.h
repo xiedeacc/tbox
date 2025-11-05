@@ -6,7 +6,9 @@
 #ifndef TBOX_SERVER_HTTP_HANDLER_CERT_HANDLER_H
 #define TBOX_SERVER_HTTP_HANDLER_CERT_HANDLER_H
 
+#include "glog/logging.h"
 #include "proxygen/httpserver/RequestHandler.h"
+#include "src/proto/service.pb.h"
 #include "src/server/handler/handler.h"
 #include "src/server/http_handler/util.h"
 
@@ -35,7 +37,40 @@ class CertHandler : public proxygen::RequestHandler {
     }
 
     // Handle certificate request using shared handler
-    handler::Handler::CertOpHandle(req, &res);
+    try {
+      switch (req.op()) {
+        case proto::OpCode::OP_CERT_GET:
+          handler::Handler::HandleGetCertificate(req, &res);
+          break;
+        case proto::OpCode::OP_GET_PRIVATE_KEY_HASH:
+          handler::Handler::HandleGetPrivateKeyHash(req, &res);
+          break;
+        case proto::OpCode::OP_GET_PRIVATE_KEY:
+          handler::Handler::HandleGetPrivateKey(req, &res);
+          break;
+        case proto::OpCode::OP_GET_FULLCHAIN_CERT_HASH:
+          handler::Handler::HandleGetFullchainCertHash(req, &res);
+          break;
+        case proto::OpCode::OP_GET_CA_CERT_HASH:
+          handler::Handler::HandleGetCACertHash(req, &res);
+          break;
+        case proto::OpCode::OP_GET_FULLCHAIN_CERT:
+          handler::Handler::HandleGetFullchainCert(req, &res);
+          break;
+        case proto::OpCode::OP_GET_CA_CERT:
+          handler::Handler::HandleGetCACert(req, &res);
+          break;
+        default:
+          res.set_err_code(proto::ErrCode::Fail);
+          res.set_message("Invalid operation code for certificate management");
+          LOG(ERROR) << "Invalid certificate operation code: " << req.op();
+          break;
+      }
+    } catch (const std::exception& e) {
+      LOG(ERROR) << "Certificate operation failed: " << e.what();
+      res.set_err_code(proto::ErrCode::Fail);
+      res.set_message(std::string("Operation failed: ") + e.what());
+    }
 
     res_body.clear();
     if (!util::Util::MessageToJson(res, &res_body)) {
@@ -53,6 +88,7 @@ class CertHandler : public proxygen::RequestHandler {
  private:
   std::string body_;
 };
+
 
 }  // namespace http_handler
 }  // namespace server
