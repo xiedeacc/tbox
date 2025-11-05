@@ -697,31 +697,22 @@ std::string SSLConfigManager::GetRemotePrivateKeyHash() {
   }
 
   try {
+    async_grpc::Client<server::grpc_handler::CertOpMethod> client(channel_);
+
     tbox::proto::CertRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_PRIVATE_KEY_HASH);
     request.set_token(auth_manager->GetToken());
 
+    // Use async_grpc client like report_manager does
     grpc::Status status;
-    tbox::proto::CertResponse response;
-    
-    // Use the main channel for this request with additional safety checks
-    auto stub = tbox::proto::TBOXService::NewStub(channel_);
-    if (!stub) {
-      LOG(ERROR) << "Failed to create gRPC stub";
-      return "";
-    }
-    
-    grpc::ClientContext context;
-    // Set timeout to prevent hanging (extended for certificate operations)
-    context.set_deadline(std::chrono::system_clock::now() + 
-                        std::chrono::seconds(30));
-    
-    status = stub->CertOp(&context, request, &response);
+    bool success = client.Write(request, &status);
 
-    if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
-      // Private key hash should be in the message field
-      if (!response.message().empty()) {
+    if (success && status.ok()) {
+      const auto& response = client.response();
+      if (response.err_code() == tbox::proto::ErrCode::Success) {
+        // Private key hash should be in the message field
+        if (!response.message().empty()) {
         return response.message();
       } else {
         LOG(WARNING) << "Remote private key hash response empty - no message field";
@@ -772,31 +763,24 @@ bool SSLConfigManager::FetchAndStorePrivateKey(const std::string& key_path) {
   }
 
   try {
-    async_grpc::Client<tbox::server::grpc_handler::CertOpMethod> client(channel_);
+    async_grpc::Client<server::grpc_handler::CertOpMethod> client(channel_);
 
     tbox::proto::CertRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_PRIVATE_KEY);
     request.set_token(auth_manager->GetToken());
 
+    // Use async_grpc client like report_manager does
     grpc::Status status;
-    tbox::proto::CertResponse response;
-    
-    // Use the main channel for this request
-    if (channel_) {
-      auto stub = tbox::proto::TBOXService::NewStub(channel_);
-      grpc::ClientContext context;
-      status = stub->CertOp(&context, request, &response);
-    } else {
-      LOG(ERROR) << "No gRPC channel available";
-      return false;
-    }
+    bool success = client.Write(request, &status);
 
-    if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
-      // Private key content should be in private_key field
-      std::string private_key_content = response.private_key();
-      
-      if (!private_key_content.empty()) {
+    if (success && status.ok()) {
+      const auto& response = client.response();
+      if (response.err_code() == tbox::proto::ErrCode::Success) {
+        // Private key content should be in private_key field
+        std::string private_key_content = response.private_key();
+        
+        if (!private_key_content.empty()) {
         // Write private key to file
         if (WriteFileContent(key_path, private_key_content)) {
           // Set restrictive permissions for private key (600 = rw-------)
@@ -871,31 +855,22 @@ std::string SSLConfigManager::GetRemoteFullchainCertHash() {
   }
 
   try {
+    async_grpc::Client<server::grpc_handler::CertOpMethod> client(channel_);
+
     tbox::proto::CertRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_FULLCHAIN_CERT_HASH);
     request.set_token(auth_manager->GetToken());
 
+    // Use async_grpc client like report_manager does
     grpc::Status status;
-    tbox::proto::CertResponse response;
-    
-    // Use the main channel for this request with additional safety checks
-    auto stub = tbox::proto::TBOXService::NewStub(channel_);
-    if (!stub) {
-      LOG(ERROR) << "Failed to create gRPC stub";
-      return "";
-    }
-    
-    grpc::ClientContext context;
-    // Set timeout to prevent hanging (extended for certificate operations)
-    context.set_deadline(std::chrono::system_clock::now() + 
-                        std::chrono::seconds(30));
-    
-    status = stub->CertOp(&context, request, &response);
+    bool success = client.Write(request, &status);
 
-    if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
-      // Fullchain certificate hash should be in the message field
-      if (!response.message().empty()) {
+    if (success && status.ok()) {
+      const auto& response = client.response();
+      if (response.err_code() == tbox::proto::ErrCode::Success) {
+        // Fullchain certificate hash should be in the message field
+        if (!response.message().empty()) {
         return response.message();
       } else {
         LOG(WARNING) << "Remote fullchain certificate hash response empty - no message field";
@@ -953,6 +928,8 @@ bool SSLConfigManager::FetchAndStoreFullchainCert(const std::string& cert_path) 
   }
 
   try {
+    async_grpc::Client<server::grpc_handler::CertOpMethod> client(channel_);
+
     tbox::proto::CertRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_FULLCHAIN_CERT);
@@ -961,21 +938,14 @@ bool SSLConfigManager::FetchAndStoreFullchainCert(const std::string& cert_path) 
     grpc::Status status;
     tbox::proto::CertResponse response;
     
-    // Use the main channel for this request with additional safety checks
-    auto stub = tbox::proto::TBOXService::NewStub(channel_);
-    if (!stub) {
-      LOG(ERROR) << "Failed to create gRPC stub";
-      return false;
+    // Use async_grpc client like report_manager does
+    bool success = client.Write(request, &status);
+    if (success && status.ok()) {
+      // Get the response from the client
+      success = client.Read(&response, &status);
     }
-    
-    grpc::ClientContext context;
-    // Set timeout to prevent hanging (extended for certificate operations)
-    context.set_deadline(std::chrono::system_clock::now() + 
-                        std::chrono::seconds(30));
-    
-    status = stub->CertOp(&context, request, &response);
 
-    if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
+    if (success && status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
       // Fullchain certificate content should be in certificate field
       std::string cert_content = response.certificate();
       
@@ -1055,6 +1025,8 @@ std::string SSLConfigManager::GetRemoteCACertHash() {
   }
 
   try {
+    async_grpc::Client<server::grpc_handler::CertOpMethod> client(channel_);
+
     tbox::proto::CertRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_CA_CERT_HASH);
@@ -1063,21 +1035,14 @@ std::string SSLConfigManager::GetRemoteCACertHash() {
     grpc::Status status;
     tbox::proto::CertResponse response;
     
-    // Use the main channel for this request with additional safety checks
-    auto stub = tbox::proto::TBOXService::NewStub(channel_);
-    if (!stub) {
-      LOG(ERROR) << "Failed to create gRPC stub";
-      return "";
+    // Use async_grpc client like report_manager does
+    bool success = client.Write(request, &status);
+    if (success && status.ok()) {
+      // Get the response from the client
+      success = client.Read(&response, &status);
     }
-    
-    grpc::ClientContext context;
-    // Set timeout to prevent hanging (extended for certificate operations)
-    context.set_deadline(std::chrono::system_clock::now() + 
-                        std::chrono::seconds(30));
-    
-    status = stub->CertOp(&context, request, &response);
 
-    if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
+    if (success && status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
       // CA certificate hash should be in the message field
       if (!response.message().empty()) {
         return response.message();
@@ -1137,6 +1102,8 @@ bool SSLConfigManager::FetchAndStoreCACert(const std::string& cert_path) {
   }
 
   try {
+    async_grpc::Client<server::grpc_handler::CertOpMethod> client(channel_);
+
     tbox::proto::CertRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_CA_CERT);
@@ -1145,21 +1112,14 @@ bool SSLConfigManager::FetchAndStoreCACert(const std::string& cert_path) {
     grpc::Status status;
     tbox::proto::CertResponse response;
     
-    // Use the main channel for this request with additional safety checks
-    auto stub = tbox::proto::TBOXService::NewStub(channel_);
-    if (!stub) {
-      LOG(ERROR) << "Failed to create gRPC stub";
-      return false;
+    // Use async_grpc client like report_manager does
+    bool success = client.Write(request, &status);
+    if (success && status.ok()) {
+      // Get the response from the client
+      success = client.Read(&response, &status);
     }
-    
-    grpc::ClientContext context;
-    // Set timeout to prevent hanging (extended for certificate operations)
-    context.set_deadline(std::chrono::system_clock::now() + 
-                        std::chrono::seconds(30));
-    
-    status = stub->CertOp(&context, request, &response);
 
-    if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
+    if (success && status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
       // CA certificate content should be in ca_certificate field
       std::string cert_content = response.ca_certificate();
       
