@@ -71,9 +71,7 @@ if ! ssh_exec "echo 'SSH connection successful'"; then
 fi
 print_success "SSH connection verified"
 
-# Stop existing service if running on remote host
-print_status "Stopping existing service on remote host if running..."
-ssh_exec "sudo systemctl stop ${SERVICE_NAME} 2>/dev/null || true"
+# NOTE: Service will be stopped later right before swapping the binary to minimize downtime
 
 # Build all targets locally for ARM64
 print_status "Building all targets locally for ARM64 (cpu_model=neoverse-11)..."
@@ -111,12 +109,10 @@ print_status "Creating installation directories on remote host..."
 ssh_exec "sudo mkdir -p ${BIN_DIR} ${CONF_DIR} ${LOG_DIR} ${DATA_DIR}"
 print_success "Directories created"
 
-# Copy the stripped binary to remote host
-print_status "Copying stripped binary to remote host..."
+# Copy the binary to a temporary location on remote host (swap later)
+print_status "Copying binary to remote host temporary location..."
 scp_copy "$TEMP_BINARY" "${REMOTE_USER}@${REMOTE_HOST}:/tmp/${BINARY_NAME}"
-ssh_exec "sudo mv /tmp/${BINARY_NAME} ${BIN_DIR}/${BINARY_NAME}"
-ssh_exec "sudo chmod +x ${BIN_DIR}/${BINARY_NAME}"
-print_success "Binary installed on remote host"
+print_success "Binary uploaded to /tmp on remote host"
 
 # Copy configuration file to remote host
 print_status "Copying configuration file to remote host..."
@@ -129,6 +125,14 @@ print_status "Installing systemd service file on remote host..."
 scp_copy deploy/tbox_server.service "${REMOTE_USER}@${REMOTE_HOST}:/tmp/tbox_server.service"
 ssh_exec "sudo mv /tmp/tbox_server.service /etc/systemd/system/"
 print_success "Service file installed on remote host"
+
+# Stop service and swap binary to minimize downtime
+print_status "Stopping ${SERVICE_NAME} on remote host before swapping binary..."
+ssh_exec "sudo systemctl stop ${SERVICE_NAME} 2>/dev/null || true"
+print_status "Replacing binary on remote host..."
+ssh_exec "sudo mv /tmp/${BINARY_NAME} ${BIN_DIR}/${BINARY_NAME}"
+ssh_exec "sudo chmod +x ${BIN_DIR}/${BINARY_NAME}"
+print_success "Binary replaced on remote host"
 
 # Set ownership and permissions on remote host
 print_status "Setting ownership and permissions on remote host..."
@@ -146,8 +150,8 @@ ssh_exec "sudo systemctl enable ${SERVICE_NAME}"
 print_success "Service enabled on remote host"
 
 # Start the service on remote host
-print_status "Starting ${SERVICE_NAME} service on remote host..."
-if ssh_exec "sudo systemctl start ${SERVICE_NAME}"; then
+print_status "Restarting ${SERVICE_NAME} service on remote host..."
+if ssh_exec "sudo systemctl restart ${SERVICE_NAME}"; then
     print_success "Service started successfully on remote host"
 else
     print_error "Failed to start service on remote host"
