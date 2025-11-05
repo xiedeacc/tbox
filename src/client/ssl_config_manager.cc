@@ -93,12 +93,23 @@ void SSLConfigManager::Stop() {
 }
 
 void SSLConfigManager::MonitorCertificate() {
+  // Wait a bit before starting to ensure gRPC client is fully initialized
+  LOG(INFO) << "SSL config manager starting, waiting 5 seconds for system initialization...";
+  std::this_thread::sleep_for(std::chrono::seconds(5));
+  
   while (running_.load()) {
     try {
+      // Only proceed if we have a valid channel
+      if (!channel_) {
+        LOG(WARNING) << "No gRPC channel available, skipping certificate update";
+        std::this_thread::sleep_for(std::chrono::seconds(kMonitorIntervalSeconds));
+        continue;
+      }
+      
       // Check and update tbox certificate
       bool tbox_updated = UpdateTboxCertificate();
       
-      // Check and update nginx certificates
+      // Check and update nginx certificates  
       bool nginx_updated = UpdateNginxCertificates();
       
       if (tbox_updated || nginx_updated) {
@@ -669,15 +680,24 @@ std::string SSLConfigManager::GetRemotePrivateKeyHash() {
     return "";
   }
 
+  // Additional safety check for channel
+  if (!channel_) {
+    LOG(WARNING) << "No gRPC channel available for SSL config manager";
+    return "";
+  }
+
   auto auth_manager = client::AuthenticationManager::Instance();
+  if (!auth_manager) {
+    LOG(ERROR) << "Authentication manager not available";
+    return "";
+  }
+  
   if (!auth_manager->IsAuthenticated()) {
     LOG(WARNING) << "Not authenticated, cannot get remote private key hash";
     return "";
   }
 
   try {
-    async_grpc::Client<tbox::server::grpc_handler::ReportOpMethod> client(channel_);
-
     tbox::proto::ReportRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_PRIVATE_KEY_HASH);
@@ -687,24 +707,32 @@ std::string SSLConfigManager::GetRemotePrivateKeyHash() {
     grpc::Status status;
     tbox::proto::ReportResponse response;
     
-    // Use the main channel for this request
-    if (channel_) {
-      auto stub = tbox::proto::TBOXService::NewStub(channel_);
-      grpc::ClientContext context;
-      status = stub->ReportOp(&context, request, &response);
-    } else {
-      LOG(ERROR) << "No gRPC channel available";
+    // Use the main channel for this request with additional safety checks
+    auto stub = tbox::proto::TBOXService::NewStub(channel_);
+    if (!stub) {
+      LOG(ERROR) << "Failed to create gRPC stub";
       return "";
     }
+    
+    grpc::ClientContext context;
+    // Set timeout to prevent hanging
+    context.set_deadline(std::chrono::system_clock::now() + 
+                        std::chrono::seconds(10));
+    
+    status = stub->ReportOp(&context, request, &response);
 
     if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
       // Private key hash should be in the first client_ip field
       if (response.client_ip_size() > 0) {
         return response.client_ip(0);
+      } else {
+        LOG(WARNING) << "Remote private key hash response empty - no client_ip field";
       }
     } else {
-      LOG(WARNING) << "Failed to get remote private key hash: " 
-                   << status.error_message();
+      LOG(WARNING) << "Failed to get remote private key hash - gRPC status: " 
+                   << (status.ok() ? "OK" : "FAILED")
+                   << ", error: " << status.error_message()
+                   << ", response error code: " << static_cast<int>(response.err_code());
     }
   } catch (const std::exception& e) {
     LOG(ERROR) << "Exception getting remote private key hash: " << e.what();
@@ -787,8 +815,10 @@ bool SSLConfigManager::FetchAndStorePrivateKey(const std::string& key_path) {
         LOG(ERROR) << "Empty private key content received from server";
       }
     } else {
-      LOG(WARNING) << "Failed to fetch private key from server: " 
-                   << status.error_message();
+      LOG(WARNING) << "Failed to fetch private key from server - gRPC status: " 
+                   << (status.ok() ? "OK" : "FAILED")
+                   << ", error: " << status.error_message()
+                   << ", response error code: " << static_cast<int>(response.err_code());
     }
   } catch (const std::exception& e) {
     LOG(ERROR) << "Exception fetching private key: " << e.what();

@@ -19,7 +19,7 @@ StartLimitBurst=3
 # Security settings
 NoNewPrivileges=yes
 PrivateTmp=yes
-ProtectHome=yes
+ProtectHome=read-only
 ProtectSystem=strict
 ReadWritePaths=/usr/local/tbox/log /usr/local/tbox/data
 

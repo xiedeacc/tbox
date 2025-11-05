@@ -73,9 +73,6 @@ bool GrpcClient::Init() {
     // Update SSL config manager with current configuration
     ssl_config_manager->UpdateConfig(config_manager->GetBaseConfig());
     
-    // Set gRPC channel for SSL config manager to use for server communication
-    ssl_config_manager->SetChannel(channel_);
-
     // Get certificate path from configuration
     std::string ca_cert_path = config_manager->LocalCertPath();
     if (ca_cert_path.empty()) {
@@ -105,6 +102,13 @@ bool GrpcClient::Init() {
   if (!channel_) {
     LOG(ERROR) << "Failed to create gRPC channel to " << target_address_;
     return false;
+  }
+
+  // Now set the channel for SSL config manager AFTER the channel is created
+  if (!use_http) {
+    auto ssl_config_manager = SSLConfigManager::Instance();
+    ssl_config_manager->SetChannel(channel_);
+    LOG(INFO) << "SSL config manager channel set successfully";
   }
 
   stub_ = tbox::proto::TBOXService::NewStub(channel_);
