@@ -159,7 +159,7 @@ bool ReportManager::ReportClientIP() {
 
   // Smart IP filtering logic for different network scenarios
   std::vector<std::string> client_ips;
-  
+
   // First, try to find local IPs that match public IPs (direct connection case)
   for (const auto& local_ip : all_local_ips) {
     if ((!public_ipv4.empty() && local_ip == public_ipv4) ||
@@ -168,27 +168,30 @@ bool ReportManager::ReportClientIP() {
       log_buffer.push_back("Local IP " + local_ip + " matches public IP");
     }
   }
-  
-  // If no matches found (NAT/router scenario), use actual public IPs from interfaces
+
+  // If no matches found (NAT/router scenario), use actual public IPs from
+  // interfaces
   if (client_ips.empty()) {
-    log_buffer.push_back("No local IPs match server-detected public IPs (NAT scenario)");
-    
+    log_buffer.push_back(
+        "No local IPs match server-detected public IPs (NAT scenario)");
+
     // Get actual public IPv6 addresses from local interfaces
-    std::vector<std::string> public_ipv6_addrs = util::Util::GetPublicIPv6Addresses();
+    std::vector<std::string> public_ipv6_addrs =
+        util::Util::GetPublicIPv6Addresses();
     for (const auto& addr : public_ipv6_addrs) {
       client_ips.push_back(addr);
       log_buffer.push_back("Using actual public IPv6: " + addr);
     }
-    
+
     // If still no public IPs found, fall back to best available local IPs
     if (client_ips.empty()) {
       log_buffer.push_back("No public IPs available, using best local IPs");
-      
+
       // Prefer non-private IPv4 addresses first, then any non-loopback
       for (const auto& local_ip : all_local_ips) {
         try {
           folly::IPAddress ip_addr(local_ip);
-          
+
           // For IPv4: skip private ranges but allow other addresses
           if (ip_addr.isV4()) {
             folly::IPAddressV4 ipv4 = ip_addr.asV4();
@@ -196,12 +199,14 @@ bool ReportManager::ReportClientIP() {
             if (!ipv4.inSubnet(folly::IPAddressV4("10.0.0.0"), 8) &&
                 !ipv4.inSubnet(folly::IPAddressV4("172.16.0.0"), 12) &&
                 !ipv4.inSubnet(folly::IPAddressV4("192.168.0.0"), 16) &&
-                !ipv4.inSubnet(folly::IPAddressV4("169.254.0.0"), 16)) {  // Skip link-local
+                !ipv4.inSubnet(folly::IPAddressV4("169.254.0.0"),
+                               16)) {  // Skip link-local
               client_ips.push_back(local_ip);
               log_buffer.push_back("Using non-private IPv4: " + local_ip);
             }
           }
-          // For IPv6: already filtered by GetAllLocalIPAddresses (no loopback/link-local)
+          // For IPv6: already filtered by GetAllLocalIPAddresses (no
+          // loopback/link-local)
           else if (ip_addr.isV6()) {
             folly::IPAddressV6 ipv6 = ip_addr.asV6();
             if (!ipv6.isPrivate()) {  // Skip ULA addresses
@@ -214,16 +219,20 @@ bool ReportManager::ReportClientIP() {
           continue;
         }
       }
-      
+
       // Last resort: use private IPs if no public/non-private ones available
       if (client_ips.empty()) {
-        log_buffer.push_back("No public IPs available, falling back to private IPs");
-        
-        // Just use the first few local IPs (they're already filtered to exclude loopback)
+        log_buffer.push_back(
+            "No public IPs available, falling back to private IPs");
+
+        // Just use the first few local IPs (they're already filtered to exclude
+        // loopback)
         size_t max_private_ips = 3;  // Limit to avoid too many private IPs
-        for (size_t i = 0; i < std::min(all_local_ips.size(), max_private_ips); ++i) {
+        for (size_t i = 0; i < std::min(all_local_ips.size(), max_private_ips);
+             ++i) {
           client_ips.push_back(all_local_ips[i]);
-          log_buffer.push_back("Using private IP as fallback: " + all_local_ips[i]);
+          log_buffer.push_back("Using private IP as fallback: " +
+                               all_local_ips[i]);
         }
       }
     }
@@ -360,29 +369,33 @@ void ReportManager::ReportingLoop() {
 
     // Filter to reportable IPs (same smart logic as ReportClientIP)
     std::vector<std::string> reportable_ips;
-    
-    // First, try to find local IPs that match public IPs (direct connection case)
+
+    // First, try to find local IPs that match public IPs (direct connection
+    // case)
     for (const auto& local_ip : all_local_ips) {
       if ((!public_ipv4.empty() && local_ip == public_ipv4) ||
           (!public_ipv6.empty() && local_ip == public_ipv6)) {
         reportable_ips.push_back(local_ip);
       }
     }
-    
-    // If no matches found (NAT/router scenario), use actual public IPs from interfaces
+
+    // If no matches found (NAT/router scenario), use actual public IPs from
+    // interfaces
     if (reportable_ips.empty()) {
       // Get actual public IPv6 addresses from local interfaces
-      std::vector<std::string> public_ipv6_addrs = util::Util::GetPublicIPv6Addresses();
-      reportable_ips.insert(reportable_ips.end(), public_ipv6_addrs.begin(), public_ipv6_addrs.end());
-      
+      std::vector<std::string> public_ipv6_addrs =
+          util::Util::GetPublicIPv6Addresses();
+      reportable_ips.insert(reportable_ips.end(), public_ipv6_addrs.begin(),
+                            public_ipv6_addrs.end());
+
       // If still no public IPs found, fall back to best available local IPs
       if (reportable_ips.empty()) {
         // Prefer non-private IPv4 addresses first, then any non-loopback
         for (const auto& local_ip : all_local_ips) {
           try {
             folly::IPAddress ip_addr(local_ip);
-            
-            // For IPv4: skip private ranges but allow other addresses  
+
+            // For IPv4: skip private ranges but allow other addresses
             if (ip_addr.isV4()) {
               folly::IPAddressV4 ipv4 = ip_addr.asV4();
               if (!ipv4.inSubnet(folly::IPAddressV4("10.0.0.0"), 8) &&
@@ -392,7 +405,8 @@ void ReportManager::ReportingLoop() {
                 reportable_ips.push_back(local_ip);
               }
             }
-            // For IPv6: already filtered by GetAllLocalIPAddresses (no loopback/link-local)
+            // For IPv6: already filtered by GetAllLocalIPAddresses (no
+            // loopback/link-local)
             else if (ip_addr.isV6()) {
               folly::IPAddressV6 ipv6 = ip_addr.asV6();
               if (!ipv6.isPrivate()) {  // Skip ULA addresses
@@ -404,11 +418,12 @@ void ReportManager::ReportingLoop() {
             continue;
           }
         }
-        
+
         // Last resort: use private IPs if no public/non-private ones available
         if (reportable_ips.empty()) {
           size_t max_private_ips = 3;  // Limit to avoid too many private IPs
-          for (size_t i = 0; i < std::min(all_local_ips.size(), max_private_ips); ++i) {
+          for (size_t i = 0;
+               i < std::min(all_local_ips.size(), max_private_ips); ++i) {
             reportable_ips.push_back(all_local_ips[i]);
           }
         }

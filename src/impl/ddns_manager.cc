@@ -680,7 +680,8 @@ bool DDNSManager::UpdateDNS() {
 
   // Only output logs if updates were needed or if there were errors
   if (any_updates_needed || !all_success) {
-    // Output all buffered logs atomically when updates occurred or errors happened
+    // Output all buffered logs atomically when updates occurred or errors
+    // happened
     for (const auto& msg : log_buffer) {
       LOG(INFO) << msg;
     }

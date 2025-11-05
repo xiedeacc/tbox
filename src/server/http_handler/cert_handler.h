@@ -89,7 +89,6 @@ class CertHandler : public proxygen::RequestHandler {
   std::string body_;
 };
 
-
 }  // namespace http_handler
 }  // namespace server
 }  // namespace tbox

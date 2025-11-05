@@ -67,7 +67,6 @@ class CertOpHandler : public async_grpc::RpcHandler<CertOpMethod> {
   void OnReadsDone() override { Finish(grpc::Status::OK); }
 };
 
-
 }  // namespace grpc_handler
 }  // namespace server
 }  // namespace tbox
