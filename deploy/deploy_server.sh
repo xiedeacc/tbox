@@ -188,6 +188,12 @@ print_success "Directories created"
 
 # Copy the binary to a temporary location on remote host (swap later)
 print_status "Copying binary to remote host temporary location..."
+SCP_CMD="scp"
+if [[ ${#SSH_OPTS[@]} -gt 0 ]]; then
+    SCP_CMD="${SCP_CMD} ${SSH_OPTS[*]}"
+fi
+SCP_CMD="${SCP_CMD} ${TEMP_BINARY} ${REMOTE_USER}@${REMOTE_HOST}:/tmp/${BINARY_NAME}"
+print_status "Executing: ${SCP_CMD}"
 scp_copy "$TEMP_BINARY" "${REMOTE_USER}@${REMOTE_HOST}:/tmp/${BINARY_NAME}"
 print_success "Binary uploaded to /tmp on remote host"
 
