@@ -17,6 +17,7 @@
 
 #include "glog/logging.h"
 #include "src/async_grpc/client.h"
+#include "src/async_grpc/common/time.h"
 #include "src/client/authentication_manager.h"
 #include "src/impl/config_manager.h"
 #include "src/server/grpc_handler/meta.h"
@@ -97,22 +98,23 @@ void SSLConfigManager::MonitorCertificate() {
 
       LOG(INFO) << "Checking and updating tbox certificate";
       // Check and update tbox certificate
-      bool tbox_updated = UpdateTboxCertificate();
+      // bool tbox_updated = UpdateTboxCertificate();
 
       // Check and update nginx certificates
       bool nginx_updated = UpdateNginxCertificates();
 
-      if (tbox_updated || nginx_updated) {
-        LOG(INFO) << "Certificate update completed - tbox: "
-                  << (tbox_updated ? "updated" : "unchanged")
-                  << ", nginx: " << (nginx_updated ? "updated" : "unchanged");
-      } 
+      // if (tbox_updated || nginx_updated) {
+      //   LOG(INFO) << "Certificate update completed - tbox: "
+      //             << (tbox_updated ? "updated" : "unchanged")
+      //             << ", nginx: " << (nginx_updated ? "updated" : "unchanged");
+      // } 
     } catch (const std::exception& e) {
       LOG(ERROR) << "Error in certificate monitoring: " << e.what();
     }
 
     std::this_thread::sleep_for(std::chrono::seconds(5));
   }
+  LOG(INFO) << "SSL Config Manager stopped";
 }
 
 bool SSLConfigManager::HasCertificateChanged() {
@@ -1029,34 +1031,43 @@ bool SSLConfigManager::UpdateFullchainCertificate(
 
 std::string SSLConfigManager::GetRemoteCACertHash() {
   // Additional safety check for channel
+  LOG(INFO) << "Getting remote CA certificate hash";
   if (!channel_) {
     LOG(WARNING) << "gRPC channel not available for SSL config manager";
     return "";
   }
 
+  LOG(INFO) << "Authentication manager available";
   auto auth_manager = client::AuthenticationManager::Instance();
   if (!auth_manager) {
     LOG(ERROR) << "Authentication manager not available";
     return "";
   }
 
+  LOG(INFO) << "Authentication manager authenticated";
   if (!auth_manager->IsAuthenticated()) {
     LOG(WARNING) << "Not authenticated, cannot get remote CA certificate hash";
     return "";
   }
 
   try {
-    async_grpc::Client<server::grpc_handler::CertOpMethod> client(channel_);
+    // Use timeout of 30 seconds to prevent hanging
+    async_grpc::Client<server::grpc_handler::CertOpMethod> client(
+        channel_, async_grpc::common::FromSeconds(30.0));
 
     tbox::proto::CertRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_CA_CERT_HASH);
     request.set_token(auth_manager->GetToken());
 
+    LOG(INFO) << "Request: " << request.DebugString();
     // Use async_grpc client like report_manager does
     grpc::Status status;
     bool success = client.Write(request, &status);
-
+    LOG(INFO) << "Write completed - success: " << success
+              << ", status.ok(): " << status.ok()
+              << ", error_code: " << status.error_code()
+              << ", error_message: " << status.error_message();
     if (success && status.ok()) {
       const auto& response = client.response();
       if (response.err_code() == tbox::proto::ErrCode::Success) {
@@ -1087,19 +1098,21 @@ std::string SSLConfigManager::GetRemoteCACertHash() {
 }
 
 std::string SSLConfigManager::GetLocalCACertHash(const std::string& cert_path) {
+  LOG(INFO) << "Getting local CA certificate hash: " << cert_path;
   if (!std::filesystem::exists(cert_path)) {
     return "";  // File doesn't exist, return empty hash
   }
 
+  LOG(INFO) << "File exists: " << std::filesystem::exists(cert_path);
   std::string result;
   bool success = util::Util::FileSHA256(cert_path, &result);
-
+  LOG(INFO) << "Success: " << success;
   if (!success) {
     LOG(WARNING) << "Failed to calculate hash for CA certificate: "
                  << cert_path;
     return "";
   }
-
+  LOG(INFO) << "Local CA certificate hash: " << result;
   return result;
 }
 
@@ -1171,6 +1184,7 @@ bool SSLConfigManager::FetchAndStoreCACert(const std::string& cert_path) {
 
 bool SSLConfigManager::UpdateCACertificate(const std::string& cert_path) {
   // Get remote CA certificate hash
+  LOG(INFO) << "Getting remote CA certificate hash";
   std::string remote_hash = GetRemoteCACertHash();
   if (remote_hash.empty()) {
     LOG(INFO) << "Could not get remote CA certificate hash (server may be "
@@ -1178,9 +1192,10 @@ bool SSLConfigManager::UpdateCACertificate(const std::string& cert_path) {
     return false;
   }
 
+  LOG(INFO) << "Remote CA certificate hash: " << remote_hash;
   // Get local CA certificate hash
   std::string local_hash = GetLocalCACertHash(cert_path);
-
+  LOG(INFO) << "Local CA certificate hash: " << local_hash;
   // Compare hashes
   if (local_hash != remote_hash) {
     LOG(INFO) << "CA certificate differs from server (local: "

@@ -24,6 +24,8 @@ class CertOpHandler : public async_grpc::RpcHandler<CertOpMethod> {
   ~CertOpHandler() = default;
 
   void OnRequest(const proto::CertRequest& req) override {
+    LOG(INFO) << "CertOpHandler::OnRequest received - request_id: "
+              << req.request_id() << ", op: " << req.op();
     auto res = std::make_unique<proto::CertResponse>();
 
     try {
@@ -41,7 +43,10 @@ class CertOpHandler : public async_grpc::RpcHandler<CertOpMethod> {
           handler::Handler::HandleGetFullchainCertHash(req, res.get());
           break;
         case proto::OpCode::OP_GET_CA_CERT_HASH:
+          LOG(INFO) << "Handling OP_GET_CA_CERT_HASH request";
           handler::Handler::HandleGetCACertHash(req, res.get());
+          LOG(INFO) << "OP_GET_CA_CERT_HASH handled, err_code: "
+                    << static_cast<int>(res->err_code());
           break;
         case proto::OpCode::OP_GET_FULLCHAIN_CERT:
           handler::Handler::HandleGetFullchainCert(req, res.get());
