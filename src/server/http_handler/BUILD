@@ -63,7 +63,9 @@ cc_library(
     deps = [
         "//src/common:defs",
         "//src/impl:config_manager",
+        "//src/server/grpc_handler",
         "//src/server/handler",
+        "//src/util",
         "@boost//:beast",
         "@boost//:system",
         "@boost//:url",

@@ -2,7 +2,10 @@
     "C_Cpp.intelliSenseEngine": "default",
     "C_Cpp.intelliSenseEngineFallback": "enabled",
     "C_Cpp.default.intelliSenseMode": "linux-clang-x64",
-    "C_Cpp.default.compilerPath": "/usr/local/llvm/18/bin/clang",
+    // Compiler path - VSCode will use PATH to find clang
+    // If you have /usr/local/llvm/18/bin in your PATH, it will be preferred
+    // Otherwise it will fall back to system clang
+    "C_Cpp.default.compilerPath": "clang",
     "C_Cpp.default.cppStandard": "c++17",
     "C_Cpp.default.cStandard": "c11",
     "C_Cpp.default.compileCommands": "${workspaceFolder}/compile_commands.json",
@@ -10,7 +13,8 @@
     "C_Cpp.errorSquiggles": "enabled",
     "C_Cpp.autocompleteAddParentheses": true,
     "C_Cpp.formatting": "clangFormat",
-    "C_Cpp.clang_format_path": "/usr/local/llvm/18/bin/clang-format",
+    // clang-format path - VSCode will use PATH to find clang-format
+    "C_Cpp.clang_format_path": "clang-format",
     "C_Cpp.clang_format_style": "file",
     "C_Cpp.clang_format_fallbackStyle": "Google",
     "editor.formatOnSave": true,

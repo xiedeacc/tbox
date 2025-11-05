@@ -82,13 +82,75 @@ if ! bazel build --define=cpu_model=neoverse-11 --config=clang_aarch64_linux_gnu
 fi
 print_success "All targets built successfully"
 
+# Get the cross-compilation strip tool from Bazel toolchain
+get_bazel_strip_tool() {
+    # Query Bazel for the toolchain path used in cross-compilation
+    local toolchain_info
+    toolchain_info=$(bazel query --config=clang_aarch64_linux_gnu \
+        'kind("cc_toolchain", deps(@cc_toolchain_config_aarch64_linux_generic_glibc_clang//:toolchain-aarch64_linux_generic_glibc_clang))' \
+        2>/dev/null | head -1)
+    
+    if [[ -n "$toolchain_info" ]]; then
+        # Extract the external repository path
+        local repo_path
+        repo_path=$(bazel info --config=clang_aarch64_linux_gnu output_base 2>/dev/null)
+        if [[ -n "$repo_path" ]]; then
+            local strip_path="${repo_path}/external/cc_toolchain_repo_aarch64_linux_generic_glibc_clang/bin/llvm-strip"
+            if [[ -x "$strip_path" ]]; then
+                echo "$strip_path"
+                return 0
+            fi
+        fi
+    fi
+    
+    # Fallback: try to find the toolchain in the current Bazel cache
+    local bazel_base
+    bazel_base=$(bazel info output_base 2>/dev/null || echo "$HOME/.cache/bazel/_bazel_$(whoami)")
+    
+    # Look for the aarch64 clang toolchain strip
+    local strip_candidates=(
+        "${bazel_base}/external/cc_toolchain_repo_aarch64_linux_generic_glibc_clang/bin/llvm-strip"
+        "${bazel_base}/*/external/cc_toolchain_repo_aarch64_linux_generic_glibc_clang/bin/llvm-strip"
+    )
+    
+    for strip_path in "${strip_candidates[@]}"; do
+        # Handle glob pattern
+        if [[ "$strip_path" == *"*"* ]]; then
+            for expanded_path in $strip_path; do
+                if [[ -x "$expanded_path" ]]; then
+                    echo "$expanded_path"
+                    return 0
+                fi
+            done
+        else
+            if [[ -x "$strip_path" ]]; then
+                echo "$strip_path"
+                return 0
+            fi
+        fi
+    done
+    
+    # Final fallback: try system llvm-strip or regular strip
+    if command -v llvm-strip >/dev/null 2>&1; then
+        echo "llvm-strip"
+    elif command -v strip >/dev/null 2>&1; then
+        echo "strip"
+    else
+        echo "strip"  # Will fail, but at least we tried
+    fi
+}
+
 # Strip the binary to reduce size
 print_status "Stripping binary to reduce size..."
+STRIP_TOOL=$(get_bazel_strip_tool)
+print_status "Using strip tool: $STRIP_TOOL"
+
 TEMP_BINARY="${HOME}/tbox_server_stripped_temp"
 cp bazel-bin/src/server/tbox_server "$TEMP_BINARY"
 chmod u+w "$TEMP_BINARY"
-if strip "$TEMP_BINARY"; then
-    print_success "Binary stripped successfully"
+
+if "$STRIP_TOOL" "$TEMP_BINARY"; then
+    print_success "Binary stripped successfully with $STRIP_TOOL"
     
     # Show size comparison
     original_size=$(stat -c%s bazel-bin/src/server/tbox_server)
@@ -96,7 +158,9 @@ if strip "$TEMP_BINARY"; then
     reduction=$((original_size - stripped_size))
     print_status "Size reduction: $(numfmt --to=iec $original_size) → $(numfmt --to=iec $stripped_size) (saved $(numfmt --to=iec $reduction))"
 else
-    print_error "Failed to strip binary, using original"
+    print_error "Failed to strip binary with $STRIP_TOOL, using original"
+    # Copy original binary if stripping failed
+    cp bazel-bin/src/server/tbox_server "$TEMP_BINARY"
 fi
 
 # Create service user on remote host if it doesn't exist
