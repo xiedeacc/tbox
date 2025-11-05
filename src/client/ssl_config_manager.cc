@@ -899,11 +899,13 @@ std::string SSLConfigManager::GetLocalFullchainCertHash(const std::string& cert_
     return "";  // File doesn't exist, return empty hash
   }
   
-  std::string command = "openssl dgst -sha256 " + cert_path + " 2>/dev/null | awk '{print $2}'";
-  std::string result = ExecuteCommand(command);
+  std::string result;
+  bool success = util::Util::FileSHA256(cert_path, &result);
   
-  // Remove any trailing whitespace
-  result.erase(result.find_last_not_of(" \t\r\n") + 1);
+  if (!success) {
+    LOG(WARNING) << "Failed to calculate hash for fullchain certificate: " << cert_path;
+    return "";
+  }
   
   return result;
 }
@@ -1081,11 +1083,13 @@ std::string SSLConfigManager::GetLocalCACertHash(const std::string& cert_path) {
     return "";  // File doesn't exist, return empty hash
   }
   
-  std::string command = "openssl dgst -sha256 " + cert_path + " 2>/dev/null | awk '{print $2}'";
-  std::string result = ExecuteCommand(command);
+  std::string result;
+  bool success = util::Util::FileSHA256(cert_path, &result);
   
-  // Remove any trailing whitespace
-  result.erase(result.find_last_not_of(" \t\r\n") + 1);
+  if (!success) {
+    LOG(WARNING) << "Failed to calculate hash for CA certificate: " << cert_path;
+    return "";
+  }
   
   return result;
 }
