@@ -56,8 +56,14 @@ ReportManager::~ReportManager() {
 }
 
 void ReportManager::Start() {
-  if (running_.load()) {
-    LOG(WARNING) << "Reporting thread is already running";
+  // Check if thread is already running or if old thread needs cleanup
+  if (running_.load() || reporting_thread_.joinable()) {
+    if (running_.load()) {
+      LOG(WARNING) << "Reporting thread is already running";
+    } else {
+      LOG(WARNING) << "Previous thread still needs cleanup, joining...";
+      reporting_thread_.join();
+    }
     return;
   }
 
@@ -75,25 +81,28 @@ void ReportManager::Start() {
 }
 
 void ReportManager::Stop() {
-  if (!running_.load()) {
+  // Check if thread is already stopped and cleaned up
+  if (!running_.load() && !reporting_thread_.joinable()) {
     return;
   }
 
   LOG(INFO) << "Stopping IP reporting thread...";
 
-  // Signal the thread to stop
+  // Signal the thread to stop (set this even if thread already exited)
   {
     std::lock_guard<std::mutex> lock(mutex_);
     should_stop_ = true;
   }
   cv_.notify_all();
 
-  // Wait for the thread to finish
+  // Wait for the thread to finish (always join if joinable, even if running_ is false)
   if (reporting_thread_.joinable()) {
     reporting_thread_.join();
   }
 
-  running_ = false;
+  // Set running_ to false after thread has finished
+  // (Note: ReportingLoop also sets this when it exits naturally)
+  running_.store(false);
   LOG(INFO) << "IP reporting thread stopped";
 }
 
@@ -340,6 +349,7 @@ void ReportManager::ReportingLoop() {
                      [this] { return should_stop_.load(); })) {
       // should_stop_ became true, exit loop
       LOG(INFO) << "Login retry interrupted by stop signal";
+      running_.store(false);
       return;
     }
   }
@@ -356,12 +366,22 @@ void ReportManager::ReportingLoop() {
       }
     }
 
+    // Check stop signal again before doing any work
+    if (should_stop_.load()) {
+      break;
+    }
+
     // Output separator for this check cycle
     LOG(INFO) << "=== Checking Local IP Addresses ===";
 
     // Get public IP addresses from server to determine reportable IPs
     std::string public_ipv4 = GetPublicIPv4();
     std::string public_ipv6 = GetPublicIPv6();
+    
+    // Check stop signal after potentially blocking network calls
+    if (should_stop_.load()) {
+      break;
+    }
 
     // Get all local IP addresses
     std::vector<std::string> all_local_ips =
@@ -430,11 +450,21 @@ void ReportManager::ReportingLoop() {
       }
     }
 
+    // Check stop signal before continuing
+    if (should_stop_.load()) {
+      break;
+    }
+
     // Check if we should report (reportable IPs changed or heartbeat due)
     if (!ShouldReport(reportable_ips)) {
       LOG(INFO) << "IP addresses unchanged and heartbeat not due. Skipping "
                    "report.";
       continue;
+    }
+
+    // Check stop signal before authentication check
+    if (should_stop_.load()) {
+      break;
     }
 
     // Check if we need to re-authenticate (e.g., after server restart)
@@ -452,6 +482,11 @@ void ReportManager::ReportingLoop() {
       }
     }
 
+    // Check stop signal before reporting
+    if (should_stop_.load()) {
+      break;
+    }
+
     // Report client IP addresses
     try {
       bool success = ReportClientIP();
@@ -466,8 +501,15 @@ void ReportManager::ReportingLoop() {
       LOG(ERROR) << "Exception in reporting loop: " << e.what();
       connection_healthy_.store(false);
     }
+    
+    // Check stop signal after reporting
+    if (should_stop_.load()) {
+      break;
+    }
   }
 
+  // Set running_ to false when loop exits naturally
+  running_.store(false);
   LOG(INFO) << "IP reporting loop ended";
 }
 

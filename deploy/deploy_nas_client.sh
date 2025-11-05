@@ -63,7 +63,11 @@ execute_cmd() {
 
 # Stop existing service if running
 print_status "Stopping existing service if running..."
-execute_cmd "timeout 3 systemctl stop ${SERVICE_NAME} 2>/dev/null && echo 'Stopped ${SERVICE_NAME} service' || echo 'Service not running or already stopped'"
+execute_cmd "systemctl stop ${SERVICE_NAME} 2>/dev/null || true"
+print_status "Waiting for service to fully stop (max 5 seconds)..."
+execute_cmd "timeout 5 bash -c 'while systemctl is-active --quiet ${SERVICE_NAME} 2>/dev/null; do sleep 0.2; done' 2>/dev/null || true"
+# Wait a bit more to ensure file handles are released
+sleep 1
 
 # Build client binary locally
 print_status "Building client binary (small tier - no AVX2 for NAS compatibility)..."
@@ -105,11 +109,29 @@ execute_cmd "id ${SERVICE_USER} &>/dev/null || (useradd --system --shell /bin/fa
 print_status "Creating installation directories..."
 execute_cmd "mkdir -p ${BIN_DIR} ${CONF_DIR} ${LOG_DIR}"
 
-# Copy the binary
+# Copy the binary (use temporary name first, then move atomically)
 print_status "Installing binary to ${BIN_DIR}/${BINARY_NAME}..."
-$SCP_CMD ${TEMP_BINARY} "${REMOTE_USER}@${SCP_HOST}:${BIN_DIR}/${BINARY_NAME}"
-execute_cmd "chmod +x ${BIN_DIR}/${BINARY_NAME}"
-print_success "Binary installed"
+TEMP_REMOTE_BINARY="${BIN_DIR}/${BINARY_NAME}.new"
+$SCP_CMD ${TEMP_BINARY} "${REMOTE_USER}@${SCP_HOST}:${TEMP_REMOTE_BINARY}"
+execute_cmd "chmod +x ${TEMP_REMOTE_BINARY}"
+# Wait a moment to ensure file is fully written
+sleep 1
+# Move atomically to avoid "Text file busy" error
+if execute_cmd "mv -f ${TEMP_REMOTE_BINARY} ${BIN_DIR}/${BINARY_NAME}"; then
+    print_success "Binary installed (atomic move)"
+else
+    print_status "Atomic move failed, trying direct copy..."
+    execute_cmd "rm -f ${TEMP_REMOTE_BINARY}"
+    # Wait a bit more for file handles to be released
+    sleep 2
+    if $SCP_CMD ${TEMP_BINARY} "${REMOTE_USER}@${SCP_HOST}:${BIN_DIR}/${BINARY_NAME}"; then
+        execute_cmd "chmod +x ${BIN_DIR}/${BINARY_NAME}"
+        print_success "Binary installed (direct copy)"
+    else
+        print_error "Failed to install binary"
+        exit 1
+    fi
+fi
 
 # Clean up temporary binary
 rm -f ${TEMP_BINARY}

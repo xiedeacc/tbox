@@ -47,9 +47,11 @@ std::string SSLConfigManager::LoadCACert(const std::string& cert_path) {
 }
 
 void SSLConfigManager::Start() {
+  LOG(INFO) << "SSL Config Manager starting";
   auto config = util::ConfigManager::Instance();
   if (!config->UpdateCerts()) {
     LOG(INFO) << "Certificate updates disabled in configuration";
+    LOG(INFO) << "SSL Config Manager started (monitoring disabled)";
     return;
   }
 
@@ -82,9 +84,6 @@ void SSLConfigManager::MonitorCertificate() {
                "initialization...";
   std::this_thread::sleep_for(std::chrono::seconds(5));
 
-  int consecutive_failures = 0;
-  const int max_backoff_interval = 300;  // 5 minutes maximum
-
   while (running_.load()) {
     try {
       // Only proceed if we have a valid channel
@@ -92,10 +91,11 @@ void SSLConfigManager::MonitorCertificate() {
         LOG(WARNING)
             << "gRPC channel not available, skipping certificate update";
         std::this_thread::sleep_for(
-            std::chrono::seconds(kMonitorIntervalSeconds));
+            std::chrono::seconds(5));
         continue;
       }
 
+      LOG(INFO) << "Checking and updating tbox certificate";
       // Check and update tbox certificate
       bool tbox_updated = UpdateTboxCertificate();
 
@@ -106,33 +106,12 @@ void SSLConfigManager::MonitorCertificate() {
         LOG(INFO) << "Certificate update completed - tbox: "
                   << (tbox_updated ? "updated" : "unchanged")
                   << ", nginx: " << (nginx_updated ? "updated" : "unchanged");
-        consecutive_failures = 0;  // Reset failure count on success
-      } else {
-        // If no updates happened, it might be due to server unavailability
-        // Only increment failures if we couldn't reach the server at all
-        if (!tbox_updated && !nginx_updated) {
-          consecutive_failures++;
-        }
-      }
+      } 
     } catch (const std::exception& e) {
       LOG(ERROR) << "Error in certificate monitoring: " << e.what();
-      consecutive_failures++;
     }
 
-    // Implement exponential backoff for failed attempts
-    int sleep_interval = kMonitorIntervalSeconds;
-    if (consecutive_failures > 0) {
-      sleep_interval =
-          std::min(kMonitorIntervalSeconds *
-                       (1 << std::min(consecutive_failures - 1, 6)),
-                   max_backoff_interval);
-      if (consecutive_failures == 1) {
-        LOG(INFO) << "Certificate server appears unavailable, reducing check "
-                     "frequency";
-      }
-    }
-
-    std::this_thread::sleep_for(std::chrono::seconds(sleep_interval));
+    std::this_thread::sleep_for(std::chrono::seconds(5));
   }
 }
 
@@ -403,7 +382,7 @@ std::string SSLConfigManager::GetRemoteCertificateChain() {
 
   try {
     async_grpc::Client<server::grpc_handler::CertOpMethod> client(channel_);
-
+    LOG(INFO) << "Successfully created async_grpc client";
     tbox::proto::CertRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_FULLCHAIN_CERT);
@@ -412,7 +391,7 @@ std::string SSLConfigManager::GetRemoteCertificateChain() {
     // Use async_grpc client like report_manager does
     grpc::Status status;
     bool success = client.Write(request, &status);
-
+    LOG(INFO) << "Successfully retrieved fullchain certificate chain from server";
     if (success && status.ok()) {
       const auto& response = client.response();
       if (response.err_code() == tbox::proto::ErrCode::Success) {
@@ -444,7 +423,7 @@ std::string SSLConfigManager::GetRemoteCertificateChain() {
   } catch (const std::exception& e) {
     LOG(ERROR) << "Exception fetching remote certificate chain: " << e.what();
   }
-
+  LOG(INFO) << "Failed to get remote certificate chain";
   return "";
 }
 
@@ -561,13 +540,14 @@ bool SSLConfigManager::SetWwwDataOwnership(const std::string& directory_path) {
 }
 
 bool SSLConfigManager::UpdateTboxCertificate() {
+  LOG(INFO) << "Updating tbox certificate";
   // Get remote certificate chain
   std::string remote_chain = GetRemoteCertificateChain();
   if (remote_chain.empty()) {
     LOG(WARNING) << "Failed to get remote certificate chain";
     return false;
   }
-
+  LOG(INFO) << "Remote certificate chain: " << remote_chain;
   CertificateChain cert_chain = ParseCertificateChain(remote_chain);
   if (cert_chain.root_cert.empty()) {
     LOG(WARNING) << "No root certificate found in remote chain";
@@ -577,7 +557,7 @@ bool SSLConfigManager::UpdateTboxCertificate() {
   // Check tbox certificate location: /usr/local/tbox/conf/xiedeacc.com.ca.cer
   std::string tbox_cert_path = "/usr/local/tbox/conf/xiedeacc.com.ca.cer";
   std::string local_cert = ReadFileContent(tbox_cert_path);
-
+   
   if (!AreCertificatesEqual(local_cert, cert_chain.root_cert)) {
     LOG(INFO) << "Tbox certificate differs from remote, updating...";
 
@@ -586,6 +566,7 @@ bool SSLConfigManager::UpdateTboxCertificate() {
 
     // Write new certificate
     if (WriteFileContent(tbox_cert_path, cert_chain.root_cert)) {
+      LOG(INFO) << "Tbox certificate written to: " << tbox_cert_path;
       SetFilePermissions(tbox_cert_path, 0644);
       LOG(INFO) << "Tbox certificate updated: " << tbox_cert_path;
       return true;
@@ -595,16 +576,20 @@ bool SSLConfigManager::UpdateTboxCertificate() {
     }
   }
 
+  LOG(INFO) << "Tbox certificate is up to date";
+
   return false;  // No update needed
 }
 
 bool SSLConfigManager::UpdateNginxCertificates() {
+  LOG(INFO) << "Updating nginx certificates";
   auto config = util::ConfigManager::Instance();
 
   std::string nginx_ssl_path = config->NginxSslPath();
   if (nginx_ssl_path.empty()) {
     nginx_ssl_path = "/etc/nginx/ssl";
   }
+  LOG(INFO) << "Nginx SSL path: " << nginx_ssl_path;
 
   // Create nginx SSL directory if it doesn't exist
   if (!std::filesystem::exists(nginx_ssl_path)) {
@@ -613,6 +598,7 @@ bool SSLConfigManager::UpdateNginxCertificates() {
   }
 
   bool updated = false;
+  LOG(INFO) << "Updated: " << updated;
 
   // Check required nginx certificate files
   std::string ca_cert_path = nginx_ssl_path + "/xiedeacc.com.ca.cer";
@@ -624,19 +610,21 @@ bool SSLConfigManager::UpdateNginxCertificates() {
   if (ca_updated) {
     updated = true;
   }
+  LOG(INFO) << "CA certificate updated: " << ca_updated;
 
   // Update fullchain certificate using hash comparison
   bool fullchain_updated = UpdateFullchainCertificate(fullchain_path);
   if (fullchain_updated) {
     updated = true;
   }
-
+  LOG(INFO) << "Fullchain certificate updated: " << fullchain_updated;
   // Check and update private key
   bool key_updated = UpdatePrivateKey(key_path);
   if (key_updated) {
     updated = true;
     LOG(INFO) << "Private key updated: " << key_path;
   }
+  LOG(INFO) << "Private key updated: " << key_updated;
 
   // Set proper ownership for nginx SSL directory
   if (updated) {
@@ -644,6 +632,7 @@ bool SSLConfigManager::UpdateNginxCertificates() {
     LOG(INFO) << "Nginx certificates updated and ownership set to www-data";
   }
 
+  LOG(INFO) << "Updated: " << updated;
   return updated;
 }
 

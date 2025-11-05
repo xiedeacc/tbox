@@ -169,17 +169,14 @@ void GrpcClient::Stop() {
 
   // Stop SSL config manager
   auto ssl_config_manager = SSLConfigManager::Instance();
-  if (ssl_config_manager->IsRunning()) {
     ssl_config_manager->Stop();
     LOG(INFO) << "SSL config manager stopped";
-  }
+  
 
-  // Stop report manager
+  // Stop report manager (always call Stop to ensure cleanup)
   auto report_manager = ReportManager::Instance();
-  if (report_manager->IsRunning()) {
-    report_manager->Stop();
-    LOG(INFO) << "Report manager stopped";
-  }
+  report_manager->Stop();
+  LOG(INFO) << "Report manager stopped";
 
   LOG(INFO) << "GrpcClient stopped";
 }
