@@ -95,11 +95,17 @@ void Rpc::OnConnection() {
   RequestStreamingReadIfNeeded();
 }
 
-void Rpc::OnRequest() { handler_->OnRequestInternal(request_.get()); }
+void Rpc::OnRequest() {
+  handler_->OnRequestInternal(request_.get());
+}
 
-void Rpc::OnReadsDone() { handler_->OnReadsDone(); }
+void Rpc::OnReadsDone() {
+  handler_->OnReadsDone();
+}
 
-void Rpc::OnFinish() { handler_->OnFinish(); }
+void Rpc::OnFinish() {
+  handler_->OnFinish();
+}
 
 void Rpc::RequestNextMethodInvocation() {
   // Ask gRPC to notify us when the connection terminates.
@@ -308,7 +314,9 @@ void Rpc::SetRpcEventState(Event event, bool pending) {
   *GetRpcEventState(event) = pending;
 }
 
-bool Rpc::IsRpcEventPending(Event event) { return *GetRpcEventState(event); }
+bool Rpc::IsRpcEventPending(Event event) {
+  return *GetRpcEventState(event);
+}
 
 bool Rpc::IsAnyEventPending() {
   return IsRpcEventPending(Rpc::Event::DONE) ||
@@ -317,7 +325,9 @@ bool Rpc::IsAnyEventPending() {
          IsRpcEventPending(Rpc::Event::FINISH);
 }
 
-std::weak_ptr<Rpc> Rpc::GetWeakPtr() { return weak_ptr_factory_(this); }
+std::weak_ptr<Rpc> Rpc::GetWeakPtr() {
+  return weak_ptr_factory_(this);
+}
 
 ActiveRpcs::ActiveRpcs() : lock_() {}
 

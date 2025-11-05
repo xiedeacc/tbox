@@ -171,9 +171,9 @@ class WebSocketHandler {
                       << ", header_size=" << header_size << ", masking_key=0x"
                       << std::hex << masking_key << std::dec
                       << ", status_code=" << status_code << " (0x" << std::hex
-                      << status_code << std::dec << ")"
-                      << " [raw bytes: 0x" << std::hex << (int)payload[0]
-                      << " 0x" << (int)payload[1] << std::dec << "]";
+                      << status_code << std::dec << ")" << " [raw bytes: 0x"
+                      << std::hex << (int)payload[0] << " 0x" << (int)payload[1]
+                      << std::dec << "]";
 
             // Send close frame in response
             if (send_frame_callback_) {
@@ -261,11 +261,13 @@ class WebSocketHandler {
     uint8_t length_field = data[1] & 0x7F;
     uint64_t payload_length;
     if (length_field == 126) {
-      if (frame->length() < 4) return false;
+      if (frame->length() < 4)
+        return false;
       payload_length = ntohs(*reinterpret_cast<const uint16_t*>(data + 2));
       header_size = 4;
     } else if (length_field == 127) {
-      if (frame->length() < 10) return false;
+      if (frame->length() < 10)
+        return false;
       payload_length =
           folly::Endian::big(*reinterpret_cast<const uint64_t*>(data + 2));
       header_size = 10;
@@ -281,7 +283,8 @@ class WebSocketHandler {
 
     // Handle masking
     if (header.mask) {
-      if (frame->length() < header_size + 4) return false;
+      if (frame->length() < header_size + 4)
+        return false;
       header.masking_key =
           ntohl(*reinterpret_cast<const uint32_t*>(data + header_size));
       header_size += 4;

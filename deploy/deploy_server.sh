@@ -16,7 +16,7 @@ BIN_DIR="${INSTALL_DIR}/bin"
 CONF_DIR="${INSTALL_DIR}/conf"
 LOG_DIR="${INSTALL_DIR}/log"
 DATA_DIR="${INSTALL_DIR}/data"
-SERVICE_USER="tbox"
+SERVICE_USER="root"
 WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Remote deployment configuration

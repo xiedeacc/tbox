@@ -21,7 +21,6 @@
 #include <ostream>
 #include <ratio>
 
-
 namespace async_grpc {
 namespace common {
 

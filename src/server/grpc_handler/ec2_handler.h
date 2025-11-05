@@ -57,7 +57,8 @@ class EC2OpHandler : public async_grpc::RpcHandler<EC2OpMethod> {
           break;
         default:
           res->set_err_code(proto::ErrCode::Fail);
-          res->set_message("Invalid operation code for EC2 instance management");
+          res->set_message(
+              "Invalid operation code for EC2 instance management");
           LOG(ERROR) << "Invalid operation code: " << req.op();
           break;
       }
@@ -74,7 +75,7 @@ class EC2OpHandler : public async_grpc::RpcHandler<EC2OpMethod> {
 
  private:
   void HandleStartInstance(const proto::EC2Request& req,
-                          proto::EC2Response* res) {
+                           proto::EC2Response* res) {
     // Configure client with region if specified
     Aws::Client::ClientConfiguration config;
     if (!req.region().empty()) {
@@ -95,14 +96,14 @@ class EC2OpHandler : public async_grpc::RpcHandler<EC2OpMethod> {
     } else {
       res->set_err_code(proto::ErrCode::Fail);
       res->set_message("Failed to start instance: " +
-                      outcome.GetError().GetMessage());
-      LOG(ERROR) << "Failed to start instance: " << req.instance_id()
-                 << " - " << outcome.GetError().GetMessage();
+                       outcome.GetError().GetMessage());
+      LOG(ERROR) << "Failed to start instance: " << req.instance_id() << " - "
+                 << outcome.GetError().GetMessage();
     }
   }
 
   void HandleStopInstance(const proto::EC2Request& req,
-                         proto::EC2Response* res) {
+                          proto::EC2Response* res) {
     // Configure client with region if specified
     Aws::Client::ClientConfiguration config;
     if (!req.region().empty()) {
@@ -123,9 +124,9 @@ class EC2OpHandler : public async_grpc::RpcHandler<EC2OpMethod> {
     } else {
       res->set_err_code(proto::ErrCode::Fail);
       res->set_message("Failed to stop instance: " +
-                      outcome.GetError().GetMessage());
-      LOG(ERROR) << "Failed to stop instance: " << req.instance_id()
-                 << " - " << outcome.GetError().GetMessage();
+                       outcome.GetError().GetMessage());
+      LOG(ERROR) << "Failed to stop instance: " << req.instance_id() << " - "
+                 << outcome.GetError().GetMessage();
     }
   }
 

@@ -11,9 +11,9 @@
 #include "proxygen/httpserver/RequestHandler.h"
 #include "proxygen/httpserver/ResponseBuilder.h"
 #include "proxygen/lib/http/HTTPMessage.h"
+#include "src/server/grpc_handler/report_handler.h"
 #include "src/server/handler/handler.h"
 #include "src/server/http_handler/util.h"
-#include "src/server/grpc_handler/report_handler.h"
 #include "src/util/util.h"
 
 namespace tbox {
@@ -59,11 +59,11 @@ class ServerHandler : public proxygen::RequestHandler {
   void onEOM() noexcept override {
     // Get all registered clients from the report handler
     auto all_clients = grpc_handler::ReportOpHandler::GetAllClients();
-    
+
     // Build comprehensive JSON response
     std::ostringstream json_stream;
     json_stream << "{";
-    
+
     // Current client IP (from HTTP headers)
     json_stream << "\"current_client_ip\":\"";
     // Escape quotes if any (unlikely in IPs) to be safe
@@ -74,10 +74,10 @@ class ServerHandler : public proxygen::RequestHandler {
       json_stream << c;
     }
     json_stream << "\",";
-    
+
     // Total number of registered clients
     json_stream << "\"total_registered_clients\":" << all_clients.size() << ",";
-    
+
     // All registered clients and their IP addresses
     json_stream << "\"registered_clients\":{";
     bool first_client = true;
@@ -86,36 +86,42 @@ class ServerHandler : public proxygen::RequestHandler {
         json_stream << ",";
       }
       first_client = false;
-      
+
       json_stream << "\"" << client_id << "\":{";
-      
+
       // IPv4 addresses
       json_stream << "\"ipv4\":[";
       for (size_t i = 0; i < client_info.ipv4_addresses.size(); ++i) {
-        if (i > 0) json_stream << ",";
+        if (i > 0)
+          json_stream << ",";
         json_stream << "\"" << client_info.ipv4_addresses[i] << "\"";
       }
       json_stream << "],";
-      
+
       // IPv6 addresses
       json_stream << "\"ipv6\":[";
       for (size_t i = 0; i < client_info.ipv6_addresses.size(); ++i) {
-        if (i > 0) json_stream << ",";
+        if (i > 0)
+          json_stream << ",";
         json_stream << "\"" << client_info.ipv6_addresses[i] << "\"";
       }
       json_stream << "],";
-      
+
       // Client info and timestamps (convert to human-readable format)
       json_stream << "\"client_info\":\"" << client_info.client_info << "\",";
-      json_stream << "\"last_report_time\":\"" << util::Util::ToTimeStr(client_info.last_report_time_millis) << "\",";
-      json_stream << "\"client_timestamp\":\"" << util::Util::ToTimeStr(client_info.client_timestamp * 1000) << "\"";
-      
+      json_stream << "\"last_report_time\":\""
+                  << util::Util::ToTimeStr(client_info.last_report_time_millis)
+                  << "\",";
+      json_stream << "\"client_timestamp\":\""
+                  << util::Util::ToTimeStr(client_info.client_timestamp * 1000)
+                  << "\"";
+
       json_stream << "}";
     }
     json_stream << "}";
-    
+
     json_stream << "}";
-    
+
     std::string res_body = json_stream.str();
     Util::Success(res_body, downstream_);
   }

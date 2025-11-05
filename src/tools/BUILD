@@ -10,7 +10,7 @@ cc_binary(
     srcs = ["gen_large_json_file.cc"],
     deps = [
         "//src/util",
-        "@mimalloc//:mimalloc",
+        "@mimalloc",
     ],
 )
 
@@ -36,6 +36,6 @@ cc_binary(
     deps = [
         "@aws-sdk-cpp//:aws-cpp-sdk-core",
         "@aws-sdk-cpp//:aws-cpp-sdk-route53",
-        "@mimalloc//:mimalloc",
+        "@mimalloc",
     ],
 )

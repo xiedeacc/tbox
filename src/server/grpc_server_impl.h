@@ -11,11 +11,11 @@
 
 #include "absl/strings/str_cat.h"
 #include "src/async_grpc/server.h"
+#include "src/impl/config_manager.h"
 #include "src/server/grpc_handler/ec2_handler.h"
 #include "src/server/grpc_handler/report_handler.h"
 #include "src/server/grpc_handler/user_handler.h"
 #include "src/server/server_context.h"
-#include "src/impl/config_manager.h"
 
 namespace tbox {
 namespace server {
@@ -35,12 +35,10 @@ class GrpcServer final {
         util::ConfigManager::Instance()->EventThreads());
 
     // Register handlers
-    server_builder.RegisterHandler<
-        tbox::server::grpc_handler::EC2OpHandler>();
-    server_builder.RegisterHandler<
-        tbox::server::grpc_handler::ReportOpHandler>();
-    server_builder.RegisterHandler<
-        tbox::server::grpc_handler::UserHandler>();
+    server_builder.RegisterHandler<tbox::server::grpc_handler::EC2OpHandler>();
+    server_builder
+        .RegisterHandler<tbox::server::grpc_handler::ReportOpHandler>();
+    server_builder.RegisterHandler<tbox::server::grpc_handler::UserHandler>();
 
     server_ = server_builder.Build();
     server_->SetExecutionContext(server_context);

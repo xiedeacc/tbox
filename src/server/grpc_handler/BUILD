@@ -91,6 +91,7 @@ cc_library(
         "report_handler.cc",
     ],
     hdrs = [
+        "cert_handler.h",
         "ec2_handler.h",
         "meta.h",
         "report_handler.h",

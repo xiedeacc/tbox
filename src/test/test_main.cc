@@ -8,7 +8,7 @@
 #include "glog/logging.h"
 #include "gtest/gtest.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   folly::Init init(&argc, &argv, false);
   // google::InitGoogleLogging(argv[0]);
   google::SetStderrLogging(google::GLOG_INFO);

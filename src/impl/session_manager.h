@@ -22,7 +22,7 @@ namespace impl {
 
 /**
  * @brief Session data structure.
- * 
+ *
  * Holds user session information including username, token, and last update
  * timestamp.
  */
@@ -35,7 +35,7 @@ class Session final {
 
 /**
  * @brief Session manager for user authentication tokens.
- * 
+ *
  * Singleton class that manages user sessions with token-based authentication.
  * Thread-safe implementation using spinlock. Sessions expire after
  * SESSION_INTERVAL milliseconds of inactivity.

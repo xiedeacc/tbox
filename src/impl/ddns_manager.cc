@@ -653,15 +653,17 @@ bool DDNSManager::UpdateDNS() {
           if (ipv6_needs_update) {
             if (UpdateRoute53AAAARecord(zone_id, domain, primary_ipv6)) {
               log_buffer.push_back("Route53 AAAA record for " + domain +
-                                   " updated to primary IPv6 -> " + primary_ipv6);
+                                   " updated to primary IPv6 -> " +
+                                   primary_ipv6);
             } else {
               log_buffer.push_back("Failed to update Route53 AAAA record for " +
                                    domain);
               all_success = false;
             }
           } else {
-            log_buffer.push_back("Route53 AAAA record for " + domain +
-                                 " is up to date with primary IPv6: " + primary_ipv6);
+            log_buffer.push_back(
+                "Route53 AAAA record for " + domain +
+                " is up to date with primary IPv6: " + primary_ipv6);
           }
         }
       }

@@ -133,6 +133,8 @@ cc_library(
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
+        "//src/proto:cc_config",
+        "//src/proto:cc_grpc_service",
         "//src/util",
         "@com_github_glog_glog//:glog",
         "@folly",
@@ -247,9 +249,9 @@ cc_binary(
         "@boost//:url",
         "@folly",
         "@libsodium//:sodium",
+        "@mimalloc",
         "@openssl//:crypto",
         "@openssl//:ssl",
         "@xz//:lzma",
-        "@mimalloc//:mimalloc",
     ],
 )

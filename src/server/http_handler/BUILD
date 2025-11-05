@@ -50,6 +50,7 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
 cc_library(
     name = "http_handler",
     hdrs = [
+        "cert_handler.h",
         "default_handler.h",
         "http_handler_factory.h",
         "server_handler.h",

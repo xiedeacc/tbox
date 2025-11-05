@@ -16,13 +16,9 @@ namespace grpc_handler {
 
 class EC2OpHandlerTest : public ::testing::Test {
  protected:
-  void SetUp() override {
-    handler_ = std::make_unique<EC2OpHandler>();
-  }
+  void SetUp() override { handler_ = std::make_unique<EC2OpHandler>(); }
 
-  void TearDown() override {
-    handler_.reset();
-  }
+  void TearDown() override { handler_.reset(); }
 
   std::unique_ptr<EC2OpHandler> handler_;
 };
@@ -77,4 +73,4 @@ TEST_F(EC2OpHandlerTest, InvalidOperationCode) {
 
 }  // namespace grpc_handler
 }  // namespace server
-}  // namespace tbox 
+}  // namespace tbox

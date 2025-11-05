@@ -5,5 +5,3 @@ exports_files([
     "ryzen5.bzl",
     "ryzen9.bzl",
 ])
-
-

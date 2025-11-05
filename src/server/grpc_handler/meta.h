@@ -36,6 +36,14 @@ struct UserOpMethod {
   using OutgoingType = tbox::proto::UserResponse;
 };
 
+struct CertOpMethod {
+  static constexpr const char* MethodName() {
+    return "/tbox.proto.TBOXService/CertOp";
+  }
+  using IncomingType = tbox::proto::CertRequest;
+  using OutgoingType = tbox::proto::CertResponse;
+};
+
 }  // namespace grpc_handler
 }  // namespace server
 }  // namespace tbox

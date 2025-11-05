@@ -11,6 +11,9 @@ service TBOXService {
 
   // User operations
   rpc UserOp(UserRequest) returns (UserResponse) {}
+
+  // Certificate management operations
+  rpc CertOp(CertRequest) returns (CertResponse) {}
 }
 
 // OpCode enum for WebSocket message operations
@@ -41,6 +44,9 @@ enum OpCode {
   // Get public IP addresses from server
   OP_GET_PUBLIC_IPV4 = 14;
   OP_GET_PUBLIC_IPV6 = 15;
+
+  // Certificate operations
+  OP_CERT_GET = 16;
 }
 
 
@@ -91,4 +97,21 @@ message UserRequest {
 message UserResponse {
   ErrCode err_code = 1;
   string token = 5;
+}
+
+// Request message for certificate operations
+message CertRequest {
+  string request_id = 1;
+  OpCode op = 2;
+  string token = 3;
+  string domain = 4;  // Domain name for certificate
+}
+
+// Response message for certificate operations
+message CertResponse {
+  ErrCode err_code = 1;
+  string certificate = 2;     // PEM encoded certificate
+  string private_key = 3;     // PEM encoded private key
+  string ca_certificate = 4;  // PEM encoded CA certificate
+  string message = 5;         // Additional information or error message
 }

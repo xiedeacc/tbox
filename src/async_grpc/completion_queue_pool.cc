@@ -30,8 +30,7 @@ size_t kDefaultNumberCompletionQueues = 2;
 
 void CompletionQueue::Start() {
   CHECK(!thread_) << "CompletionQueue already started.";
-  thread_ =
-      std::make_unique<std::thread>([this]() { RunCompletionQueue(); });
+  thread_ = std::make_unique<std::thread>([this]() { RunCompletionQueue(); });
 }
 
 void CompletionQueue::Shutdown() {

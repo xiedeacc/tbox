@@ -65,7 +65,9 @@ void Server::Builder::EnableTracing() {
 #endif
 }
 
-void Server::Builder::DisableTracing() { options_.enable_tracing = false; }
+void Server::Builder::DisableTracing() {
+  options_.enable_tracing = false;
+}
 
 void Server::Builder::SetTracingSamplerProbability(
     double tracing_sampler_probability) {

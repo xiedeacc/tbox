@@ -148,9 +148,9 @@ cc_binary(
         "@boost//:url",
         "@folly",
         "@libsodium//:sodium",
+        "@mimalloc",
         "@openssl//:crypto",
         "@openssl//:ssl",
         "@xz//:lzma",
-        "@mimalloc//:mimalloc",
     ],
 )

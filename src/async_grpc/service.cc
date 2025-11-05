@@ -52,7 +52,9 @@ void Service::StartServing(
   }
 }
 
-void Service::StopServing() { shutting_down_ = true; }
+void Service::StopServing() {
+  shutting_down_ = true;
+}
 
 void Service::HandleEvent(Rpc::Event event, Rpc* rpc, bool ok) {
   switch (event) {
@@ -134,7 +136,9 @@ void Service::HandleFinish(Rpc* rpc, bool ok) {
   RemoveIfNotPending(rpc);
 }
 
-void Service::HandleDone(Rpc* rpc, bool /*ok*/) { RemoveIfNotPending(rpc); }
+void Service::HandleDone(Rpc* rpc, bool /*ok*/) {
+  RemoveIfNotPending(rpc);
+}
 
 void Service::RemoveIfNotPending(Rpc* rpc) {
   if (!rpc->IsAnyEventPending()) {

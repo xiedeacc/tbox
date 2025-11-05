@@ -236,7 +236,7 @@ bool ReportManager::ReportClientIP() {
         // Clear token to force re-login
         auth_manager->ClearToken();
       }
-      
+
       log_buffer.push_back(
           "Report failed - status: " + std::to_string(status.error_code()) +
           ", message: " + status.error_message());
@@ -306,9 +306,9 @@ void ReportManager::ReportingLoop() {
     // Get public IP addresses from server to determine reportable IPs
     std::string public_ipv4 = GetPublicIPv4();
     std::string public_ipv6 = GetPublicIPv6();
-    
+
     // Get all local IP addresses
-    std::vector<std::string> all_local_ips = 
+    std::vector<std::string> all_local_ips =
         util::Util::GetAllLocalIPAddresses();
 
     // Filter to only IPs that match public IPs (same logic as ReportClientIP)
