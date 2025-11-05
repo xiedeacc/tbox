@@ -16,6 +16,7 @@
 
 #include "glog/logging.h"
 #include "src/async_grpc/client.h"
+#include "src/async_grpc/common/time.h"
 #include "src/client/authentication_manager.h"
 #include "src/client/ssl_config_manager.h"
 #include "src/impl/config_manager.h"
@@ -257,8 +258,9 @@ bool ReportManager::ReportClientIP() {
   }
 
   try {
+    // Set a timeout to make the call more responsive to stop signals
     async_grpc::Client<tbox::server::grpc_handler::ReportOpMethod> client(
-        channel_);
+        channel_, async_grpc::common::FromSeconds(10));
 
     tbox::proto::ReportRequest request;
     request.set_request_id(util::Util::UUID());
@@ -376,6 +378,12 @@ void ReportManager::ReportingLoop() {
 
     // Get public IP addresses from server to determine reportable IPs
     std::string public_ipv4 = GetPublicIPv4();
+    
+    // Check stop signal after each potentially blocking network call
+    if (should_stop_.load()) {
+      break;
+    }
+    
     std::string public_ipv6 = GetPublicIPv6();
     
     // Check stop signal after potentially blocking network calls
@@ -692,6 +700,10 @@ std::string ReportManager::GetPublicIPv4() {
 
   try {
     grpc::ClientContext context;
+    // Set a short timeout to make the call more responsive to stop signals
+    auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(5);
+    context.set_deadline(deadline);
+    
     tbox::proto::ReportRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_PUBLIC_IPV4);
@@ -740,6 +752,10 @@ std::string ReportManager::GetPublicIPv6() {
 
   try {
     grpc::ClientContext context;
+    // Set a short timeout to make the call more responsive to stop signals
+    auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(5);
+    context.set_deadline(deadline);
+    
     tbox::proto::ReportRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_PUBLIC_IPV6);

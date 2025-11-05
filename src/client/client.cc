@@ -55,9 +55,10 @@ void ShutdownCheckingThread(void) {
     LOG(INFO) << "DDNS manager stopped";
   }
 
-  // Stop gRPC client gracefully
+  // Stop gRPC client gracefully (this will stop report manager)
   if (grpc_client_ptr) {
     grpc_client_ptr->Stop();
+    LOG(INFO) << "gRPC client stopped";
   }
   // WebSocket disabled for now
   // if (websocket_client_ptr) {

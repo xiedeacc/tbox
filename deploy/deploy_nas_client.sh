@@ -38,36 +38,90 @@ print_success() {
     echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
 
-# SSH/SCP command builders
-SSH_OPTS="-p ${REMOTE_PORT} -o StrictHostKeyChecking=no"
-SCP_OPTS="-P ${REMOTE_PORT} -o StrictHostKeyChecking=no"
-
-# Handle IPv6 addresses differently for SSH vs SCP
-if [[ "${REMOTE_HOST}" == *":"* ]]; then
-    # IPv6 address - SSH uses direct, SCP needs brackets
-    SSH_HOST="${REMOTE_HOST}"
-    SCP_HOST="[${REMOTE_HOST}]"
-else
-    # IPv4 address - use as-is for both
-    SSH_HOST="${REMOTE_HOST}"
-    SCP_HOST="${REMOTE_HOST}"
-fi
-
-SSH_CMD="ssh ${SSH_OPTS} ${REMOTE_USER}@${SSH_HOST}"
-SCP_CMD="scp ${SCP_OPTS}"
-
-# Execute command on remote
-execute_cmd() {
-    $SSH_CMD "$1"
+# Function to check if host is IPv6
+is_ipv6() {
+    local host="$1"
+    # IPv6 addresses contain colons and no dots
+    [[ "$host" == *:* && "$host" != *.* ]]
 }
 
-# Stop existing service if running
+# SSH options - build array to handle arguments properly
+SSH_OPTS=( -p "${REMOTE_PORT}" -o StrictHostKeyChecking=no )
+
+# Add IPv6 flag to SSH options if using IPv6 address
+if is_ipv6 "${REMOTE_HOST}"; then
+    SSH_OPTS+=( -6 )
+fi
+
+# SSH helper function (uses raw IPv6 address, no brackets)
+ssh_exec() {
+    ssh "${SSH_OPTS[@]}" "${REMOTE_USER}@${REMOTE_HOST}" "$@"
+}
+
+# SCP helper function
+scp_copy() {
+    scp "${SSH_OPTS[@]}" "$@"
+}
+
+# SCP file helper function (formats destination with brackets for IPv6 in URL)  
+scp_file() {
+    local src="$1"
+    local dest="$2"
+    local scp_dest
+    if is_ipv6 "${REMOTE_HOST}"; then
+        # For IPv6, wrap in brackets in the URL format
+        scp_dest="${REMOTE_USER}@[${REMOTE_HOST}]:${dest}"
+    else
+        # For IPv4 or hostname, use as-is
+        scp_dest="${REMOTE_USER}@${REMOTE_HOST}:${dest}"
+    fi
+    scp "${SSH_OPTS[@]}" "$src" "$scp_dest"
+}
+
+# Execute command on remote (backward compatibility)
+execute_cmd() {
+    ssh_exec "$1"
+}
+
+# Test SSH connection
+print_status "Testing SSH connection to ${REMOTE_HOST}..."
+if ! ssh_exec "echo 'SSH connection successful'"; then
+    print_error "Failed to connect to remote host"
+    exit 1
+fi
+print_success "SSH connection verified"
+
+# Stop existing service if running with improved process handling
 print_status "Stopping existing service if running..."
+# First, try graceful stop
 execute_cmd "systemctl stop ${SERVICE_NAME} 2>/dev/null || true"
-print_status "Waiting for service to fully stop (max 5 seconds)..."
-execute_cmd "timeout 5 bash -c 'while systemctl is-active --quiet ${SERVICE_NAME} 2>/dev/null; do sleep 0.2; done' 2>/dev/null || true"
+
+print_status "Waiting for service to fully stop (max 30 seconds)..."
+# Enhanced stop procedure to handle stuck processes
+execute_cmd '
+SERVICE_NAME="'${SERVICE_NAME}'"
+for i in {1..30}; do
+    if ! systemctl is-active --quiet ${SERVICE_NAME} 2>/dev/null; then
+        echo "Service stopped gracefully after ${i} seconds"
+        break
+    fi
+    if [ $i -eq 15 ]; then
+        echo "Service still running after 15s, sending SIGKILL to processes..."
+        # Kill any tbox_client processes that might be stuck
+        pkill -9 -f "tbox_client" 2>/dev/null || true
+        # Also kill any processes holding open the binary file
+        lsof +D /usr/local/tbox/bin/ 2>/dev/null | awk "NR>1 {print \$2}" | xargs -r kill -9 2>/dev/null || true
+    fi
+    sleep 1
+done
+
+# Final check and cleanup
+if systemctl is-active --quiet ${SERVICE_NAME} 2>/dev/null; then
+    echo "Warning: Service still appears active, but proceeding anyway"
+fi
+'
 # Wait a bit more to ensure file handles are released
-sleep 1
+sleep 2
 
 # Build client binary locally
 print_status "Building client binary (small tier - no AVX2 for NAS compatibility)..."
@@ -112,7 +166,7 @@ execute_cmd "mkdir -p ${BIN_DIR} ${CONF_DIR} ${LOG_DIR}"
 # Copy the binary (use temporary name first, then move atomically)
 print_status "Installing binary to ${BIN_DIR}/${BINARY_NAME}..."
 TEMP_REMOTE_BINARY="${BIN_DIR}/${BINARY_NAME}.new"
-$SCP_CMD ${TEMP_BINARY} "${REMOTE_USER}@${SCP_HOST}:${TEMP_REMOTE_BINARY}"
+scp_file "${TEMP_BINARY}" "${TEMP_REMOTE_BINARY}"
 execute_cmd "chmod +x ${TEMP_REMOTE_BINARY}"
 # Wait a moment to ensure file is fully written
 sleep 1
@@ -124,7 +178,7 @@ else
     execute_cmd "rm -f ${TEMP_REMOTE_BINARY}"
     # Wait a bit more for file handles to be released
     sleep 2
-    if $SCP_CMD ${TEMP_BINARY} "${REMOTE_USER}@${SCP_HOST}:${BIN_DIR}/${BINARY_NAME}"; then
+    if scp_file "${TEMP_BINARY}" "${BIN_DIR}/${BINARY_NAME}"; then
         execute_cmd "chmod +x ${BIN_DIR}/${BINARY_NAME}"
         print_success "Binary installed (direct copy)"
     else
@@ -149,7 +203,7 @@ fi
 
 # Copy configuration file
 print_status "Installing configuration file..."
-$SCP_CMD conf/client_nas_config.json "${REMOTE_USER}@${SCP_HOST}:${CONF_DIR}/client_config.json"
+scp_file "conf/client_nas_config.json" "${CONF_DIR}/client_config.json"
 print_success "Configuration file installed"
 
 # Set ownership and permissions
@@ -159,7 +213,7 @@ print_success "Permissions set"
 
 # Install systemd service file
 print_status "Installing systemd service file..."
-$SCP_CMD deploy/tbox_client.service "${REMOTE_USER}@${SCP_HOST}:/etc/systemd/system/"
+scp_file "deploy/tbox_client.service" "/etc/systemd/system/"
 print_success "Service file installed"
 
 # Reload systemd and enable service
