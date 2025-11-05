@@ -75,8 +75,6 @@ void Handler::HandleGetFullchainCertHash(const proto::CertRequest& req,
   if (success && !hash_result.empty()) {
     res->set_err_code(proto::ErrCode::Success);
     res->set_message(hash_result);  // Return hash in message field
-    LOG(INFO) << "Sent fullchain certificate hash: "
-              << hash_result.substr(0, 16) << "...";
   } else {
     res->set_err_code(proto::ErrCode::Fail);
     res->set_message("Failed to calculate fullchain certificate hash");

@@ -47,10 +47,12 @@ is_ipv6() {
 
 # SSH options - build array to handle arguments properly
 SSH_OPTS=( -p "${REMOTE_PORT}" -o StrictHostKeyChecking=no )
+SCP_OPTS=( -P "${REMOTE_PORT}" -o StrictHostKeyChecking=no )
 
-# Add IPv6 flag to SSH options if using IPv6 address
+# Add IPv6 flag to SSH/SCP options if using IPv6 address
 if is_ipv6 "${REMOTE_HOST}"; then
     SSH_OPTS+=( -6 )
+    SCP_OPTS+=( -6 )
 fi
 
 # SSH helper function (uses raw IPv6 address, no brackets)
@@ -60,7 +62,7 @@ ssh_exec() {
 
 # SCP helper function
 scp_copy() {
-    scp "${SSH_OPTS[@]}" "$@"
+    scp "${SCP_OPTS[@]}" "$@"
 }
 
 # SCP file helper function (formats destination with brackets for IPv6 in URL)  
@@ -75,7 +77,7 @@ scp_file() {
         # For IPv4 or hostname, use as-is
         scp_dest="${REMOTE_USER}@${REMOTE_HOST}:${dest}"
     fi
-    scp "${SSH_OPTS[@]}" "$src" "$scp_dest"
+    scp "${SCP_OPTS[@]}" "$src" "$scp_dest"
 }
 
 # Execute command on remote (backward compatibility)

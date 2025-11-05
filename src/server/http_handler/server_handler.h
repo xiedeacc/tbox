@@ -20,6 +20,7 @@
 #include "src/server/grpc_handler/report_handler.h"
 #include "src/server/handler/handler.h"
 #include "src/server/http_handler/util.h"
+#include "src/server/version_info.h"
 #include "src/util/util.h"
 
 namespace tbox {
@@ -200,7 +201,10 @@ class ServerHandler : public proxygen::RequestHandler {
 
       json_stream << "}";
     }
-    json_stream << "}";
+    json_stream << "},";
+
+    // Git commit information
+    json_stream << "\"git_commit\":\"" << GIT_VERSION << "\"";
 
     json_stream << "}";
 

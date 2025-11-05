@@ -15,6 +15,7 @@
 #include "src/server/grpc_server_impl.h"
 #include "src/server/http_server_impl.h"
 #include "src/server/server_context.h"
+#include "src/server/version_info.h"
 
 // https://github.com/grpc/grpc/issues/24884
 tbox::server::HttpServer* http_server_ptr = nullptr;
@@ -65,6 +66,7 @@ void RegisterSignalHandler() {
 
 int main(int argc, char** argv) {
   LOG(INFO) << "Server initializing ...";
+  LOG(INFO) << "Git commit: " << GIT_VERSION;
 
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   FLAGS_log_dir = "./log";

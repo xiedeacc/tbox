@@ -24,8 +24,6 @@ class CertOpHandler : public async_grpc::RpcHandler<CertOpMethod> {
   ~CertOpHandler() = default;
 
   void OnRequest(const proto::CertRequest& req) override {
-    LOG(INFO) << "CertOpHandler::OnRequest received - request_id: "
-              << req.request_id() << ", op: " << req.op();
     auto res = std::make_unique<proto::CertResponse>();
 
     try {
