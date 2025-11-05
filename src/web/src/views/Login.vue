@@ -20,7 +20,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { v4 as uuidv4 } from 'uuid';  // Import uuid v4 generator
-import { sha256StringHex } from '@/utils/utils.js';
+import { sha256StringHex } from '../utils/utils.js';
 
 // State for username, password, and error messages
 const user = ref('');
