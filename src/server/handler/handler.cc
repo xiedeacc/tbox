@@ -20,8 +20,7 @@ void Handler::HandleGetCertificate(const proto::CertRequest& req,
   const std::string cert_base_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc";
 
   // Read certificate files
-  std::string cert_content =
-      ReadFileContent(cert_base_path + "/fullchain.cer");
+  std::string cert_content = ReadFileContent(cert_base_path + "/fullchain.cer");
   std::string key_content =
       ReadFileContent(cert_base_path + "/xiedeacc.com.key");
   std::string ca_content = ReadFileContent(cert_base_path + "/ca.cer");
@@ -53,8 +52,8 @@ void Handler::HandleGetFullchainCertHash(const proto::ReportRequest& req,
   if (success && !hash_result.empty()) {
     res->set_err_code(proto::ErrCode::Success);
     res->add_client_ip(hash_result);  // Return hash in client_ip field
-    res->set_message("Fullchain certificate hash: " +
-                     hash_result.substr(0, 16) + "...");
+    res->set_message(
+        "Fullchain certificate hash: " + hash_result.substr(0, 16) + "...");
     LOG(INFO) << "Sent fullchain certificate hash: "
               << hash_result.substr(0, 16) << "...";
   } else {
@@ -130,8 +129,8 @@ void Handler::HandleGetFullchainCert(const proto::ReportRequest& req,
   if (!cert_content.empty()) {
     res->set_err_code(proto::ErrCode::Success);
     res->set_message(cert_content);  // Return certificate in message field
-    LOG(INFO) << "Sent fullchain certificate content ("
-              << cert_content.length() << " bytes)";
+    LOG(INFO) << "Sent fullchain certificate content (" << cert_content.length()
+              << " bytes)";
   } else {
     res->set_err_code(proto::ErrCode::Fail);
     res->set_message("Failed to read fullchain certificate");
@@ -150,8 +149,8 @@ void Handler::HandleGetFullchainCert(const proto::CertRequest& req,
     res->set_certificate(
         cert_content);  // Return certificate in certificate field
     res->set_message("Fullchain certificate retrieved successfully");
-    LOG(INFO) << "Sent fullchain certificate content ("
-              << cert_content.length() << " bytes)";
+    LOG(INFO) << "Sent fullchain certificate content (" << cert_content.length()
+              << " bytes)";
   } else {
     res->set_err_code(proto::ErrCode::Fail);
     res->set_message("Failed to read fullchain certificate");

@@ -163,17 +163,17 @@ class ServerOpHandler : public async_grpc::RpcHandler<ServerOpMethod> {
     // Try to get server IP using hostname
     std::string command = "hostname -I | awk '{print $1}'";
     std::string result = ExecuteCommand(command);
-    
+
     // Remove any trailing whitespace
     result.erase(result.find_last_not_of(" \t\r\n") + 1);
-    
+
     if (result.empty()) {
       // Fallback method - get IP from network interface
       command = "ip route get 8.8.8.8 | awk '{print $7; exit}'";
       result = ExecuteCommand(command);
       result.erase(result.find_last_not_of(" \t\r\n") + 1);
     }
-    
+
     return result.empty() ? "unknown" : result;
   }
 

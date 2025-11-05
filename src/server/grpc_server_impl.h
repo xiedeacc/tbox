@@ -40,7 +40,8 @@ class GrpcServer final {
         .RegisterHandler<tbox::server::grpc_handler::ReportOpHandler>();
     server_builder.RegisterHandler<tbox::server::grpc_handler::UserHandler>();
     server_builder.RegisterHandler<tbox::server::grpc_handler::CertOpHandler>();
-    server_builder.RegisterHandler<tbox::server::grpc_handler::ServerOpHandler>();
+    server_builder
+        .RegisterHandler<tbox::server::grpc_handler::ServerOpHandler>();
 
     server_ = server_builder.Build();
     server_->SetExecutionContext(server_context);

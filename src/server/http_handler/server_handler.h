@@ -11,12 +11,11 @@
 #include <vector>
 
 #include "aws/core/Aws.h"
-#include "folly/IPAddress.h"
-#include "src/util/util.h"
 #include "aws/core/client/ClientConfiguration.h"
 #include "aws/ec2/EC2Client.h"
 #include "aws/ec2/model/StartInstancesRequest.h"
 #include "aws/ec2/model/StopInstancesRequest.h"
+#include "folly/IPAddress.h"
 #include "proxygen/httpserver/RequestHandler.h"
 #include "proxygen/httpserver/ResponseBuilder.h"
 #include "proxygen/lib/http/HTTPMessage.h"
@@ -31,7 +30,8 @@ namespace server {
 namespace http_handler {
 
 /**
- * @brief HTTP handler for server-related information and EC2 management endpoints.
+ * @brief HTTP handler for server-related information and EC2 management
+ * endpoints.
  *
  * Returns the client IP address observed by the server, server IP address,
  * all registered client IP addresses from the report handler, and handles
@@ -78,7 +78,7 @@ class ServerHandler : public proxygen::RequestHandler {
   void onEOM() noexcept override {
     // Parse request body to check for EC2 operations
     std::string operation = ParseOperation(body_);
-    
+
     if (operation == "ec2_start" || operation == "ec2_stop") {
       HandleEC2Operation(operation);
     } else {
@@ -104,20 +104,22 @@ class ServerHandler : public proxygen::RequestHandler {
   /// @brief Get server's public IP addresses (IPv4 and IPv6)
   std::string GetServerIPAddress() {
     std::vector<std::string> public_ips;
-    
+
     // Try to get public IPv4 from AWS metadata service (for EC2 instances)
     std::string public_ipv4 = GetAWSPublicIPv4();
     if (!public_ipv4.empty()) {
       public_ips.push_back(public_ipv4);
     }
-    
+
     // Get public IPv6 addresses using utility function
-    std::vector<std::string> ipv6_addresses = util::Util::GetPublicIPv6Addresses();
+    std::vector<std::string> ipv6_addresses =
+        util::Util::GetPublicIPv6Addresses();
     for (const auto& ipv6 : ipv6_addresses) {
       public_ips.push_back(ipv6);
     }
-    
-    // If AWS metadata didn't work for IPv4, fall back to external service detection
+
+    // If AWS metadata didn't work for IPv4, fall back to external service
+    // detection
     if (public_ipv4.empty()) {
       std::string external_ip = GetExternalPublicIP();
       if (!external_ip.empty()) {
@@ -134,15 +136,16 @@ class ServerHandler : public proxygen::RequestHandler {
         }
       }
     }
-    
+
     // Return comma-separated list of public IPs, or "unknown" if none found
     if (public_ips.empty()) {
       return "unknown";
     }
-    
+
     std::string result;
     for (size_t i = 0; i < public_ips.size(); ++i) {
-      if (i > 0) result += ", ";
+      if (i > 0)
+        result += ", ";
       result += public_ips[i];
     }
     return result;
@@ -151,12 +154,14 @@ class ServerHandler : public proxygen::RequestHandler {
   /// @brief Get public IPv4 address from AWS metadata service
   std::string GetAWSPublicIPv4() {
     // AWS metadata service endpoint for public IPv4
-    std::string command = "curl -s --max-time 3 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null";
+    std::string command =
+        "curl -s --max-time 3 "
+        "http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null";
     std::string result = ExecuteCommand(command);
-    
+
     // Remove any trailing whitespace
     result.erase(result.find_last_not_of(" \t\r\n") + 1);
-    
+
     // Validate it's actually an IPv4 address
     try {
       if (!result.empty() && result.find("404") == std::string::npos) {
@@ -171,23 +176,22 @@ class ServerHandler : public proxygen::RequestHandler {
     return "";
   }
 
-
   /// @brief Get public IP address using external service (fallback)
   std::string GetExternalPublicIP() {
     // Try multiple external services for reliability
     std::vector<std::string> services = {
-      "curl -s --max-time 5 https://checkip.amazonaws.com 2>/dev/null",
-      "curl -s --max-time 5 https://ipinfo.io/ip 2>/dev/null",
-      "curl -s --max-time 5 https://api.ipify.org 2>/dev/null"
-    };
-    
+        "curl -s --max-time 5 https://checkip.amazonaws.com 2>/dev/null",
+        "curl -s --max-time 5 https://ipinfo.io/ip 2>/dev/null",
+        "curl -s --max-time 5 https://api.ipify.org 2>/dev/null"};
+
     for (const auto& command : services) {
       std::string result = ExecuteCommand(command);
       result.erase(result.find_last_not_of(" \t\r\n") + 1);
-      
+
       // Validate it's a valid IP address
       try {
-        if (!result.empty() && result.size() < 50) {  // Reasonable IP length check
+        if (!result.empty() &&
+            result.size() < 50) {  // Reasonable IP length check
           folly::IPAddress ip_addr(result);
           return result;
         }
@@ -300,7 +304,8 @@ class ServerHandler : public proxygen::RequestHandler {
     std::string region = ExtractJSONValue(body_, "region");
 
     if (instance_id.empty()) {
-      std::string error_response = "{\"error\":\"Instance ID is required for EC2 operations\"}";
+      std::string error_response =
+          "{\"error\":\"Instance ID is required for EC2 operations\"}";
       Util::InternalServerError(error_response, downstream_);
       return;
     }
@@ -326,11 +331,12 @@ class ServerHandler : public proxygen::RequestHandler {
 
       if (outcome.IsSuccess()) {
         json_stream << "\"status\":\"starting\",";
-        json_stream << "\"message\":\"Instance start request submitted successfully\"";
+        json_stream
+            << "\"message\":\"Instance start request submitted successfully\"";
         LOG(INFO) << "Successfully started instance: " << instance_id;
       } else {
         json_stream << "\"status\":\"error\",";
-        json_stream << "\"message\":\"Failed to start instance: " 
+        json_stream << "\"message\":\"Failed to start instance: "
                     << outcome.GetError().GetMessage() << "\"";
         LOG(ERROR) << "Failed to start instance: " << instance_id << " - "
                    << outcome.GetError().GetMessage();
@@ -343,11 +349,12 @@ class ServerHandler : public proxygen::RequestHandler {
 
       if (outcome.IsSuccess()) {
         json_stream << "\"status\":\"stopping\",";
-        json_stream << "\"message\":\"Instance stop request submitted successfully\"";
+        json_stream
+            << "\"message\":\"Instance stop request submitted successfully\"";
         LOG(INFO) << "Successfully stopped instance: " << instance_id;
       } else {
         json_stream << "\"status\":\"error\",";
-        json_stream << "\"message\":\"Failed to stop instance: " 
+        json_stream << "\"message\":\"Failed to stop instance: "
                     << outcome.GetError().GetMessage() << "\"";
         LOG(ERROR) << "Failed to stop instance: " << instance_id << " - "
                    << outcome.GetError().GetMessage();
@@ -360,7 +367,8 @@ class ServerHandler : public proxygen::RequestHandler {
   }
 
   /// @brief Extract value from JSON string (simple implementation)
-  std::string ExtractJSONValue(const std::string& json, const std::string& key) {
+  std::string ExtractJSONValue(const std::string& json,
+                               const std::string& key) {
     std::string search_key = "\"" + key + "\":\"";
     size_t start_pos = json.find(search_key);
     if (start_pos == std::string::npos) {

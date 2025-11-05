@@ -96,7 +96,8 @@ void ReportManager::Stop() {
   }
   cv_.notify_all();
 
-  // Wait for the thread to finish (always join if joinable, even if running_ is false)
+  // Wait for the thread to finish (always join if joinable, even if running_ is
+  // false)
   if (reporting_thread_.joinable()) {
     reporting_thread_.join();
   }
@@ -378,14 +379,14 @@ void ReportManager::ReportingLoop() {
 
     // Get public IP addresses from server to determine reportable IPs
     std::string public_ipv4 = GetPublicIPv4();
-    
+
     // Check stop signal after each potentially blocking network call
     if (should_stop_.load()) {
       break;
     }
-    
+
     std::string public_ipv6 = GetPublicIPv6();
-    
+
     // Check stop signal after potentially blocking network calls
     if (should_stop_.load()) {
       break;
@@ -509,7 +510,7 @@ void ReportManager::ReportingLoop() {
       LOG(ERROR) << "Exception in reporting loop: " << e.what();
       connection_healthy_.store(false);
     }
-    
+
     // Check stop signal after reporting
     if (should_stop_.load()) {
       break;
@@ -703,7 +704,7 @@ std::string ReportManager::GetPublicIPv4() {
     // Set a short timeout to make the call more responsive to stop signals
     auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(5);
     context.set_deadline(deadline);
-    
+
     tbox::proto::ReportRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_PUBLIC_IPV4);
@@ -755,7 +756,7 @@ std::string ReportManager::GetPublicIPv6() {
     // Set a short timeout to make the call more responsive to stop signals
     auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(5);
     context.set_deadline(deadline);
-    
+
     tbox::proto::ReportRequest request;
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_GET_PUBLIC_IPV6);

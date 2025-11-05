@@ -26,8 +26,8 @@ std::shared_ptr<CertManager> CertManager::Instance() {
   return cert_manager.try_get();
 }
 
-CertManager::CertManager() 
-    : running_(false), 
+CertManager::CertManager()
+    : running_(false),
       should_stop_(false),
       initialized_(false),
       check_interval_seconds_(kCheckIntervalSeconds) {}
@@ -43,25 +43,19 @@ bool CertManager::Init() {
   LOG(INFO) << "Initializing CertManager...";
 
   // Configure supported domains
-  domains_ = {
-    {
-      .domain = "xiedeacc.com",
-      .acme_dir = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc",
-      .nginx_prefix = "xiedeacc.com"
-    },
-    {
-      .domain = "youkechat.net", 
-      .acme_dir = "/home/ubuntu/.acme.sh/youkechat.net_ecc",
-      .nginx_prefix = "youkechat.net"
-    }
-  };
+  domains_ = {{.domain = "xiedeacc.com",
+               .acme_dir = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc",
+               .nginx_prefix = "xiedeacc.com"},
+              {.domain = "youkechat.net",
+               .acme_dir = "/home/ubuntu/.acme.sh/youkechat.net_ecc",
+               .nginx_prefix = "youkechat.net"}};
 
   // Verify acme.sh directories exist
   for (const auto& domain_config : domains_) {
     if (!FileExists(domain_config.acme_dir)) {
-      LOG(WARNING) << "Acme.sh directory does not exist: " 
-                   << domain_config.acme_dir
-                   << " for domain " << domain_config.domain;
+      LOG(WARNING) << "Acme.sh directory does not exist: "
+                   << domain_config.acme_dir << " for domain "
+                   << domain_config.domain;
     } else {
       LOG(INFO) << "Found acme.sh directory for " << domain_config.domain
                 << ": " << domain_config.acme_dir;
@@ -70,14 +64,14 @@ bool CertManager::Init() {
 
   // Ensure nginx ssl directory exists
   if (!EnsureNginxSslDir()) {
-    LOG(ERROR) << "Failed to create or access nginx SSL directory: " 
+    LOG(ERROR) << "Failed to create or access nginx SSL directory: "
                << kNginxSslDir;
     return false;
   }
 
   initialized_ = true;
-  LOG(INFO) << "CertManager initialized successfully for " 
-            << domains_.size() << " domain(s)";
+  LOG(INFO) << "CertManager initialized successfully for " << domains_.size()
+            << " domain(s)";
   return true;
 }
 
@@ -100,9 +94,9 @@ void CertManager::Start() {
   running_ = true;
 
   update_thread_ = std::thread(&CertManager::UpdateLoop, this);
-  LOG(INFO) << "Started certificate sync thread with interval " 
-            << check_interval_seconds_ << " seconds for "
-            << domains_.size() << " domain(s)";
+  LOG(INFO) << "Started certificate sync thread with interval "
+            << check_interval_seconds_ << " seconds for " << domains_.size()
+            << " domain(s)";
 }
 
 void CertManager::Stop() {
@@ -134,7 +128,7 @@ bool CertManager::SyncCertificates() {
     return false;
   }
 
-  LOG(INFO) << "Starting certificate sync check for " << domains_.size() 
+  LOG(INFO) << "Starting certificate sync check for " << domains_.size()
             << " domain(s)";
 
   bool overall_success = true;
@@ -142,21 +136,21 @@ bool CertManager::SyncCertificates() {
 
   for (const auto& domain_config : domains_) {
     LOG(INFO) << "Checking certificates for domain: " << domain_config.domain;
-    
+
     if (SyncDomainCertificates(domain_config)) {
       synced_count++;
-      LOG(INFO) << "Certificate sync completed for domain: " 
+      LOG(INFO) << "Certificate sync completed for domain: "
                 << domain_config.domain;
     } else {
-      LOG(ERROR) << "Certificate sync failed for domain: " 
+      LOG(ERROR) << "Certificate sync failed for domain: "
                  << domain_config.domain;
       overall_success = false;
     }
   }
 
-  LOG(INFO) << "Certificate sync check completed. Successfully processed " 
+  LOG(INFO) << "Certificate sync check completed. Successfully processed "
             << synced_count << "/" << domains_.size() << " domain(s)";
-  
+
   return overall_success;
 }
 
@@ -173,7 +167,7 @@ std::string CertManager::GetCertFileExtension(CertType type) {
   }
 }
 
-std::string CertManager::GetAcmeFilename(const std::string& domain, 
+std::string CertManager::GetAcmeFilename(const std::string& domain,
                                          CertType type) {
   switch (type) {
     case CertType::KEY:
@@ -187,7 +181,7 @@ std::string CertManager::GetAcmeFilename(const std::string& domain,
   }
 }
 
-std::string CertManager::GetNginxFilename(const std::string& domain, 
+std::string CertManager::GetNginxFilename(const std::string& domain,
                                           CertType type) {
   return domain + GetCertFileExtension(type);
 }
@@ -204,15 +198,15 @@ bool CertManager::FileExists(const std::string& file_path) {
   return access(file_path.c_str(), R_OK) == 0;
 }
 
-bool CertManager::CopyFile(const std::string& src_path, 
+bool CertManager::CopyFile(const std::string& src_path,
                            const std::string& dest_path) {
   try {
-    std::filesystem::copy_file(src_path, dest_path, 
-                               std::filesystem::copy_options::overwrite_existing);
-    
+    std::filesystem::copy_file(
+        src_path, dest_path, std::filesystem::copy_options::overwrite_existing);
+
     // Set proper permissions for SSL files (readable by owner and group)
     chmod(dest_path.c_str(), 0644);
-    
+
     LOG(INFO) << "Copied certificate file: " << src_path << " -> " << dest_path;
     return true;
   } catch (const std::exception& e) {
@@ -225,19 +219,16 @@ bool CertManager::CopyFile(const std::string& src_path,
 bool CertManager::SyncDomainCertificates(const DomainConfig& domain_config) {
   // Check if acme.sh directory exists
   if (!FileExists(domain_config.acme_dir)) {
-    LOG(WARNING) << "Acme.sh directory not found for domain " 
+    LOG(WARNING) << "Acme.sh directory not found for domain "
                  << domain_config.domain << ": " << domain_config.acme_dir;
     return true;  // Not a failure, just skip
   }
 
   bool success = true;
-  
+
   // Sync each certificate type
-  const std::vector<CertType> cert_types = {
-    CertType::KEY,
-    CertType::CA,
-    CertType::FULLCHAIN
-  };
+  const std::vector<CertType> cert_types = {CertType::KEY, CertType::CA,
+                                            CertType::FULLCHAIN};
 
   for (CertType cert_type : cert_types) {
     if (!SyncCertificateFile(domain_config, cert_type)) {
@@ -248,12 +239,13 @@ bool CertManager::SyncDomainCertificates(const DomainConfig& domain_config) {
   return success;
 }
 
-bool CertManager::SyncCertificateFile(const DomainConfig& domain_config, 
+bool CertManager::SyncCertificateFile(const DomainConfig& domain_config,
                                       CertType cert_type) {
   // Build file paths
   std::string acme_filename = GetAcmeFilename(domain_config.domain, cert_type);
-  std::string nginx_filename = GetNginxFilename(domain_config.domain, cert_type);
-  
+  std::string nginx_filename =
+      GetNginxFilename(domain_config.domain, cert_type);
+
   std::string src_path = domain_config.acme_dir + "/" + acme_filename;
   std::string dest_path = std::string(kNginxSslDir) + "/" + nginx_filename;
 
@@ -268,7 +260,8 @@ bool CertManager::SyncCertificateFile(const DomainConfig& domain_config,
   bool need_copy = false;
 
   if (!dest_exists) {
-    LOG(INFO) << "Destination certificate file missing, will copy: " << dest_path;
+    LOG(INFO) << "Destination certificate file missing, will copy: "
+              << dest_path;
     need_copy = true;
   } else {
     // Compare hashes to see if files are different
@@ -276,8 +269,8 @@ bool CertManager::SyncCertificateFile(const DomainConfig& domain_config,
     std::string dest_hash = CalculateFileHash(dest_path);
 
     if (src_hash.empty() || dest_hash.empty()) {
-      LOG(ERROR) << "Failed to calculate hash for comparison: " 
-                 << src_path << " or " << dest_path;
+      LOG(ERROR) << "Failed to calculate hash for comparison: " << src_path
+                 << " or " << dest_path;
       return false;
     }
 
@@ -302,14 +295,14 @@ bool CertManager::SyncCertificateFile(const DomainConfig& domain_config,
 bool CertManager::EnsureNginxSslDir() {
   try {
     std::filesystem::create_directories(kNginxSslDir);
-    
+
     // Verify directory is accessible
     if (!FileExists(kNginxSslDir)) {
       LOG(ERROR) << "Failed to access nginx SSL directory after creation: "
                  << kNginxSslDir;
       return false;
     }
-    
+
     LOG(INFO) << "Nginx SSL directory ready: " << kNginxSslDir;
     return true;
   } catch (const std::exception& e) {
@@ -342,7 +335,7 @@ void CertManager::UpdateLoop() {
     try {
       bool success = SyncCertificates();
       if (success) {
-        LOG(INFO) << "Certificate sync successful, next check in " 
+        LOG(INFO) << "Certificate sync successful, next check in "
                   << check_interval_seconds_ << " seconds";
       } else {
         LOG(WARNING) << "Certificate sync had some failures, next check in "

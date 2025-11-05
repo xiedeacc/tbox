@@ -17,11 +17,11 @@
 
 #include "glog/logging.h"
 #include "src/async_grpc/client.h"
-#include "src/util/util.h"
 #include "src/async_grpc/common/time.h"
 #include "src/client/authentication_manager.h"
 #include "src/impl/config_manager.h"
 #include "src/server/grpc_handler/meta.h"
+#include "src/util/util.h"
 
 namespace tbox {
 namespace client {
@@ -92,8 +92,7 @@ void SSLConfigManager::MonitorCertificate() {
       if (!channel_) {
         LOG(WARNING)
             << "gRPC channel not available, skipping certificate update";
-        std::this_thread::sleep_for(
-            std::chrono::seconds(5));
+        std::this_thread::sleep_for(std::chrono::seconds(5));
         continue;
       }
 
@@ -108,7 +107,7 @@ void SSLConfigManager::MonitorCertificate() {
         LOG(INFO) << "Certificate update completed - tbox: "
                   << (tbox_updated ? "updated" : "unchanged")
                   << ", nginx: " << (nginx_updated ? "updated" : "unchanged");
-      } 
+      }
     } catch (const std::exception& e) {
       LOG(ERROR) << "Error in certificate monitoring: " << e.what();
     }
@@ -306,7 +305,8 @@ std::string SSLConfigManager::GetRemoteCertificateChain() {
     // Use async_grpc client like report_manager does
     grpc::Status status;
     bool success = client.Write(request, &status);
-    LOG(INFO) << "Successfully retrieved fullchain certificate chain from server";
+    LOG(INFO)
+        << "Successfully retrieved fullchain certificate chain from server";
     if (success && status.ok()) {
       const auto& response = client.response();
       if (response.err_code() == tbox::proto::ErrCode::Success) {
@@ -462,7 +462,6 @@ bool SSLConfigManager::UpdateTboxCertificate() {
     LOG(WARNING) << "Failed to get remote certificate chain";
     return false;
   }
-  LOG(INFO) << "Remote certificate chain: " << remote_chain;
   CertificateChain cert_chain = ParseCertificateChain(remote_chain);
   if (cert_chain.root_cert.empty()) {
     LOG(WARNING) << "No root certificate found in remote chain";
@@ -472,7 +471,7 @@ bool SSLConfigManager::UpdateTboxCertificate() {
   // Check tbox certificate location: /usr/local/tbox/conf/xiedeacc.com.ca.cer
   std::string tbox_cert_path = "/usr/local/tbox/conf/xiedeacc.com.ca.cer";
   std::string local_cert = ReadFileContent(tbox_cert_path);
-   
+
   if (!AreCertificatesEqual(local_cert, cert_chain.root_cert)) {
     LOG(INFO) << "Tbox certificate differs from remote, updating...";
 

@@ -18,13 +18,6 @@ LOG_DIR="${INSTALL_DIR}/log"
 SERVICE_USER="tbox"
 WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# NAS deployment parameters (pre-configured)
-REMOTE_HOST="2408:8256:3105:8f90:9a6e:e8ff:fe28:dea3"
-REMOTE_PORT="10022"
-REMOTE_USER="root"
-
-echo -e "${GREEN}Starting deployment of tbox_client to NAS (${REMOTE_HOST}:${REMOTE_PORT})...${NC}"
-
 # Function to print status
 print_status() {
     echo -e "${YELLOW}[INFO]${NC} $1"
@@ -37,6 +30,38 @@ print_error() {
 print_success() {
     echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
+
+# NAS deployment parameters (pre-configured)
+NAS_IPV6="2408:8256:3105:8f90:9a6e:e8ff:fe28:dea3"
+NAS_IPV4="192.168.3.101"
+REMOTE_PORT="10022"
+REMOTE_USER="root"
+
+# Detect IPv6 connectivity and set REMOTE_HOST accordingly
+print_status "Checking IPv6 connectivity..."
+# Check if system has IPv6 enabled and can reach the NAS via IPv6
+if command -v ping6 >/dev/null 2>&1; then
+  if ping6 -c 1 -W 2 "${NAS_IPV6}" >/dev/null 2>&1; then
+    REMOTE_HOST="${NAS_IPV6}"
+    print_success "IPv6 connectivity detected, using IPv6 address: ${REMOTE_HOST}"
+  elif ping6 -c 1 -W 2 "2001:4860:4860::8888" >/dev/null 2>&1; then
+    # Check if general IPv6 connectivity exists (Google DNS)
+    REMOTE_HOST="${NAS_IPV6}"
+    print_status "IPv6 connectivity available, attempting IPv6 address: ${REMOTE_HOST}"
+  else
+    REMOTE_HOST="${NAS_IPV4}"
+    print_status "No IPv6 connectivity detected, using IPv4 address: ${REMOTE_HOST}"
+  fi
+elif ip -6 route show default >/dev/null 2>&1; then
+  # If ping6 not available but IPv6 routing exists, try IPv6
+  REMOTE_HOST="${NAS_IPV6}"
+  print_status "IPv6 routing detected, attempting IPv6 address: ${REMOTE_HOST}"
+else
+  REMOTE_HOST="${NAS_IPV4}"
+  print_status "No IPv6 connectivity detected, using IPv4 address: ${REMOTE_HOST}"
+fi
+
+echo -e "${GREEN}Starting deployment of tbox_client to NAS (${REMOTE_HOST}:${REMOTE_PORT})...${NC}"
 
 # Function to check if host is IPv6
 is_ipv6() {

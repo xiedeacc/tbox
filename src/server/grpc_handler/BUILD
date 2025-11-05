@@ -109,4 +109,3 @@ cc_library(
         "@aws-sdk-cpp//:aws-cpp-sdk-route53",
     ],
 )
-

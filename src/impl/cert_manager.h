@@ -53,21 +53,23 @@ class CertManager final {
 
   // Configuration constants
   static constexpr int kCheckIntervalSeconds = 3600;  ///< Check every hour
-  static constexpr const char* kNginxSslDir = "/etc/nginx/ssl";  ///< Nginx SSL dir
-  static constexpr const char* kAcmeBaseDir = "/home/ubuntu/.acme.sh";  ///< Acme.sh base dir
+  static constexpr const char* kNginxSslDir =
+      "/etc/nginx/ssl";  ///< Nginx SSL dir
+  static constexpr const char* kAcmeBaseDir =
+      "/home/ubuntu/.acme.sh";  ///< Acme.sh base dir
 
   /// @brief Certificate file types
   enum class CertType {
-    KEY,         ///< Private key (.key)
-    CA,          ///< CA certificate (.ca.cer)
-    FULLCHAIN    ///< Fullchain certificate (.fullchain.cer)
+    KEY,       ///< Private key (.key)
+    CA,        ///< CA certificate (.ca.cer)
+    FULLCHAIN  ///< Fullchain certificate (.fullchain.cer)
   };
 
   /// @brief Domain configuration
   struct DomainConfig {
-    std::string domain;           ///< Domain name (e.g., "xiedeacc.com")
-    std::string acme_dir;         ///< Acme.sh directory path
-    std::string nginx_prefix;     ///< Nginx file prefix
+    std::string domain;        ///< Domain name (e.g., "xiedeacc.com")
+    std::string acme_dir;      ///< Acme.sh directory path
+    std::string nginx_prefix;  ///< Nginx file prefix
   };
 
  private:
@@ -116,7 +118,8 @@ class CertManager final {
   /// @param domain_config Domain configuration.
   /// @param cert_type Certificate type to sync.
   /// @return True on success or no sync needed, false on failure.
-  bool SyncCertificateFile(const DomainConfig& domain_config, CertType cert_type);
+  bool SyncCertificateFile(const DomainConfig& domain_config,
+                           CertType cert_type);
 
   /// @brief Create nginx ssl directory if it doesn't exist.
   /// @return True on success, false on failure.
@@ -126,17 +129,17 @@ class CertManager final {
   void UpdateLoop();
 
   // Threading and synchronization
-  std::atomic<bool> running_;           ///< Whether the thread is running
-  std::atomic<bool> should_stop_;       ///< Signal to stop the thread
-  std::thread update_thread_;           ///< Background update thread
-  mutable std::mutex mutex_;            ///< Mutex for thread synchronization
-  std::condition_variable cv_;          ///< Condition variable for thread control
-  mutable std::mutex init_mutex_;       ///< Mutex for initialization
+  std::atomic<bool> running_;      ///< Whether the thread is running
+  std::atomic<bool> should_stop_;  ///< Signal to stop the thread
+  std::thread update_thread_;      ///< Background update thread
+  mutable std::mutex mutex_;       ///< Mutex for thread synchronization
+  std::condition_variable cv_;     ///< Condition variable for thread control
+  mutable std::mutex init_mutex_;  ///< Mutex for initialization
 
   // State
-  std::atomic<bool> initialized_;       ///< Whether manager is initialized
-  std::vector<DomainConfig> domains_;   ///< Configured domains
-  int check_interval_seconds_;          ///< Check interval in seconds
+  std::atomic<bool> initialized_;      ///< Whether manager is initialized
+  std::vector<DomainConfig> domains_;  ///< Configured domains
+  int check_interval_seconds_;         ///< Check interval in seconds
 };
 
 }  // namespace impl

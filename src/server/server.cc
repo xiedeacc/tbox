@@ -8,9 +8,9 @@
 #include "folly/init/Init.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
+#include "src/impl/cert_manager.h"
 #include "src/impl/config_manager.h"
 #include "src/impl/ddns_manager.h"
-#include "src/impl/cert_manager.h"
 #include "src/impl/user_manager.h"
 #include "src/server/grpc_server_impl.h"
 #include "src/server/http_server_impl.h"
@@ -121,7 +121,8 @@ int main(int argc, char** argv) {
       LOG(INFO) << "Certificate manager started";
     }
   } else {
-    LOG(WARNING) << "Failed to initialize certificate manager, continuing without it";
+    LOG(WARNING)
+        << "Failed to initialize certificate manager, continuing without it";
   }
 
   RegisterSignalHandler();

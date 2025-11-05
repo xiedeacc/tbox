@@ -61,7 +61,6 @@ class SSLConfigManager {
   // Monitor certificate changes every 5 seconds
   void MonitorCertificate();
 
-
   // Fetch new certificates from server
   bool FetchAndStoreCertificates();
 
