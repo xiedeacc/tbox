@@ -85,7 +85,7 @@ print_success "SSH connection verified"
 # Build all targets locally for ARM64
 print_status "Building all targets locally for ARM64 (cpu_model=neoverse-11)..."
 cd "${WORKSPACE_ROOT}"
-if ! bazel build --define=cpu_model=neoverse-11 --config=clang_aarch64_linux_gnu //...; then
+if ! bazel build --define=cpu_model=neoverse-11 --config=clang_aarch64_linux_gnu //src/server:tbox_server; then
     print_error "Failed to build all targets"
     exit 1
 fi
