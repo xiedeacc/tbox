@@ -102,7 +102,7 @@ class ServerHandler : public proxygen::RequestHandler {
   }
 
   /// @brief Get server's public IP addresses (IPv4 and IPv6)
-  std::string GetServerIPAddress() {
+  std::vector<std::string> GetServerIPAddresses() {
     std::vector<std::string> public_ips;
 
     // Try to get public IPv4 from AWS metadata service (for EC2 instances)
@@ -137,18 +137,7 @@ class ServerHandler : public proxygen::RequestHandler {
       }
     }
 
-    // Return comma-separated list of public IPs, or "unknown" if none found
-    if (public_ips.empty()) {
-      return "unknown";
-    }
-
-    std::string result;
-    for (size_t i = 0; i < public_ips.size(); ++i) {
-      if (i > 0)
-        result += ", ";
-      result += public_ips[i];
-    }
-    return result;
+    return public_ips;
   }
 
   /// @brief Get public IPv4 address from AWS metadata service
@@ -223,15 +212,21 @@ class ServerHandler : public proxygen::RequestHandler {
     // Get all registered clients from the report handler
     auto all_clients = grpc_handler::ReportOpHandler::GetAllClients();
 
-    // Get server IP address
-    std::string server_ip = GetServerIPAddress();
+    // Get server IP addresses
+    std::vector<std::string> server_ips = GetServerIPAddresses();
 
     // Build comprehensive JSON response
     std::ostringstream json_stream;
     json_stream << "{";
 
-    // Server IP address
-    json_stream << "\"server_ip\":\"" << server_ip << "\",";
+    // Server IP addresses array
+    json_stream << "\"server_ip\":[";
+    for (size_t i = 0; i < server_ips.size(); ++i) {
+      if (i > 0)
+        json_stream << ",";
+      json_stream << "\"" << server_ips[i] << "\"";
+    }
+    json_stream << "],";
 
     // Current client IP (from HTTP headers)
     json_stream << "\"current_client_ip\":\"";
@@ -317,9 +312,21 @@ class ServerHandler : public proxygen::RequestHandler {
     }
     Aws::EC2::EC2Client ec2_client(config);
 
+    // Get server IP addresses
+    std::vector<std::string> server_ips = GetServerIPAddresses();
+
     std::ostringstream json_stream;
     json_stream << "{";
-    json_stream << "\"server_ip\":\"" << GetServerIPAddress() << "\",";
+    
+    // Server IP addresses array
+    json_stream << "\"server_ip\":[";
+    for (size_t i = 0; i < server_ips.size(); ++i) {
+      if (i > 0)
+        json_stream << ",";
+      json_stream << "\"" << server_ips[i] << "\"";
+    }
+    json_stream << "],";
+    
     json_stream << "\"current_client_ip\":\"" << client_ip_ << "\",";
     json_stream << "\"instance_id\":\"" << instance_id << "\",";
 
