@@ -72,6 +72,9 @@ bool GrpcClient::Init() {
 
     // Update SSL config manager with current configuration
     ssl_config_manager->UpdateConfig(config_manager->GetBaseConfig());
+    
+    // Set gRPC channel for SSL config manager to use for server communication
+    ssl_config_manager->SetChannel(channel_);
 
     // Get certificate path from configuration
     std::string ca_cert_path = config_manager->LocalCertPath();
@@ -147,6 +150,11 @@ bool GrpcClient::Init() {
 }
 
 void GrpcClient::Start() {
+  // Start SSL config manager (if certificate updates are enabled)
+  auto ssl_config_manager = SSLConfigManager::Instance();
+  ssl_config_manager->Start();
+  LOG(INFO) << "SSL config manager started";
+
   // Start report manager
   auto report_manager = ReportManager::Instance();
   if (!report_manager->IsRunning()) {
@@ -157,6 +165,11 @@ void GrpcClient::Start() {
 
 void GrpcClient::Stop() {
   LOG(INFO) << "Stopping GrpcClient...";
+
+  // Stop SSL config manager
+  auto ssl_config_manager = SSLConfigManager::Instance();
+  ssl_config_manager->Stop();
+  LOG(INFO) << "SSL config manager stopped";
 
   // Stop report manager
   auto report_manager = ReportManager::Instance();

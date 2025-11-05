@@ -6,6 +6,9 @@
 #include "src/client/ssl_config_manager.h"
 
 #include <sys/stat.h>
+#include <pwd.h>
+#include <grp.h>
+#include <errno.h>
 
 #include <cstring>
 #include <filesystem>
@@ -13,6 +16,10 @@
 #include <sstream>
 
 #include "glog/logging.h"
+#include "src/client/authentication_manager.h"
+#include "src/async_grpc/client.h"
+#include "src/server/grpc_handler/meta.h"
+#include "src/impl/config_manager.h"
 
 namespace tbox {
 namespace client {
@@ -45,6 +52,11 @@ SSLConfigManager::~SSLConfigManager() {
 void SSLConfigManager::UpdateConfig(const proto::BaseConfig& config) {
   config_ = &config;
   LOG(INFO) << "SSL Config Manager configuration updated";
+}
+
+void SSLConfigManager::SetChannel(std::shared_ptr<grpc::Channel> channel) {
+  channel_ = channel;
+  LOG(INFO) << "SSL Config Manager gRPC channel set";
 }
 
 std::string SSLConfigManager::LoadCACert(const std::string& cert_path) {
@@ -83,21 +95,16 @@ void SSLConfigManager::Stop() {
 void SSLConfigManager::MonitorCertificate() {
   while (running_.load()) {
     try {
-      if (HasCertificateChanged()) {
-        LOG(INFO) << "Certificate change detected, updating...";
-
-        // Get current remote certificate and update local copy
-        std::string remote_cert = GetRemoteCertificateFingerprint();
-        if (!remote_cert.empty()) {
-          UpdateLocalCertificate(remote_cert);
-
-          // Fetch new certificates from server and store them
-          if (FetchAndStoreCertificates()) {
-            LOG(INFO) << "Certificates updated successfully";
-          } else {
-            LOG(ERROR) << "Failed to fetch and store certificates";
-          }
-        }
+      // Check and update tbox certificate
+      bool tbox_updated = UpdateTboxCertificate();
+      
+      // Check and update nginx certificates
+      bool nginx_updated = UpdateNginxCertificates();
+      
+      if (tbox_updated || nginx_updated) {
+        LOG(INFO) << "Certificate update completed - tbox: " 
+                  << (tbox_updated ? "updated" : "unchanged") 
+                  << ", nginx: " << (nginx_updated ? "updated" : "unchanged");
       }
     } catch (const std::exception& e) {
       LOG(ERROR) << "Error in certificate monitoring: " << e.what();
@@ -294,14 +301,43 @@ std::string SSLConfigManager::ReadFileContent(const std::string& file_path) {
 
 bool SSLConfigManager::WriteFileContent(const std::string& file_path,
                                         const std::string& content) {
+  // Ensure parent directory exists
+  std::filesystem::path file_path_obj(file_path);
+  std::filesystem::path parent_dir = file_path_obj.parent_path();
+  
+  if (!parent_dir.empty() && !std::filesystem::exists(parent_dir)) {
+    LOG(INFO) << "Creating parent directory: " << parent_dir;
+    std::error_code ec;
+    if (!std::filesystem::create_directories(parent_dir, ec)) {
+      LOG(ERROR) << "Failed to create parent directory " << parent_dir 
+                 << ": " << ec.message();
+      return false;
+    }
+  }
+  
   std::ofstream file(file_path);
   if (!file.is_open()) {
-    LOG(ERROR) << "Failed to open file for writing: " << file_path;
+    LOG(ERROR) << "Failed to open file for writing: " << file_path 
+               << " (errno: " << errno << " - " << strerror(errno) << ")";
     return false;
   }
 
   file << content;
+  if (file.fail()) {
+    LOG(ERROR) << "Failed to write content to file: " << file_path
+               << " (errno: " << errno << " - " << strerror(errno) << ")";
+    file.close();
+    return false;
+  }
+  
   file.close();
+  if (file.fail()) {
+    LOG(ERROR) << "Failed to close file: " << file_path
+               << " (errno: " << errno << " - " << strerror(errno) << ")";
+    return false;
+  }
+  
+  LOG(INFO) << "Successfully wrote " << content.length() << " bytes to: " << file_path;
   return true;
 }
 
@@ -335,6 +371,455 @@ bool SSLConfigManager::SetFilePermissions(const std::string& file_path,
     return false;
   }
   return true;
+}
+
+std::string SSLConfigManager::GetRemoteCertificateChain() {
+  if (!config_) {
+    LOG(ERROR) << "Configuration not available";
+    return "";
+  }
+
+  // Extract domain from server_addr
+  std::string server_addr = config_->server_addr();
+  std::string domain = server_addr;
+
+  // Remove protocol prefix if present
+  size_t protocol_pos = domain.find("://");
+  if (protocol_pos != std::string::npos) {
+    domain = domain.substr(protocol_pos + 3);
+  }
+
+  // Remove port if present
+  size_t port_pos = domain.find(":");
+  if (port_pos != std::string::npos) {
+    domain = domain.substr(0, port_pos);
+  }
+
+  // Get the complete certificate chain using openssl s_client
+  std::string command = "echo | openssl s_client -connect " + domain + 
+                        ":443 -servername " + domain + 
+                        " -showcerts 2>/dev/null";
+
+  std::string result = ExecuteCommand(command);
+  return result;
+}
+
+SSLConfigManager::CertificateChain SSLConfigManager::ParseCertificateChain(
+    const std::string& chain) {
+  CertificateChain cert_chain;
+  
+  // Find all certificate blocks in the chain
+  std::vector<std::string> certificates;
+  size_t pos = 0;
+  
+  while (true) {
+    size_t begin_pos = chain.find("-----BEGIN CERTIFICATE-----", pos);
+    if (begin_pos == std::string::npos) break;
+    
+    size_t end_pos = chain.find("-----END CERTIFICATE-----", begin_pos);
+    if (end_pos == std::string::npos) break;
+    
+    end_pos += 25; // Include "-----END CERTIFICATE-----"
+    std::string cert = chain.substr(begin_pos, end_pos - begin_pos);
+    certificates.push_back(cert);
+    pos = end_pos;
+  }
+  
+  // First certificate is typically the server certificate
+  if (!certificates.empty()) {
+    cert_chain.server_cert = certificates[0];
+  }
+  
+  // Second certificate is typically the intermediate CA
+  if (certificates.size() > 1) {
+    cert_chain.intermediate_cert = certificates[1];
+  }
+  
+  // Last certificate is typically the root CA
+  if (certificates.size() > 2) {
+    cert_chain.root_cert = certificates.back();
+  }
+  
+  // Build fullchain (server + intermediate + root)
+  cert_chain.fullchain = "";
+  for (const auto& cert : certificates) {
+    cert_chain.fullchain += cert + "\n";
+  }
+  
+  return cert_chain;
+}
+
+bool SSLConfigManager::AreCertificatesEqual(const std::string& cert1, 
+                                           const std::string& cert2) {
+  if (cert1.empty() || cert2.empty()) {
+    return cert1.empty() && cert2.empty();
+  }
+  
+  // Normalize whitespace and compare certificate content
+  auto normalize = [](const std::string& cert) {
+    std::string normalized;
+    std::istringstream iss(cert);
+    std::string line;
+    
+    while (std::getline(iss, line)) {
+      // Trim whitespace
+      line.erase(0, line.find_first_not_of(" \t\r\n"));
+      line.erase(line.find_last_not_of(" \t\r\n") + 1);
+      
+      if (!line.empty()) {
+        normalized += line + "\n";
+      }
+    }
+    return normalized;
+  };
+  
+  return normalize(cert1) == normalize(cert2);
+}
+
+bool SSLConfigManager::SetWwwDataOwnership(const std::string& directory_path) {
+  // Get www-data user and group IDs
+  struct passwd* pwd = getpwnam("www-data");
+  struct group* grp = getgrnam("www-data");
+  
+  if (!pwd || !grp) {
+    LOG(WARNING) << "www-data user/group not found, using root ownership";
+    return true; // Not a critical error
+  }
+  
+  // Set ownership of directory
+  if (chown(directory_path.c_str(), pwd->pw_uid, grp->gr_gid) != 0) {
+    LOG(WARNING) << "Failed to set www-data ownership for directory: " 
+                 << directory_path << ", error: " << strerror(errno);
+    return false;
+  }
+  
+  // Set ownership for all files in directory
+  try {
+    for (const auto& entry : std::filesystem::directory_iterator(directory_path)) {
+      if (entry.is_regular_file()) {
+        std::string file_path = entry.path().string();
+        if (chown(file_path.c_str(), pwd->pw_uid, grp->gr_gid) != 0) {
+          LOG(WARNING) << "Failed to set www-data ownership for file: " 
+                       << file_path << ", error: " << strerror(errno);
+        }
+      }
+    }
+  } catch (const std::exception& e) {
+    LOG(WARNING) << "Error setting ownership for files in " << directory_path 
+                 << ": " << e.what();
+    return false;
+  }
+  
+  return true;
+}
+
+bool SSLConfigManager::UpdateTboxCertificate() {
+  if (!config_) {
+    LOG(ERROR) << "Configuration not available";
+    return false;
+  }
+  
+  // Get remote certificate chain
+  std::string remote_chain = GetRemoteCertificateChain();
+  if (remote_chain.empty()) {
+    LOG(WARNING) << "Failed to get remote certificate chain";
+    return false;
+  }
+  
+  CertificateChain cert_chain = ParseCertificateChain(remote_chain);
+  if (cert_chain.root_cert.empty()) {
+    LOG(WARNING) << "No root certificate found in remote chain";
+    return false;
+  }
+  
+  // Check tbox certificate location: /usr/local/tbox/conf/xiedeacc.com.ca.cer
+  std::string tbox_cert_path = "/usr/local/tbox/conf/xiedeacc.com.ca.cer";
+  std::string local_cert = ReadFileContent(tbox_cert_path);
+  
+  if (!AreCertificatesEqual(local_cert, cert_chain.root_cert)) {
+    LOG(INFO) << "Tbox certificate differs from remote, updating...";
+    
+    // Create directory if it doesn't exist
+    std::filesystem::create_directories("/usr/local/tbox/conf");
+    
+    // Write new certificate
+    if (WriteFileContent(tbox_cert_path, cert_chain.root_cert)) {
+      SetFilePermissions(tbox_cert_path, 0644);
+      LOG(INFO) << "Tbox certificate updated: " << tbox_cert_path;
+      return true;
+    } else {
+      LOG(ERROR) << "Failed to write tbox certificate: " << tbox_cert_path;
+      return false;
+    }
+  }
+  
+  return false; // No update needed
+}
+
+bool SSLConfigManager::UpdateNginxCertificates() {
+  if (!config_) {
+    LOG(ERROR) << "Configuration not available";
+    return false;
+  }
+  
+  std::string nginx_ssl_path = config_->nginx_ssl_path();
+  if (nginx_ssl_path.empty()) {
+    nginx_ssl_path = "/etc/nginx/ssl";
+  }
+  
+  // Get remote certificate chain
+  std::string remote_chain = GetRemoteCertificateChain();
+  if (remote_chain.empty()) {
+    LOG(WARNING) << "Failed to get remote certificate chain";
+    return false;
+  }
+  
+  CertificateChain cert_chain = ParseCertificateChain(remote_chain);
+  if (cert_chain.server_cert.empty() || cert_chain.fullchain.empty()) {
+    LOG(WARNING) << "Invalid certificate chain from remote server";
+    return false;
+  }
+  
+  // Create nginx SSL directory if it doesn't exist
+  if (!std::filesystem::exists(nginx_ssl_path)) {
+    std::filesystem::create_directories(nginx_ssl_path);
+    SetWwwDataOwnership(nginx_ssl_path);
+  }
+  
+  bool updated = false;
+  
+  // Check required nginx certificate files
+  std::string ca_cert_path = nginx_ssl_path + "/xiedeacc.com.ca.cer";
+  std::string fullchain_path = nginx_ssl_path + "/xiedeacc.com.fullchain.cer";
+  std::string key_path = nginx_ssl_path + "/xiedeacc.com.key";
+  
+  // Update CA certificate
+  std::string local_ca_cert = ReadFileContent(ca_cert_path);
+  if (!AreCertificatesEqual(local_ca_cert, cert_chain.root_cert)) {
+    LOG(INFO) << "Nginx CA certificate differs from remote, updating...";
+    if (WriteFileContent(ca_cert_path, cert_chain.root_cert)) {
+      SetFilePermissions(ca_cert_path, 0644);
+      updated = true;
+    }
+  }
+  
+  // Update fullchain certificate
+  std::string local_fullchain = ReadFileContent(fullchain_path);
+  if (!AreCertificatesEqual(local_fullchain, cert_chain.fullchain)) {
+    LOG(INFO) << "Nginx fullchain certificate differs from remote, updating...";
+    if (WriteFileContent(fullchain_path, cert_chain.fullchain)) {
+      SetFilePermissions(fullchain_path, 0644);
+      updated = true;
+    }
+  }
+  
+  // Check and update private key
+  bool key_updated = UpdatePrivateKey(key_path);
+  if (key_updated) {
+    updated = true;
+    LOG(INFO) << "Private key updated: " << key_path;
+  }
+  
+  // Set proper ownership for nginx SSL directory
+  if (updated) {
+    SetWwwDataOwnership(nginx_ssl_path);
+    LOG(INFO) << "Nginx certificates updated and ownership set to www-data";
+  }
+  
+  return updated;
+}
+
+bool SSLConfigManager::ValidateFullchainCertificate(
+    const std::string& fullchain_path) {
+  if (!std::filesystem::exists(fullchain_path)) {
+    LOG(WARNING) << "Fullchain certificate file does not exist: " 
+                 << fullchain_path;
+    return false;
+  }
+  
+  std::string fullchain_content = ReadFileContent(fullchain_path);
+  if (fullchain_content.empty()) {
+    LOG(ERROR) << "Failed to read fullchain certificate: " << fullchain_path;
+    return false;
+  }
+  
+  CertificateChain cert_chain = ParseCertificateChain(fullchain_content);
+  
+  // Validate that we have at least server certificate
+  if (cert_chain.server_cert.empty()) {
+    LOG(ERROR) << "No server certificate found in fullchain: " << fullchain_path;
+    return false;
+  }
+  
+  // Log certificate chain information
+  int cert_count = 0;
+  if (!cert_chain.server_cert.empty()) cert_count++;
+  if (!cert_chain.intermediate_cert.empty()) cert_count++;
+  if (!cert_chain.root_cert.empty()) cert_count++;
+  
+  LOG(INFO) << "Fullchain certificate validation for " << fullchain_path 
+            << " - found " << cert_count << " certificate(s)";
+  
+  return cert_count >= 1; // At minimum we need a server certificate
+}
+
+std::string SSLConfigManager::GetRemotePrivateKeyHash() {
+  if (!config_) {
+    LOG(ERROR) << "Configuration not available";
+    return "";
+  }
+
+  auto auth_manager = client::AuthenticationManager::Instance();
+  if (!auth_manager->IsAuthenticated()) {
+    LOG(WARNING) << "Not authenticated, cannot get remote private key hash";
+    return "";
+  }
+
+  try {
+    async_grpc::Client<tbox::server::grpc_handler::ReportOpMethod> client(channel_);
+
+    tbox::proto::ReportRequest request;
+    request.set_request_id(util::Util::UUID());
+    request.set_op(tbox::proto::OpCode::OP_GET_PRIVATE_KEY_HASH);
+    request.set_token(auth_manager->GetToken());
+    request.set_client_id(util::ConfigManager::Instance()->ClientId());
+
+    grpc::Status status;
+    tbox::proto::ReportResponse response;
+    
+    // Use the main channel for this request
+    if (channel_) {
+      auto stub = tbox::proto::TBOXService::NewStub(channel_);
+      grpc::ClientContext context;
+      status = stub->ReportOp(&context, request, &response);
+    } else {
+      LOG(ERROR) << "No gRPC channel available";
+      return "";
+    }
+
+    if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
+      // Private key hash should be in the first client_ip field
+      if (response.client_ip_size() > 0) {
+        return response.client_ip(0);
+      }
+    } else {
+      LOG(WARNING) << "Failed to get remote private key hash: " 
+                   << status.error_message();
+    }
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "Exception getting remote private key hash: " << e.what();
+  }
+
+  return "";
+}
+
+std::string SSLConfigManager::GetLocalPrivateKeyHash(const std::string& key_path) {
+  if (!std::filesystem::exists(key_path)) {
+    LOG(INFO) << "Local private key does not exist: " << key_path;
+    return "";
+  }
+
+  // Calculate SHA256 hash of the private key file
+  std::string command = "openssl dgst -sha256 " + key_path + " 2>/dev/null | awk '{print $2}'";
+  std::string result = ExecuteCommand(command);
+  
+  // Remove any trailing whitespace
+  result.erase(result.find_last_not_of(" \t\r\n") + 1);
+  
+  if (result.empty()) {
+    LOG(WARNING) << "Failed to calculate hash for local private key: " << key_path;
+  } else {
+    LOG(INFO) << "Local private key hash: " << result.substr(0, 16) << "...";
+  }
+  
+  return result;
+}
+
+bool SSLConfigManager::FetchAndStorePrivateKey(const std::string& key_path) {
+  if (!config_) {
+    LOG(ERROR) << "Configuration not available";
+    return false;
+  }
+
+  auto auth_manager = client::AuthenticationManager::Instance();
+  if (!auth_manager->IsAuthenticated()) {
+    LOG(WARNING) << "Not authenticated, cannot fetch private key";
+    return false;
+  }
+
+  try {
+    async_grpc::Client<tbox::server::grpc_handler::ReportOpMethod> client(channel_);
+
+    tbox::proto::ReportRequest request;
+    request.set_request_id(util::Util::UUID());
+    request.set_op(tbox::proto::OpCode::OP_GET_PRIVATE_KEY);
+    request.set_token(auth_manager->GetToken());
+    request.set_client_id(util::ConfigManager::Instance()->ClientId());
+
+    grpc::Status status;
+    tbox::proto::ReportResponse response;
+    
+    // Use the main channel for this request
+    if (channel_) {
+      auto stub = tbox::proto::TBOXService::NewStub(channel_);
+      grpc::ClientContext context;
+      status = stub->ReportOp(&context, request, &response);
+    } else {
+      LOG(ERROR) << "No gRPC channel available";
+      return false;
+    }
+
+    if (status.ok() && response.err_code() == tbox::proto::ErrCode::Success) {
+      // Private key content should be in message field
+      std::string private_key_content = response.message();
+      
+      if (!private_key_content.empty()) {
+        // Write private key to file
+        if (WriteFileContent(key_path, private_key_content)) {
+          // Set restrictive permissions for private key (600 = rw-------)
+          SetFilePermissions(key_path, 0600);
+          LOG(INFO) << "Successfully fetched and stored private key: " << key_path;
+          return true;
+        } else {
+          LOG(ERROR) << "Failed to write private key to: " << key_path;
+        }
+      } else {
+        LOG(ERROR) << "Empty private key content received from server";
+      }
+    } else {
+      LOG(WARNING) << "Failed to fetch private key from server: " 
+                   << status.error_message();
+    }
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "Exception fetching private key: " << e.what();
+  }
+
+  return false;
+}
+
+bool SSLConfigManager::UpdatePrivateKey(const std::string& key_path) {
+  // Get remote private key hash
+  std::string remote_hash = GetRemotePrivateKeyHash();
+  if (remote_hash.empty()) {
+    LOG(WARNING) << "Could not get remote private key hash";
+    return false;
+  }
+
+  // Get local private key hash
+  std::string local_hash = GetLocalPrivateKeyHash(key_path);
+
+  // Compare hashes
+  if (local_hash != remote_hash) {
+    LOG(INFO) << "Private key differs from server (local: " 
+              << (local_hash.empty() ? "missing" : local_hash.substr(0, 16) + "...")
+              << ", remote: " << remote_hash.substr(0, 16) + "...), updating..."; 
+    
+    // Fetch and store the updated private key
+    return FetchAndStorePrivateKey(key_path);
+  } else {
+    LOG(INFO) << "Private key is up to date";
+    return false; // No update needed
+  }
 }
 
 }  // namespace client

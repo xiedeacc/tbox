@@ -534,6 +534,7 @@ bool DDNSManager::UpdateDNS() {
 
   // Update all monitored domains
   bool all_success = true;
+  bool any_updates_needed = false;  // Track if any updates were needed
   for (const auto& [domain, zone_id] : domain_to_zone_id_) {
     log_buffer.push_back("Checking domain: " + domain);
 
@@ -545,6 +546,7 @@ bool DDNSManager::UpdateDNS() {
       // Check for and delete private IPv4 addresses
       for (const auto& ipv4 : route53_ipv4s) {
         if (IsPrivateIP(ipv4)) {
+          any_updates_needed = true;  // Deletion is an update
           log_buffer.push_back("Found private IPv4 in Route53: " + ipv4 +
                                " - deleting");
           if (!DeleteRoute53Record(zone_id, domain, "A", ipv4)) {
@@ -573,6 +575,7 @@ bool DDNSManager::UpdateDNS() {
       if (!public_ipv4.empty()) {
         bool ipv4_needs_update = !IsIPInList(public_ipv4, route53_ipv4s);
         if (ipv4_needs_update) {
+          any_updates_needed = true;  // IPv4 update needed
           if (UpdateRoute53ARecord(zone_id, domain, public_ipv4)) {
             log_buffer.push_back("Route53 A record for " + domain +
                                  " updated successfully -> " + public_ipv4);
@@ -599,6 +602,7 @@ bool DDNSManager::UpdateDNS() {
       // Check for and delete private IPv6 addresses
       for (const auto& ipv6 : route53_ipv6s) {
         if (IsPrivateIP(ipv6)) {
+          any_updates_needed = true;  // Deletion is an update
           log_buffer.push_back("Found private IPv6 in Route53: " + ipv6 +
                                " - deleting");
           if (!DeleteRoute53Record(zone_id, domain, "AAAA", ipv6)) {
@@ -651,6 +655,7 @@ bool DDNSManager::UpdateDNS() {
           }
 
           if (ipv6_needs_update) {
+            any_updates_needed = true;  // IPv6 update needed
             if (UpdateRoute53AAAARecord(zone_id, domain, primary_ipv6)) {
               log_buffer.push_back("Route53 AAAA record for " + domain +
                                    " updated to primary IPv6 -> " +
@@ -673,9 +678,15 @@ bool DDNSManager::UpdateDNS() {
     }
   }
 
-  // Output all buffered logs atomically
-  for (const auto& msg : log_buffer) {
-    LOG(INFO) << msg;
+  // Only output logs if updates were needed or if there were errors
+  if (any_updates_needed || !all_success) {
+    // Output all buffered logs atomically when updates occurred or errors happened
+    for (const auto& msg : log_buffer) {
+      LOG(INFO) << msg;
+    }
+  } else {
+    // Just log a minimal message when everything is up to date
+    LOG(INFO) << "DNS records are up to date - no updates needed";
   }
 
   return all_success;

@@ -17,6 +17,7 @@
 #include <thread>
 
 #include "glog/logging.h"
+#include "grpcpp/grpcpp.h"
 #include "src/proto/config.pb.h"
 #include "src/proto/service.pb.h"
 
@@ -32,6 +33,9 @@ class SSLConfigManager {
 
   // Update configuration
   void UpdateConfig(const proto::BaseConfig& config);
+
+  // Set gRPC channel for server communication
+  void SetChannel(std::shared_ptr<grpc::Channel> channel);
 
   // Load CA certificate from file path
   std::string LoadCACert(const std::string& cert_path);
@@ -79,12 +83,52 @@ class SSLConfigManager {
   // Set file permissions
   bool SetFilePermissions(const std::string& file_path, mode_t permissions);
 
+  // Get complete certificate chain from remote server using openssl s_client
+  std::string GetRemoteCertificateChain();
+
+  // Get individual certificates from chain (server, intermediate, root)
+  struct CertificateChain {
+    std::string server_cert;
+    std::string intermediate_cert;
+    std::string root_cert;
+    std::string fullchain;
+  };
+  CertificateChain ParseCertificateChain(const std::string& chain);
+
+  // Compare certificate contents (not just fingerprints)
+  bool AreCertificatesEqual(const std::string& cert1, const std::string& cert2);
+
+  // Set directory ownership to www-data user
+  bool SetWwwDataOwnership(const std::string& directory_path);
+
+  // Check and update tbox certificate location
+  bool UpdateTboxCertificate();
+
+  // Check and update nginx SSL certificates
+  bool UpdateNginxCertificates();
+
+  // Validate that fullchain contains server + intermediate + root certs
+  bool ValidateFullchainCertificate(const std::string& fullchain_path);
+
+  // Get SHA256 hash of remote private key
+  std::string GetRemotePrivateKeyHash();
+
+  // Get SHA256 hash of local private key
+  std::string GetLocalPrivateKeyHash(const std::string& key_path);
+
+  // Fetch private key from server and store locally
+  bool FetchAndStorePrivateKey(const std::string& key_path);
+
+  // Check and update private key if needed
+  bool UpdatePrivateKey(const std::string& key_path);
+
   static std::shared_ptr<SSLConfigManager> instance_;
   static std::mutex instance_mutex_;
 
   const proto::BaseConfig* config_;
   std::atomic<bool> running_;
   std::unique_ptr<std::thread> monitor_thread_;
+  std::shared_ptr<grpc::Channel> channel_;
 
   // Certificate monitoring configuration
   static constexpr int kMonitorIntervalSeconds = 5;

@@ -21,7 +21,7 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectHome=yes
 ProtectSystem=strict
-ReadWritePaths=/usr/local/tbox/log
+ReadWritePaths=/usr/local/tbox/log /usr/local/tbox/conf /etc/nginx/ssl
 
 # Environment
 Environment="GLOG_log_dir=/usr/local/tbox/log"
