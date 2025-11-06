@@ -154,6 +154,20 @@ config_setting(
 )
 
 config_setting(
+    name = "musl_libc",
+    define_values = {"abi": "musl"},
+)
+
+config_setting(
+    name = "glibc_aarch64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+    define_values = {"abi": "gnu"},
+)
+
+config_setting(
     name = "osx_x86_64",
     constraint_values = [
         "@platforms//os:osx",

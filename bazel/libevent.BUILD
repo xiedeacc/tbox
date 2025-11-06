@@ -124,12 +124,18 @@ cc_library(
             "WIN32-Code/tree.h",
             "compat/sys/queue.h",
         ],
+        "@tbox//bazel:musl_libc": [
+            "compat/sys/queue.h",
+        ],
         "//conditions:default": [],
     }),
     copts = COPTS + select({
         "@platforms//os:windows": [
             "-Iexternal/libevent/compat",
             "-Iexternal/libevent/WIN32-Code",
+        ],
+        "@tbox//bazel:musl_libc": [
+            "-Iexternal/libevent/compat",
         ],
         "//conditions:default": [],
     }),
@@ -161,12 +167,18 @@ cc_library(
             "WIN32-Code/tree.h",
             "compat/sys/queue.h",
         ],
+        "@tbox//bazel:musl_libc": [
+            "compat/sys/queue.h",
+        ],
         "//conditions:default": [],
     }),
     copts = COPTS + select({
         "@platforms//os:windows": [
             "-Iexternal/libevent/compat",
             "-Iexternal/libevent/WIN32-Code",
+        ],
+        "@tbox//bazel:musl_libc": [
+            "-Iexternal/libevent/compat",
         ],
         "//conditions:default": [],
     }),
@@ -205,12 +217,18 @@ cc_library(
             "WIN32-Code/tree.h",
             "compat/sys/queue.h",
         ],
+        "@tbox//bazel:musl_libc": [
+            "compat/sys/queue.h",
+        ],
         "//conditions:default": [],
     }),
     copts = COPTS + select({
         "@platforms//os:windows": [
             "-Iexternal/libevent/compat",
             "-Iexternal/libevent/WIN32-Code",
+        ],
+        "@tbox//bazel:musl_libc": [
+            "-Iexternal/libevent/compat",
         ],
         "//conditions:default": [],
     }),
@@ -1051,6 +1069,12 @@ template_rule(
     }) | select({
         "@tbox//bazel:linux_aarch64": {
             "#define EVENT__HAVE_EPOLL_PWAIT2 1": "/* #undef EVENT__HAVE_EPOLL_PWAIT2 */",
+        },
+        "//conditions:default": {
+        },
+    }) | select({
+        "@tbox//bazel:musl_libc": {
+            "#define EVENT__HAVE_MMAP64 1": "/* #undef EVENT__HAVE_MMAP64 */",
         },
         "//conditions:default": {
         },

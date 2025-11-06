@@ -106,9 +106,7 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "@platforms//os:linux": [
         "_GNU_SOURCE",
         "AWS_HAVE_POSIX_LARGE_FILE_SUPPORT",
-        "AWS_HAVE_EXECINFO",
         "AWS_HAVE_LINUX_IF_LINK_H",
-        "AWS_AFFINITY_METHOD=AWS_AFFINITY_METHOD_PTHREAD_ATTR",
         "AWS_PTHREAD_GETNAME_TAKES_3ARGS",
         "AWS_PTHREAD_SETNAME_TAKES_2ARGS",
         "HAVE_SYSCONF",
@@ -123,6 +121,18 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
         "AWS_HAVE_EXECINFO",
     ],
     "//conditions:default": [],
+}) + select({
+    # Use pthread affinity for glibc, none for musl
+    "@tbox//bazel:musl_libc": [
+        "AWS_AFFINITY_METHOD=AWS_AFFINITY_METHOD_NONE",
+        # Disable ARM optimizations for musl builds
+        "AWS_ARCH_ARM64=0",
+        "AWS_HAVE_ARMv8_1=0", 
+        "AWS_USE_CPU_EXTENSIONS=0",
+    ],
+    "//conditions:default": [
+        "AWS_AFFINITY_METHOD=AWS_AFFINITY_METHOD_PTHREAD_ATTR",
+    ],
 })
 
 LINKOPTS = GLOBAL_LINKOPTS + select({
@@ -159,7 +169,7 @@ write_file(
         "#define AWS_HAVE_GCC_INLINE_ASM",
         "/* #undef AWS_HAVE_MSVC_INTRINSICS_X64 */",
         "#define AWS_HAVE_POSIX_LARGE_FILE_SUPPORT",
-        "#define AWS_HAVE_EXECINFO",
+        "{{EXECINFO}}",
         "/* #undef AWS_HAVE_WINAPI_DESKTOP */",
         "#define AWS_HAVE_LINUX_IF_LINK_H",
         "{{AVX2_INTRINSICS}}",
@@ -187,6 +197,7 @@ template_rule(
             "{{ARCH_ARM64}}": "/* #undef AWS_ARCH_ARM64 */",
             "{{ARCH_INTEL}}": "#define AWS_ARCH_INTEL",
             "{{ARCH_INTEL_X64}}": "#define AWS_ARCH_INTEL_X64",
+            "{{EXECINFO}}": "#define AWS_HAVE_EXECINFO",
         },
         "@platforms//cpu:aarch64": {
             "{{ARM32_CRC}}": "/* #undef AWS_HAVE_ARM32_CRC */",
@@ -198,6 +209,7 @@ template_rule(
             "{{AVX2_INTRINSICS}}": "/* #undef AWS_HAVE_AVX2_INTRINSICS */",
             "{{MM256_EXTRACT}}": "/* #undef AWS_HAVE_MM256_EXTRACT_EPI64 */",
             "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
+            "{{EXECINFO}}": "/* #undef AWS_HAVE_EXECINFO */",
         },
         "//conditions:default": {
             "{{ARM32_CRC}}": "/* #undef AWS_HAVE_ARM32_CRC */",
@@ -209,6 +221,7 @@ template_rule(
             "{{AVX2_INTRINSICS}}": "/* #undef AWS_HAVE_AVX2_INTRINSICS */",
             "{{MM256_EXTRACT}}": "/* #undef AWS_HAVE_MM256_EXTRACT_EPI64 */",
             "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
+            "{{EXECINFO}}": "/* #undef AWS_HAVE_EXECINFO */",
         },
     }) | select({
         "@tbox//bazel:cpu_model_ryzen9": {
@@ -239,6 +252,20 @@ template_rule(
             "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
             "{{USE_CPU_EXTENSIONS}}": "/* #undef AWS_USE_CPU_EXTENSIONS */",
         },
+    }) | select({
+        # Enable execinfo for glibc aarch64 builds (exclude musl builds)
+        "@tbox//bazel:glibc_aarch64": {
+            "{{EXECINFO}}": "#define AWS_HAVE_EXECINFO",
+        },
+        "//conditions:default": {},
+    }) | select({
+        # Disable ARM optimizations for musl builds to avoid linking issues
+        "@tbox//bazel:musl_libc": {
+            "{{ARMv8_1}}": "/* #undef AWS_HAVE_ARMv8_1 */",
+            "{{ARCH_ARM64}}": "/* #undef AWS_ARCH_ARM64 */",
+            "{{USE_CPU_EXTENSIONS}}": "/* #undef AWS_USE_CPU_EXTENSIONS */",
+        },
+        "//conditions:default": {},
     }),
 )
 
@@ -399,7 +426,6 @@ cc_library(
         ),
         "@platforms//cpu:aarch64": glob(
             [
-                "crt/aws-crt-cpp/crt/aws-checksums/source/arm/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-checksums/source/generic/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/**/*.c",
@@ -449,6 +475,10 @@ cc_library(
             "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",
             "@tbox//bazel:aws_cpu_stubs_small.c",
         ],
+    }) + select({
+        # Add stub implementations for ARM functions when using musl
+        "@tbox//bazel:musl_libc": ["@tbox//bazel:aws_arm_stubs.c"],
+        "//conditions:default": [],
     }),
     hdrs = [
         ":Config_h",

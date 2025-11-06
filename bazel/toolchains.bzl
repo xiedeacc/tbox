@@ -7,14 +7,15 @@ def cc_toolchains_register():
             "x86_64": {
                 "linux": [
                     {
+                        "vendor": "unknown",
                         "distro": "generic",
-                        "libc": "glibc",
+                        "libc": "gnu",
                         "compiler": "clang",
                         "triple": "x86_64-unknown-linux-gnu",
                         "url": "https://blog.xiedeacc.com/files/clang18.1.8-linux-x86_64_toolchain.tar.gz",
                         "strip_prefix": "clang18.1.8-linux-x86_64_toolchain",
                         "sha256sum": "be64a29251dd2b7ae6e8e783f99ab395b4bf2a75f98d8a6e03bf855e9d811434",
-                        "sysroot": "@cc_toolchain_repo_x86_64_linux_generic_glibc_clang",
+                        "sysroot": "@linux-x86_64-gnu_sysroot",
                         "tool_names": {
                             "ar": "llvm-ar",
                             "as": "llvm-as",
@@ -45,15 +46,14 @@ def cc_toolchains_register():
                             "lib/clang/18/lib/x86_64-unknown-linux-gnu",
                             "/usr/lib/x86_64-linux-gnu",
                         ],
-                        "link_libs": [
-                            "libclang_rt.builtins.a",
-                        ],
+                        "link_libs": [],
                         "supports_start_end_lib": True,
                         "debug": True,
                     },
                 ],
                 "osx": [
                     {
+                        "vendor": "unknown",
                         "distro": "generic",
                         "libc": "macosx",
                         "compiler": "clang",
@@ -103,6 +103,7 @@ def cc_toolchains_register():
             "aarch64": {
                 "linux": [
                     {
+                        "vendor": "openwrt",
                         "distro": "openwrt",
                         "libc": "musl",
                         "compiler": "gcc",
@@ -110,7 +111,7 @@ def cc_toolchains_register():
                         "url": "https://blog.xiedeacc.com/files/gcc12.3.0-openwrt23.4-aarch64_toolchain.tar.gz",
                         "strip_prefix": "gcc12.3.0-openwrt23.4-aarch64_toolchain",
                         "sha256sum": "03f9bfda848f9d044ec3f4cebf1fce1f82f9c6363d9a3ef36affae522590f52a",
-                        "sysroot": "@cc_toolchain_repo_aarch64_linux_openwrt_musl_gcc",
+                        "sysroot": "@cc_toolchain_repo_gcc_aarch64_openwrt_linux_musl",
                         "tool_names": {
                             "ar": "aarch64-openwrt-linux-musl-ar",
                             "as": "aarch64-openwrt-linux-musl-as.bin",
@@ -132,8 +133,14 @@ def cc_toolchains_register():
                             "lib/gcc/aarch64-openwrt-linux-musl/12.3.0/include-fixed",
                             "include",
                         ],
-                        "lib_directories": [],
-                        "sysroot_include_directories": [],
+                        "lib_directories": [
+                            "lib/gcc/aarch64-openwrt-linux-musl/12.3.0",
+                            "lib",
+                        ],
+                        "sysroot_include_directories": [
+                            "aarch64-openwrt-linux-musl/include",
+                            "include",
+                        ],
                         "sysroot_lib_directories": [
                             "lib/gcc/aarch64-openwrt-linux-musl/12.3.0",
                             "lib",
@@ -145,14 +152,15 @@ def cc_toolchains_register():
                         "debug": True,
                     },
                     {
+                        "vendor": "unknown",
                         "distro": "generic",
-                        "libc": "glibc",
+                        "libc": "gnu",
                         "compiler": "clang",
                         "triple": "aarch64-unknown-linux-gnu",
                         "url": "https://blog.xiedeacc.com/files/clang18.1.8-linux-x86_64_toolchain.tar.gz",
                         "strip_prefix": "clang18.1.8-linux-x86_64_toolchain",
                         "sha256sum": "be64a29251dd2b7ae6e8e783f99ab395b4bf2a75f98d8a6e03bf855e9d811434",
-                        "sysroot": "@clang18.1.8-aarch64_sysroot",
+                        "sysroot": "@linux-aarch64-gnu_sysroot",
                         "tool_names": {
                             "ar": "llvm-ar",
                             "as": "llvm-as",
@@ -161,7 +169,7 @@ def cc_toolchains_register():
                             "g++": "clang++",
                             "gcc": "clang",
                             "gcov": "llvm-cov",
-                            "ld": "ld",
+                            "ld": "ld.lld",
                             "llvm-cov": "llvm-cov",
                             "nm": "llvm-nm",
                             "objcopy": "llvm-objcopy",
@@ -169,33 +177,30 @@ def cc_toolchains_register():
                             "strip": "llvm-strip",
                         },
                         "cxx_builtin_include_directories": [
-                        ],
-                        "lib_directories": [
-                        ],
-                        "sysroot_include_directories": [
                             "include/aarch64-unknown-linux-gnu/c++/v1",
                             "include/c++/v1",
                             "lib/clang/18/include",
+                            "lib/clang/18/share",
+                            "include",
+                        ],
+                        "lib_directories": [
+                            "lib",
+                            "lib/aarch64-unknown-linux-gnu",
+                            "lib/clang/18/lib/aarch64-unknown-linux-gnu",
+                        ],
+                        "sysroot_include_directories": [
                             "usr/include",
                         ],
                         "sysroot_lib_directories": [
                             "lib",
-                            "lib/aarch64-unknown-linux-gnu",
-                            "lib/clang/18/lib/aarch64-unknown-linux-gnu",
                             "usr/lib",
                         ],
-                        "link_libs": [
-                            "libclang_rt.builtins.a",
-                            "Scrt1.o",
-                            "crti.o",
-                            "crtbeginS.o",
-                            "crtendS.o",
-                            "crtn.o",
-                        ],
+                        "link_libs": [],
                         "supports_start_end_lib": True,
                         "debug": True,
                     },
                     {
+                        "vendor": "unknown",
                         "distro": "generic",
                         "libc": "musl",
                         "compiler": "gcc",
@@ -214,8 +219,7 @@ def cc_toolchains_register():
                             "g++": "aarch64-unknown-linux-musl-g++",
                             "gcc": "aarch64-unknown-linux-musl-gcc",
                             "gcov": "aarch64-unknown-linux-musl-gcov",
-                            #"ld": "aarch64-unknown-linux-musl-ld",
-                            "ld": "ld",
+                            "ld": "aarch64-unknown-linux-musl-ld",
                             "llvm-cov": "aarch64-unknown-linux-musl-gcov",
                             "nm": "aarch64-unknown-linux-musl-nm",
                             "objcopy": "aarch64-unknown-linux-musl-objcopy",
@@ -234,14 +238,18 @@ def cc_toolchains_register():
                         ],
                         "lib_directories": [
                             "lib",
-                            "lib/gcc/x86_64-unknown-linux-gnu/14.2.0",
+                            "lib/gcc/aarch64-unknown-linux-musl/14.2.0",
                         ],
                         "sysroot_lib_directories": [
                             "lib",
                             "usr/lib",
                         ],
-                        "link_libs": [],
-                        "supports_start_end_lib": True,
+                        "link_libs": [
+                            "stdc++",
+                            "m",
+                        ],
+                        "link_flags": [],
+                        "supports_start_end_lib": False,
                         "debug": True,
                     },
                 ],

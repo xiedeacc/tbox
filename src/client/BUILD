@@ -253,7 +253,11 @@ cc_binary(
         "@boost//:url",
         "@folly",
         "@libsodium//:sodium",
-        "@mimalloc",
+    ] + select({
+        # Exclude mimalloc for musl builds to avoid symbol conflicts
+        "@tbox//bazel:musl_libc": [],
+        "//conditions:default": ["@mimalloc"],
+    }) + [
         "@openssl//:crypto",
         "@openssl//:ssl",
         "@xz//:lzma",

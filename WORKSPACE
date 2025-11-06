@@ -807,10 +807,9 @@ http_archive(
     urls = ["https://blog.xiedeacc.com/files/macosx14.2-x86_64_sysroot.tar.gz"],
 )
 
-new_git_repository(
+local_repository(
     name = "cc_toolchains",
-    commit = "d52a3974b37e01ab7774694d5cd8ed8ae120f16e",
-    remote = "git@github.com:xiedeacc/cc_toolchains.git",
+    path = "cc_toolchains",
 )
 
 load("//bazel:toolchains.bzl", "cc_toolchains_register")

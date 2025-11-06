@@ -44,9 +44,16 @@ cc_library(
         "src/*.h",
     ]),
     copts = COPTS + [
-        "-DMI_MALLOC_OVERRIDE=1",
         "-fPIC",
-    ],
+    ] + select({
+        # Disable C++ operator override for musl builds to avoid symbol conflicts
+        "@tbox//bazel:musl_libc": [
+            "-DMI_MALLOC_OVERRIDE=0",
+        ],
+        "//conditions:default": [
+            "-DMI_MALLOC_OVERRIDE=1",
+        ],
+    }),
     defines = DEFINES,
     includes = [
         "include",

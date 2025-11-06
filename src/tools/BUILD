@@ -10,8 +10,11 @@ cc_binary(
     srcs = ["gen_large_json_file.cc"],
     deps = [
         "//src/util",
-        "@mimalloc",
-    ],
+    ] + select({
+        # Exclude mimalloc for musl builds to avoid symbol conflicts
+        "@tbox//bazel:musl_libc": [],
+        "//conditions:default": ["@mimalloc"],
+    }),
 )
 
 cc_binary(
@@ -36,6 +39,9 @@ cc_binary(
     deps = [
         "@aws-sdk-cpp//:aws-cpp-sdk-core",
         "@aws-sdk-cpp//:aws-cpp-sdk-route53",
-        "@mimalloc",
-    ],
+    ] + select({
+        # Exclude mimalloc for musl builds to avoid symbol conflicts
+        "@tbox//bazel:musl_libc": [],
+        "//conditions:default": ["@mimalloc"],
+    }),
 )

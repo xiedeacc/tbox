@@ -118,6 +118,8 @@ GLOBAL_COPTS = select({
     "@tbox//bazel:linux_x86_64": [
     ],
     "@tbox//bazel:linux_aarch64": [
+        "-march=armv8-a+crc+crypto",
+        "-mcpu=cortex-a53+crc+crypto",
     ],
     "@tbox//bazel:osx_x86_64": [
     ],

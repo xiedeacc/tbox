@@ -29,8 +29,10 @@ def cc_test(
     test_main = ["//src/test:test_main"]
     native.cc_test(
         linkstatic = True,
-        deps = depset(test_main + test_deps + deps).to_list() + [
-            "@mimalloc//:mimalloc",
-        ],
+        deps = depset(test_main + test_deps + deps).to_list() + select({
+            # Exclude mimalloc for musl builds to avoid symbol conflicts
+            "@tbox//bazel:musl_libc": [],
+            "//conditions:default": ["@mimalloc//:mimalloc"],
+        }),
         **kwargs
     )

@@ -836,5 +836,10 @@ template_rule(
             "#define STACK_DIRECTION 1": "#define STACK_DIRECTION -1",
         },
         "//conditions:default": {},
+    }) | select({
+        "@tbox//bazel:musl_libc": {
+            "#define HAVE_CANONICALIZE_FILE_NAME 1": "/* #undef HAVE_CANONICALIZE_FILE_NAME */",
+        },
+        "//conditions:default": {},
     }),
 )
