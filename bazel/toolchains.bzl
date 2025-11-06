@@ -177,7 +177,7 @@ def cc_toolchains_register():
                             "strip": "llvm-strip",
                         },
                         "cxx_builtin_include_directories": [
-                            "include/aarch64-unknown-linux-gnu/c++/v1",
+                            "include/x86_64-unknown-linux-gnu/c++/v1",
                             "include/c++/v1",
                             "lib/clang/18/include",
                             "lib/clang/18/share",
@@ -185,8 +185,8 @@ def cc_toolchains_register():
                         ],
                         "lib_directories": [
                             "lib",
-                            "lib/aarch64-unknown-linux-gnu",
-                            "lib/clang/18/lib/aarch64-unknown-linux-gnu",
+                            "lib/x86_64-unknown-linux-gnu",
+                            "lib/clang/18/lib/x86_64-unknown-linux-gnu",
                         ],
                         "sysroot_include_directories": [
                             "usr/include",
@@ -244,11 +244,11 @@ def cc_toolchains_register():
                             "lib",
                             "usr/lib",
                         ],
-                        "link_libs": [
-                            "stdc++",
-                            "m",
+                        "link_libs": [],
+                        "link_flags": [
+                            "-lstdc++",
+                            "-lm",
                         ],
-                        "link_flags": [],
                         "supports_start_end_lib": False,
                         "debug": True,
                     },

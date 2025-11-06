@@ -61,8 +61,7 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
 ] + select({
     # Base architecture defines
     "@platforms//cpu:x86_64": [
-        "AWS_ARCH_INTEL",
-        "AWS_ARCH_INTEL_X64",
+        # Defined in config.h template to avoid redefinition warnings
     ],
     "@platforms//cpu:aarch64": [
         "AWS_ARCH_ARM64",
@@ -117,8 +116,8 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
         "AWS_ENABLE_EPOLL",
     ],
     "@platforms//os:osx": [
-        "AWS_HAVE_POSIX_LARGE_FILE_SUPPORT",
-        "AWS_HAVE_EXECINFO",
+        # Defined in config.h template to avoid redefinition warnings
+        "AWS_ENABLE_KQUEUE",
     ],
     "//conditions:default": [],
 }) + select({

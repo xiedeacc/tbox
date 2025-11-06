@@ -266,7 +266,7 @@ genrule(
         "/* config.h.  Generated from config.h.in by configure.  */",
         "/* config.h.in.  Generated from configure.ac by autoheader.  */",
         "",
-        "#if defined(__linux__) || defined(__APPLE__)",
+        "#if defined(__linux__)",
         "#include <features.h>",
         "#endif",
         "/* Define if building universal (internal helper macro) */",

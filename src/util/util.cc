@@ -55,7 +55,13 @@
 #include <unistd.h>
 #include <utime.h>
 #elif defined(__APPLE__)
+#include <arpa/inet.h>
 #include <fcntl.h>
+#include <ifaddrs.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #endif
 
@@ -788,6 +794,9 @@ int64_t Util::MemUsage() {
 
   long pageSize = sysconf(_SC_PAGESIZE);  // in bytes
   return resident * pageSize / 1024 / 1024;
+#else
+  // Memory usage monitoring not implemented for this platform
+  return -1;
 #endif
 }
 
@@ -1202,8 +1211,9 @@ string Util::ExecutablePath() {
   ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
   return std::string(result, (count > 0) ? count : 0);
 #elif defined(_WIN32)
+  return "";
 #elif defined(__APPLE__)
-
+  return "";
 #endif
 }
 
