@@ -800,11 +800,11 @@ http_archive(
 )
 
 http_archive(
-    name = "macosx14.2-x86_64_sysroot",
-    build_file = "//bazel:cc_toolchain.BUILD",
-    sha256 = "d75e540388ade4056c0c91a5623b927f884bfc3f622b96e23ed31aacf226535d",
-    strip_prefix = "macosx14.2-x86_64_sysroot",
-    urls = ["https://blog.xiedeacc.com/files/macosx14.2-x86_64_sysroot.tar.gz"],
+    name = "macosx14.2_sysroot",
+    build_file = "//bazel:toolchains.BUILD",
+    sha256 = "dfda4d0f437035242c865fb10c3e183f348fab41251847e2f9c6930cf7772768",
+    strip_prefix = "macosx14.2_sysroot",
+    urls = ["https://code.xiamu.com/files/macosx14.2_sysroot.tar.gz"],
 )
 
 local_repository(
