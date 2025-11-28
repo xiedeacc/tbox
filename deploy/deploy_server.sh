@@ -20,7 +20,7 @@ SERVICE_USER="ubuntu"
 WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Remote deployment configuration
-REMOTE_HOST="2406:da18:c4a:2281:b2fe:f769:a18a:3ce7"
+REMOTE_HOST="13.215.176.217"
 SSH_KEY="/home/ubuntu/.ssh/id_ed25519"
 REMOTE_USER="ubuntu"
 
