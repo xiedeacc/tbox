@@ -71,6 +71,19 @@ proto_library(
     srcs = ["enums.proto"],
 )
 
+cc_proto_library(
+    name = "cc_syncer_config",
+    deps = [
+        ":syncer_config_proto",
+    ],
+)
+
+proto_library(
+    name = "syncer_config_proto",
+    srcs = ["syncer_config.proto"],
+    deps = [],
+)
+
 filegroup(
     name = "proto_files",
     srcs = glob(["*.proto"]),

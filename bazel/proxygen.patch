@@ -122,3 +122,15 @@ index b757a6664..6bc5c4b05 100644
        return false;
      } else {
        VLOG(6) << T::getName() << ": transitioning from " << state << " to "
+diff --git a/proxygen/lib/http/session/HTTPErrorPage.h b/proxygen/lib/http/session/HTTPErrorPage.h
+index 8e6b3c9..2abf92a 100644
+--- a/proxygen/lib/http/session/HTTPErrorPage.h
++++ b/proxygen/lib/http/session/HTTPErrorPage.h
+@@ -8,6 +8,7 @@
+ 
+ #pragma once
+ 
++#include <cstdint>
+ #include <memory>
+ #include <string>
+ 

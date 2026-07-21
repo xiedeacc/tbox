@@ -467,6 +467,8 @@ new_git_repository(
 git_repository(
     name = "yaml-cpp",
     commit = "1d8ca1f35eb3a9c9142462b28282a848e5d29a91",
+    patch_args = ["-p1"],
+    patches = ["//bazel:yaml-cpp.patch"],
     remote = "git@github.com:jbeder/yaml-cpp.git",
     repo_mapping = {
         "@abseil-cpp": "@com_google_absl",
@@ -604,8 +606,8 @@ new_git_repository(
 
 git_repository(
     name = "hedron_compile_commands",
-    commit = "e43e8eaeed3e252ac7c02983f4b1792bdff2e2f0",
-    remote = "git@github.com:xiedeacc/bazel-compile-commands-extractor.git",
+    commit = "abb61a688167623088f8768cc9264798df6a9d10",
+    remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
 )
 
 new_git_repository(
@@ -719,7 +721,7 @@ load("@rules_python//python:repositories.bzl", "py_repositories")
 
 bazel_features_deps()
 
-rules_foreign_cc_dependencies()
+rules_foreign_cc_dependencies(register_built_pkgconfig_toolchain = False)
 
 py_repositories()
 

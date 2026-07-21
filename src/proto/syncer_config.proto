@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package tbox.proto;
+
+message SyncPair {
+  string source_dir = 1;
+  repeated string dest_dirs = 2;
+}
+
+message SyncerConfig {
+  uint32 sync_interval_seconds = 1;
+  string event_journal_path = 2;
+  repeated SyncPair sync_pairs = 3;
+  string log_dir = 4;
+}
