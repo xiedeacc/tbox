@@ -100,7 +100,7 @@ def _java_wrap_cc_impl(ctx):
         mnemonic = "SwigCompile",
     )
 
-    java_runtime = ctx.attr._jdk[java_common.JavaRuntimeInfo]
+    java_runtime = ctx.attr._host_jdk[java_common.JavaRuntimeInfo]
     _create_src_jar(ctx, java_runtime, java_files_dir, ctx.outputs.srcjar)
 
 _java_wrap_cc = rule(
@@ -139,8 +139,9 @@ It's expected that the `swig` binary exists in the host's path.
             doc = "Generated Java source jar.",
             mandatory = True,
         ),
-        "_jdk": attr.label(
-            default = Label("@bazel_tools//tools/jdk:current_java_runtime"),
+        "_host_jdk": attr.label(
+            cfg = "exec",
+            default = Label("@bazel_tools//tools/jdk:current_host_java_runtime"),
             providers = [java_common.JavaRuntimeInfo],
         ),
         "_swig": attr.label(

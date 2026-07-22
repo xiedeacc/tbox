@@ -141,6 +141,7 @@ build:openwrt_aarch64 --cpu='aarch64'
 build:openwrt_aarch64 --compiler='gcc'
 build:openwrt_aarch64 --define libc=musl
 build:openwrt_aarch64 --java_runtime_version="remotejdk_21"
+build:openwrt_aarch64 --jobs=6
 #build:openwrt_aarch64 --action_env=STAGING_DIR=/root/src/software/openwrt/openwrt-aarch64_toolchain
 build:openwrt_aarch64 --action_env=LD_LIBRARY_PATH=/root/src/software/toolchains/host-libs
 build:openwrt_aarch64 --action_env=STAGING_DIR=/root/src/software/toolchains
@@ -155,6 +156,7 @@ build:gcc_aarch64_linux_musl --cpu='aarch64'
 build:gcc_aarch64_linux_musl --compiler='gcc'
 build:gcc_aarch64_linux_musl --define libc=musl
 build:gcc_aarch64_linux_musl --java_runtime_version="remotejdk_21"
+build:gcc_aarch64_linux_musl --jobs=6
 build:gcc_aarch64_linux_musl --action_env=LD_LIBRARY_PATH=/root/src/software/toolchains/host-libs
 build:gcc_aarch64_linux_musl --action_env=STAGING_DIR=/root/src/software/toolchains
 build:gcc_aarch64_linux_musl --copt='-g'
@@ -167,6 +169,8 @@ build:clang_aarch64_linux_gnu --extra_toolchains='@remotejdk21_linux_aarch64_too
 build:clang_aarch64_linux_gnu --cpu='aarch64'
 build:clang_aarch64_linux_gnu --compiler='clang'
 build:clang_aarch64_linux_gnu --define libc=glibc
+build:clang_aarch64_linux_gnu --java_runtime_version="remotejdk_21"
+build:clang_aarch64_linux_gnu --jobs=6
 build:clang_aarch64_linux_gnu --action_env=LD_LIBRARY_PATH=/root/src/software/toolchains/host-libs
 build:clang_aarch64_linux_gnu --copt='-g'
 build:clang_aarch64_linux_gnu --host_copt='-g'
@@ -178,6 +182,8 @@ build:clang_aarch64_linux_musl --extra_toolchains='@remotejdk21_linux_aarch64_to
 build:clang_aarch64_linux_musl --cpu='aarch64'
 build:clang_aarch64_linux_musl --compiler='clang'
 build:clang_aarch64_linux_musl --define libc=musl
+build:clang_aarch64_linux_musl --java_runtime_version="remotejdk_21"
+build:clang_aarch64_linux_musl --jobs=6
 build:clang_aarch64_linux_musl --action_env=LD_LIBRARY_PATH=/root/src/software/toolchains/host-libs
 build:clang_aarch64_linux_musl --action_env=STAGING_DIR=/root/src/software/toolchains
 build:clang_aarch64_linux_musl --copt='-g'

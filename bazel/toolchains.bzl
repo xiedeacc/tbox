@@ -247,11 +247,12 @@ def cc_toolchains_register():
                         "distro": "generic",
                         "libc": "musl",
                         "compiler": "clang",
+                        "cxx_runtime": "libstdc++",
                         "triple": "aarch64-unknown-linux-musl",
                         "url": "https://rgit.xiedeacc.com/files/clang18.1.8-linux-x86_64_toolchain.tar.gz",
                         "strip_prefix": "clang18.1.8-linux-x86_64_toolchain",
                         "sha256sum": "be64a29251dd2b7ae6e8e783f99ab395b4bf2a75f98d8a6e03bf855e9d811434",
-                        "sysroot": "@linux-aarch64-musl_sysroot",
+                        "sysroot": "@cc_toolchain_repo_aarch64_linux_generic_musl_gcc",
                         "tool_names": {
                             "ar": "llvm-ar",
                             "as": "llvm-as",
@@ -268,19 +269,22 @@ def cc_toolchains_register():
                             "strip": "llvm-strip",
                         },
                         "cxx_builtin_include_directories": [
-                            "include/c++/v1",
                             "lib/clang/18/include",
                         ],
                         "sysroot_include_directories": [
-                            "usr/include",
+                            "aarch64-unknown-linux-musl/include/c++/14.2.0/aarch64-unknown-linux-musl",
+                            "aarch64-unknown-linux-musl/include/c++/14.2.0",
+                            "aarch64-unknown-linux-musl/include/c++/14.2.0/backward",
+                            "aarch64-unknown-linux-musl/sysroot/usr/include",
                         ],
                         "lib_directories": [
                             "lib",
                             "lib/clang/18/lib/linux",
                         ],
                         "sysroot_lib_directories": [
-                            "lib",
-                            "usr/lib",
+                            "lib/gcc/aarch64-unknown-linux-musl/14.2.0",
+                            "aarch64-unknown-linux-musl/sysroot/lib",
+                            "aarch64-unknown-linux-musl/sysroot/usr/lib",
                         ],
                         "link_libs": [
                             "libclang_rt.builtins-aarch64.a",

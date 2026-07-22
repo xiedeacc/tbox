@@ -396,6 +396,7 @@ new_git_repository(
     name = "libunwind",
     build_file = "//bazel:libunwind.BUILD",
     commit = "3c47821d681777e3cff33edb25c804d93102e1c6",
+    patches = ["//bazel:libunwind-musl-pthread-dtor.patch"],
     remote = "git@github.com:libunwind/libunwind.git",
 )
 
@@ -502,7 +503,10 @@ new_git_repository(
     name = "proxygen",
     build_file = "//bazel:proxygen.BUILD",
     patch_args = ["-p1"],
-    patches = ["//bazel:proxygen.patch"],
+    patches = [
+        "//bazel:proxygen.patch",
+        "//bazel:proxygen-gperf-fallthrough.patch",
+    ],
     remote = "git@github.com:facebook/proxygen.git",
     tag = "v2024.07.08.00",
 )
