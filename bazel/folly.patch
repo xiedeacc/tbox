@@ -1,8 +1,16 @@
 diff --git a/folly/experimental/symbolizer/Elf.cpp b/folly/experimental/symbolizer/Elf.cpp
-index 6a7f74fa4..87b092311 100644
+index 6a7f74fa4..746524d93 100644
 --- a/folly/experimental/symbolizer/Elf.cpp
 +++ b/folly/experimental/symbolizer/Elf.cpp
-@@ -47,6 +47,8 @@
+@@ -22,6 +22,7 @@
+ #include <sys/stat.h>
+ #include <sys/types.h>
+ #include <cstring>
++#include <unistd.h>
+ #include <string>
+
+ #include <glog/logging.h>
+@@ -47,6 +48,8 @@
  #endif
  #elif defined(__ANDROID__)
  #define FOLLY_ELF_NATIVE_CLASS __WORDSIZE

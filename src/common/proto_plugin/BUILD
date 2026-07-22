@@ -1,7 +1,6 @@
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "version_info")
-load("//bazel:build.bzl", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 load("//bazel:cpplint.bzl", "cpplint")
-load("//bazel:pb_code_gen_plugin.bzl", "cc_proto_plugin")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -58,8 +57,8 @@ cc_binary(
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
-        "@boost//:algorithm",
         "//src/common:logging",
+        "@boost//:algorithm",
         "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protoc_lib",
     ],

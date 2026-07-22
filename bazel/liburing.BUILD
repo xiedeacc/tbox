@@ -1,5 +1,7 @@
-package(default_visibility = ["//visibility:public"])
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@tbox//bazel:common.bzl", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS")
+
+package(default_visibility = ["//visibility:public"])
 
 COPTS = [
     "-g",
@@ -75,6 +77,10 @@ cc_library(
     ]),
     copts = COPTS,
     defines = DEFINES,
+    includes = [
+        "src",
+        "src/include",
+    ],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES + select({
         "@platforms//cpu:x86_64": [],
@@ -108,6 +114,10 @@ cc_library(
     ]),
     copts = COPTS,
     defines = DEFINES,
+    includes = [
+        "src",
+        "src/include",
+    ],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES + select({
         "@platforms//cpu:x86_64": [],

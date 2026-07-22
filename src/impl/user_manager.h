@@ -11,7 +11,7 @@
 #include <memory>
 #include <string>
 
-#include "external/sqlite/sqlite3.h"
+#include "sqlite3.h"
 #include "src/common/logging.h"
 #include "src/common/error.h"
 #include "src/impl/session_manager.h"

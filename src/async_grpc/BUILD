@@ -1,3 +1,4 @@
+load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 # Copyright 2018 The Cartographer Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,6 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
 
 # Top-level proto and C++ targets for Cartographer's gRPC server.
 
@@ -34,7 +38,10 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES
 
 proto_library(
     name = "protos",
-    srcs = glob(["**/*.proto"]),
+    srcs = glob(
+        ["**/*.proto"],
+        allow_empty = True,
+    ),
     deps = ["@com_google_protobuf//:empty_proto"],
 )
 

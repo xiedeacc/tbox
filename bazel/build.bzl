@@ -3,6 +3,8 @@
 Currently provides a thin wrapper around native.cc_test with repo defaults.
 """
 
+load("@rules_cc//cc:defs.bzl", _cc_test = "cc_test")
+
 def cc_test(
         deps = [],
         autolink_main = True,
@@ -27,7 +29,7 @@ def cc_test(
         if "//external:gtest_main" in deps:
             deps.pop("//external:gtest_main")
     test_main = ["//src/test:test_main"]
-    native.cc_test(
+    _cc_test(
         linkstatic = True,
         deps = depset(test_main + test_deps + deps).to_list() + select({
             "@tbox//bazel:libc_musl": [],

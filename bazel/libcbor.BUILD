@@ -1,4 +1,5 @@
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 
 package(default_visibility = ["//visibility:public"])
@@ -125,6 +126,7 @@ cc_library(
     ],
     copts = COPTS + ["-Iexternal/libcbor/src"],
     defines = DEFINES,
+    includes = ["src"],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
 )

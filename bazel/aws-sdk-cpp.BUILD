@@ -1,5 +1,7 @@
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "template_rule")
+load("@tbox//bazel:glob.bzl", "optional_glob")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -24,7 +26,8 @@ COPTS_BASE = GLOBAL_COPTS + [
     "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n",
     "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/api",
     "-Iexternal/aws-sdk-cpp/crt/aws-crt-cpp/include",
-    "-include external/aws-sdk-cpp/crt/aws-crt-cpp/crt/s2n/utils/s2n_prelude.h",
+    "-include",
+    "s2n_prelude.h",
 ]
 
 COPTS = COPTS_BASE + select({
@@ -320,7 +323,7 @@ genrule(
 # AWS Common Runtime C library (from submodule)
 cc_library(
     name = "aws-crt-c",
-    srcs = glob(
+    srcs = optional_glob(
         [
             "crt/aws-crt-cpp/crt/aws-c-auth/source/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-cal/source/**/*.c",
@@ -341,6 +344,7 @@ cc_library(
             "crt/aws-crt-cpp/crt/s2n/utils/**/*.c",
             #"crt/aws-crt-cpp/crt/aws-lc/crypto/**/*.c",
         ],
+        allow_empty = True,
         exclude = [
             "crt/aws-crt-cpp/crt/aws-c-io/source/windows/**",
             "crt/aws-crt-cpp/crt/aws-c-io/source/linux/**",
@@ -369,7 +373,7 @@ cc_library(
             "crt/aws-crt-cpp/crt/aws-c-common/source/platform_fallback_stubs/**",
         ],
     ) + select({
-        "@platforms//os:windows": glob([
+        "@platforms//os:windows": optional_glob([
             "crt/aws-crt-cpp/crt/aws-c-io/source/windows/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-common/source/windows/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-cal/source/windows/**/*.c",
@@ -377,7 +381,7 @@ cc_library(
             #"crt/aws-crt-cpp/crt/aws-lc/crypto/refcount_win.c",
             #"crt/aws-crt-cpp/crt/aws-lc/crypto/thread_win.c",
         ],
-        "@platforms//os:linux": glob([
+        "@platforms//os:linux": optional_glob([
             "crt/aws-crt-cpp/crt/aws-c-io/source/linux/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-common/source/linux/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-io/source/posix/**/*.c",
@@ -387,7 +391,7 @@ cc_library(
         ]) + [
             #"crt/aws-crt-cpp/crt/aws-lc/crypto/thread_pthread.c",
         ],
-        "@platforms//os:osx": glob([
+        "@platforms//os:osx": optional_glob([
             "crt/aws-crt-cpp/crt/aws-c-io/source/darwin/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-common/source/darwin/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-io/source/posix/**/*.c",
@@ -400,7 +404,7 @@ cc_library(
         "//conditions:default": [],
     }) + select({
         # Base architecture-specific source files (only generic for x86_64, excluding cpuid)
-        "@platforms//cpu:x86_64": glob(
+        "@platforms//cpu:x86_64": optional_glob(
             [
                 "crt/aws-crt-cpp/crt/aws-checksums/source/generic/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/**/*.c",
@@ -409,7 +413,7 @@ cc_library(
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",  # Conditionally added below
             ],
         ),
-        "@platforms//cpu:aarch64": glob(
+        "@platforms//cpu:aarch64": optional_glob(
             [
                 "crt/aws-crt-cpp/crt/aws-checksums/source/generic/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/**/*.c",
@@ -425,7 +429,7 @@ cc_library(
         "//conditions:default": [],
     }) + select({
         # CPU tier-specific sources: Intel optimizations for medium/large tiers
-        "@tbox//bazel:cpu_model_ryzen9": glob(
+        "@tbox//bazel:cpu_model_ryzen9": optional_glob(
             [
                 "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
@@ -435,7 +439,7 @@ cc_library(
                 "crt/aws-crt-cpp/crt/aws-checksums/source/intel/cpuid.c",
             ],
         ),
-        "@tbox//bazel:cpu_model_ryzen5": glob(
+        "@tbox//bazel:cpu_model_ryzen5": optional_glob(
             [
                 "crt/aws-crt-cpp/crt/aws-checksums/source/intel/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/intel/**/*.c",
@@ -455,7 +459,7 @@ cc_library(
             # Use generic cpuid for ARM as this submodule layout lacks arch/arm/cpuid.c
             "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",
             "@tbox//bazel:aws_cpu_stubs_small.c",
-        ] + glob([
+        ] + optional_glob([
             "crt/aws-crt-cpp/crt/aws-checksums/source/arm/**/*.c",
         ]),
         "//conditions:default": [
@@ -471,7 +475,7 @@ cc_library(
         "crt/aws-crt-cpp/crt/aws-c-http/include/aws/http/private/hpack_huffman_static_table.def",
         "crt/aws-crt-cpp/crt/aws-c-io/source/pkcs11_private.h",
         "crt/aws-crt-cpp/crt/aws-c-io/source/pkcs11/v2.40/pkcs11.h",
-    ] + glob(
+    ] + optional_glob(
         [
             "crt/aws-crt-cpp/include/**/*.h",
             "crt/aws-crt-cpp/include/**/*.hpp",
@@ -513,12 +517,12 @@ cc_library(
             "crt/aws-crt-cpp/crt/**/tests/**",
         ],
     ) + select({
-        "@platforms//os:windows": glob([
+        "@platforms//os:windows": optional_glob([
             "crt/aws-crt-cpp/crt/aws-c-io/include/windows/**/*.h",
             "crt/aws-crt-cpp/crt/aws-c-common/include/windows/**/*.h",
             "crt/aws-crt-cpp/crt/aws-c-cal/include/windows/**/*.h",
         ]),
-        "@platforms//os:linux": glob([
+        "@platforms//os:linux": optional_glob([
             "crt/aws-crt-cpp/crt/aws-c-io/include/linux/**/*.h",
             "crt/aws-crt-cpp/crt/aws-c-common/include/linux/**/*.h",
             "crt/aws-crt-cpp/crt/aws-c-io/include/posix/**/*.h",
@@ -526,7 +530,7 @@ cc_library(
             "crt/aws-crt-cpp/crt/aws-c-cal/include/linux/**/*.h",
             "crt/aws-crt-cpp/crt/aws-c-cal/include/posix/**/*.h",
         ]),
-        "@platforms//os:osx": glob([
+        "@platforms//os:osx": optional_glob([
             "crt/aws-crt-cpp/crt/aws-c-io/include/darwin/**/*.h",
             "crt/aws-crt-cpp/crt/aws-c-common/include/darwin/**/*.h",
             "crt/aws-crt-cpp/crt/aws-c-io/include/posix/**/*.h",
@@ -538,6 +542,27 @@ cc_library(
     }),
     copts = COPTS,
     includes = [
+        ".",
+        "crt/aws-c-common/generated/include",
+        "crt/aws-crt-cpp/crt",
+        "crt/aws-crt-cpp/crt/aws-c-auth/include",
+        "crt/aws-crt-cpp/crt/aws-c-cal/include",
+        "crt/aws-crt-cpp/crt/aws-c-common/include",
+        "crt/aws-crt-cpp/crt/aws-c-common/source",
+        "crt/aws-crt-cpp/crt/aws-c-common/source/external/libcbor",
+        "crt/aws-crt-cpp/crt/aws-c-compression/include",
+        "crt/aws-crt-cpp/crt/aws-c-event-stream/include",
+        "crt/aws-crt-cpp/crt/aws-c-http/include",
+        "crt/aws-crt-cpp/crt/aws-c-io/include",
+        "crt/aws-crt-cpp/crt/aws-c-mqtt/include",
+        "crt/aws-crt-cpp/crt/aws-c-s3/include",
+        "crt/aws-crt-cpp/crt/aws-c-sdkutils/include",
+        "crt/aws-crt-cpp/crt/aws-checksums/include",
+        "crt/aws-crt-cpp/crt/s2n",
+        "crt/aws-crt-cpp/crt/s2n/api",
+        "crt/aws-crt-cpp/crt/s2n/utils",
+        "crt/aws-crt-cpp/generated/include",
+        "crt/aws-crt-cpp/include",
         "include",
     ],
     linkopts = LINKOPTS,
@@ -555,7 +580,7 @@ cc_library(
 # AWS Common Runtime C++ library (from submodule)
 cc_library(
     name = "aws-crt-cpp",
-    srcs = glob(
+    srcs = optional_glob(
         [
             "crt/aws-crt-cpp/source/**/*.cpp",
         ],
@@ -563,7 +588,7 @@ cc_library(
     hdrs = [
         ":Config_h",
         ":config_h",
-    ] + glob(
+    ] + optional_glob(
         [
             "crt/aws-crt-cpp/include/**/*.h",
             "crt/aws-crt-cpp/include/**/*.hpp",
@@ -571,6 +596,8 @@ cc_library(
     ),
     copts = COPTS,
     includes = [
+        "crt/aws-c-common/generated/include",
+        "crt/aws-crt-cpp/generated/include",
         "include",
     ],
     linkopts = LINKOPTS,
@@ -583,7 +610,7 @@ cc_library(
 # Core AWS SDK library
 cc_library(
     name = "aws-cpp-sdk-core",
-    srcs = glob(
+    srcs = optional_glob(
         [
             "src/aws-cpp-sdk-core/source/**/*.cpp",
         ],
@@ -598,20 +625,20 @@ cc_library(
             "src/aws-cpp-sdk-core/source/net/Net.cpp",
         ],
     ) + select({
-        "@platforms//os:windows": glob([
+        "@platforms//os:windows": optional_glob([
             "src/aws-cpp-sdk-core/source/platform/windows/**/*.cpp",
         ]),
-        "@platforms//os:linux": glob([
+        "@platforms//os:linux": optional_glob([
             "src/aws-cpp-sdk-core/source/net/linux-shared/**/*.cpp",
             "src/aws-cpp-sdk-core/source/platform/linux-shared/**/*.cpp",
         ]),
-        "@platforms//os:osx": glob([
+        "@platforms//os:osx": optional_glob([
             "src/aws-cpp-sdk-core/source/platform/darwin/**/*.cpp",
             "src/aws-cpp-sdk-core/source/platform/posix/**/*.cpp",
         ]),
         "//conditions:default": [],
     }),
-    hdrs = glob(
+    hdrs = optional_glob(
         [
             "src/aws-cpp-sdk-core/include/**/*.h",
             "src/aws-cpp-sdk-core/include/**/*.hpp",
@@ -621,14 +648,14 @@ cc_library(
             "src/aws-cpp-sdk-core/include/smithy/tracing/impl/opentelemetry/**",
         ],
     ) + select({
-        "@platforms//os:windows": glob([
+        "@platforms//os:windows": optional_glob([
             "src/aws-cpp-sdk-core/include/platform/windows/**/*.h",
         ]),
-        "@platforms//os:linux": glob([
+        "@platforms//os:linux": optional_glob([
             "src/aws-cpp-sdk-core/include/platform/linux/**/*.h",
             "src/aws-cpp-sdk-core/include/platform/posix/**/*.h",
         ]),
-        "@platforms//os:osx": glob([
+        "@platforms//os:osx": optional_glob([
             "src/aws-cpp-sdk-core/include/platform/darwin/**/*.h",
             "src/aws-cpp-sdk-core/include/platform/posix/**/*.h",
         ]),
@@ -643,9 +670,11 @@ cc_library(
         "-I$(GENDIR)/external/aws-sdk-cpp/crt/aws-crt-cpp/generated/include",
     ],
     includes = [
+        "crt/aws-c-common/generated/include",
         "crt/aws-crt-cpp/crt/aws-c-cal/include",
         "crt/aws-crt-cpp/crt/aws-c-common/include",
         "crt/aws-crt-cpp/crt/aws-c-io/include",
+        "crt/aws-crt-cpp/generated/include",
         "crt/aws-crt-cpp/include",
         "include",
         "src/aws-cpp-sdk-core/include",
@@ -663,10 +692,10 @@ cc_library(
 # Access Management library
 cc_library(
     name = "aws-cpp-sdk-access-management",
-    srcs = glob([
+    srcs = optional_glob([
         "src/aws-cpp-sdk-access-management/source/**/*.cpp",
     ]),
-    hdrs = glob([
+    hdrs = optional_glob([
         "src/aws-cpp-sdk-access-management/include/**/*.h",
         "src/aws-cpp-sdk-access-management/include/**/*.hpp",
     ]),
@@ -687,10 +716,10 @@ cc_library(
 # Identity Management library
 cc_library(
     name = "aws-cpp-sdk-identity-management",
-    srcs = glob([
+    srcs = optional_glob([
         "src/aws-cpp-sdk-identity-management/source/**/*.cpp",
     ]),
-    hdrs = glob([
+    hdrs = optional_glob([
         "src/aws-cpp-sdk-identity-management/include/**/*.h",
         "src/aws-cpp-sdk-identity-management/include/**/*.hpp",
     ]),
@@ -711,10 +740,10 @@ cc_library(
 # EC2 library (from generated sources)
 cc_library(
     name = "aws-cpp-sdk-ec2",
-    srcs = glob([
+    srcs = optional_glob([
         "generated/src/aws-cpp-sdk-ec2/source/**/*.cpp",
     ]),
-    hdrs = glob([
+    hdrs = optional_glob([
         "generated/src/aws-cpp-sdk-ec2/include/**/*.h",
         "generated/src/aws-cpp-sdk-ec2/include/**/*.hpp",
     ]),
@@ -733,10 +762,10 @@ cc_library(
 # IAM library (from generated sources)
 cc_library(
     name = "aws-cpp-sdk-iam",
-    srcs = glob([
+    srcs = optional_glob([
         "generated/src/aws-cpp-sdk-iam/source/**/*.cpp",
     ]),
-    hdrs = glob([
+    hdrs = optional_glob([
         "generated/src/aws-cpp-sdk-iam/include/**/*.h",
         "generated/src/aws-cpp-sdk-iam/include/**/*.hpp",
     ]),
@@ -755,10 +784,10 @@ cc_library(
 # ELB library (from generated sources)
 cc_library(
     name = "aws-cpp-sdk-elasticloadbalancing",
-    srcs = glob([
+    srcs = optional_glob([
         "generated/src/aws-cpp-sdk-elasticloadbalancing/source/**/*.cpp",
     ]),
-    hdrs = glob([
+    hdrs = optional_glob([
         "generated/src/aws-cpp-sdk-elasticloadbalancing/include/**/*.h",
         "generated/src/aws-cpp-sdk-elasticloadbalancing/include/**/*.hpp",
     ]),
@@ -777,10 +806,10 @@ cc_library(
 # Route53 library (from generated sources)
 cc_library(
     name = "aws-cpp-sdk-route53",
-    srcs = glob([
+    srcs = optional_glob([
         "generated/src/aws-cpp-sdk-route53/source/**/*.cpp",
     ]),
-    hdrs = glob([
+    hdrs = optional_glob([
         "generated/src/aws-cpp-sdk-route53/include/**/*.h",
         "generated/src/aws-cpp-sdk-route53/include/**/*.hpp",
     ]),
@@ -799,10 +828,10 @@ cc_library(
 # Systems Manager library (from generated sources)
 cc_library(
     name = "aws-cpp-sdk-ssm",
-    srcs = glob([
+    srcs = optional_glob([
         "generated/src/aws-cpp-sdk-ssm/source/**/*.cpp",
     ]),
-    hdrs = glob([
+    hdrs = optional_glob([
         "generated/src/aws-cpp-sdk-ssm/include/**/*.h",
         "generated/src/aws-cpp-sdk-ssm/include/**/*.hpp",
     ]),
@@ -821,10 +850,10 @@ cc_library(
 # Secrets Manager library (from generated sources)
 cc_library(
     name = "aws-cpp-sdk-secretsmanager",
-    srcs = glob([
+    srcs = optional_glob([
         "generated/src/aws-cpp-sdk-secretsmanager/source/**/*.cpp",
     ]),
-    hdrs = glob([
+    hdrs = optional_glob([
         "generated/src/aws-cpp-sdk-secretsmanager/include/**/*.h",
         "generated/src/aws-cpp-sdk-secretsmanager/include/**/*.hpp",
     ]),
@@ -843,10 +872,10 @@ cc_library(
 # Cognito Identity library (from generated sources)
 cc_library(
     name = "aws-cpp-sdk-cognito-identity",
-    srcs = glob([
+    srcs = optional_glob([
         "generated/src/aws-cpp-sdk-cognito-identity/source/**/*.cpp",
     ]),
-    hdrs = glob([
+    hdrs = optional_glob([
         "generated/src/aws-cpp-sdk-cognito-identity/include/**/*.h",
         "generated/src/aws-cpp-sdk-cognito-identity/include/**/*.hpp",
     ]),
@@ -865,10 +894,10 @@ cc_library(
 # STS (Security Token Service) library (from generated sources)
 cc_library(
     name = "aws-cpp-sdk-sts",
-    srcs = glob([
+    srcs = optional_glob([
         "generated/src/aws-cpp-sdk-sts/source/**/*.cpp",
     ]),
-    hdrs = glob([
+    hdrs = optional_glob([
         "generated/src/aws-cpp-sdk-sts/include/**/*.h",
         "generated/src/aws-cpp-sdk-sts/include/**/*.hpp",
     ]),

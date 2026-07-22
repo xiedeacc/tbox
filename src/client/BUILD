@@ -1,4 +1,5 @@
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "version_info")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 load("//bazel:build.bzl", "cc_test")
 load("//bazel:cpplint.bzl", "cpplint")
 
@@ -82,11 +83,11 @@ cc_library(
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
+        "//src/common:logging",
         "//src/proto:cc_service",
         "@boost//:asio",
         "@boost//:beast",
         "@boost//:json",
-        "//src/common:logging",
         "@folly",
         "@simdjson",
     ],
@@ -100,10 +101,10 @@ cc_library(
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
+        "//src/common:logging",
         "//src/impl:config_manager",
         "//src/proto:cc_grpc_service",
         "//src/util",
-        "//src/common:logging",
         "@com_github_grpc_grpc//:grpc++",
         "@folly",
     ],
@@ -120,11 +121,11 @@ cc_library(
         ":authentication_manager",
         ":ssl_config_manager",
         "//src/async_grpc",
+        "//src/common:logging",
         "//src/impl:config_manager",
         "//src/proto:cc_grpc_service",
         "//src/server/grpc_handler:meta",
         "//src/util",
-        "//src/common:logging",
         "@com_github_grpc_grpc//:grpc++",
         "@folly",
     ],
@@ -140,12 +141,12 @@ cc_library(
     deps = [
         ":authentication_manager",
         "//src/async_grpc",
+        "//src/common:logging",
         "//src/impl:config_manager",
         "//src/proto:cc_config",
         "//src/proto:cc_grpc_service",
         "//src/server/grpc_handler:meta",
         "//src/util",
-        "//src/common:logging",
         "@folly",
     ],
 )
@@ -161,10 +162,10 @@ cc_library(
         ":authentication_manager",
         ":report_manager",
         ":ssl_config_manager",
+        "//src/common:logging",
         "//src/impl:config_manager",
         "//src/proto:cc_grpc_service",
         "//src/util",
-        "//src/common:logging",
         "@com_github_grpc_grpc//:grpc++",
         "@folly",
     ],
@@ -194,8 +195,8 @@ cc_test(
     local_defines = LOCAL_DEFINES,
     deps = [
         ":ssl_config_manager",
-        "//src/util",
         "//src/common:logging",
+        "//src/util",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -208,10 +209,10 @@ cc_test(
     local_defines = LOCAL_DEFINES,
     deps = [
         ":authentication_manager",
+        "//src/common:logging",
         "//src/impl:config_manager",
         "//src/proto:cc_grpc_service",
         "//src/proto:cc_service",
-        "//src/common:logging",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_googletest//:gtest_main",
     ],

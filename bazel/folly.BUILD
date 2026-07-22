@@ -1,4 +1,5 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "template_rule")
 
 package(default_visibility = ["//visibility:public"])
@@ -19,7 +20,7 @@ COPTS = GLOBAL_COPTS + select({
         "/I$(GENDIR)/external/libsodium/src/libsodium/include",
     ],
     "//conditions:default": [
-        "-std=c++17",
+        "-std=c++20",
         "-Iexternal/libdwarf/src/lib/libdwarf",
         "-isystem external/libiberty/include",
         "-isystem external/folly",
@@ -259,6 +260,7 @@ cc_library(
     }),
     copts = COPTS,
     defines = DEFINES,
+    includes = ["."],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [

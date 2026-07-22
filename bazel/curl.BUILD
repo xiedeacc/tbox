@@ -1,6 +1,7 @@
 #https://github.com/tensorflow/tensorflow/blob/51d480498b07346b8b6e2ee3fbd3dc486f60ed96/third_party/curl.BUILD
 #https://github.com/googleapis/google-cloud-cpp/blob/main/bazel/curl.BUILD
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "template_rule")
 
 package(default_visibility = ["//visibility:public"])
@@ -9,12 +10,10 @@ COPTS = GLOBAL_COPTS + select({
     "@platforms//os:windows": [
         "/std:c11",
         "/Ox",
-        "/Iexternal/curl/lib",
     ],
     "//conditions:default": [
         "-std=c11",
         "-O3",
-        "-Iexternal/curl/lib",
     ],
 }) + select({
     "@platforms//os:linux": [],
@@ -253,7 +252,11 @@ cc_library(
         "@platforms//os:windows": ["CURL_STATICLIB"],
         "//conditions:default": [],
     }),
-    includes = ["include"],
+    includes = [
+        ".",
+        "include",
+        "lib",
+    ],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [

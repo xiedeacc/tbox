@@ -1,4 +1,5 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "template_rule")
 
 package(default_visibility = ["//visibility:public"])
@@ -25,7 +26,6 @@ COPTS = GLOBAL_COPTS + select({
 })
 
 DEFINES = GLOBAL_DEFINES
-
 
 LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + select({
     "@platforms//os:windows": [],
@@ -151,7 +151,10 @@ cc_library(
         "@platforms//os:windows": ["CARES_STATICLIB"],
         "//conditions:default": [],
     }),
-    includes = ["include"],
+    includes = [
+        "include",
+        "src/lib",
+    ],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES + [
         "CARES_BUILDING_LIBRARY",

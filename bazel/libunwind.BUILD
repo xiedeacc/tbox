@@ -1,3 +1,4 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@tbox//bazel:common.bzl", "template_rule")
 
 package(default_visibility = ["//visibility:public"])
@@ -194,6 +195,16 @@ cc_library(
     copts = COPTS + select({
         "@platforms//cpu:x86_64": X86_64_COPTS,
         "@platforms//cpu:aarch64": AARCH64_COPTS,
+    }),
+    includes = [
+        "include",
+        "include/tdep",
+        "src",
+        "src/dwarf",
+        "src/mi",
+    ] + select({
+        "@platforms//cpu:x86_64": ["src/x86_64"],
+        "@platforms//cpu:aarch64": ["src/aarch64"],
     }),
     linkstatic = True,
     local_defines = LOCAL_DEFINES,

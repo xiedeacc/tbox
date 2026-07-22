@@ -1,4 +1,5 @@
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "version_info")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 load("//bazel:build.bzl", "cc_test")
 load("//bazel:cpplint.bzl", "cpplint")
 
@@ -64,6 +65,7 @@ cc_library(
     deps = [
         "//src/common:defs",
         "//src/common:error_code",
+        "//src/common:logging",
         "//src/proto:cc_service",
         "@blake3",
         "@boost//:algorithm",
@@ -71,7 +73,6 @@ cc_library(
         "@boost//:iostreams",
         "@boost//:uuid",
         "@c-ares",
-        "//src/common:logging",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",

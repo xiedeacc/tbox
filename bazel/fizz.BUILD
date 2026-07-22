@@ -1,4 +1,5 @@
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LOCAL_DEFINES", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -73,6 +74,7 @@ cc_library(
     ),
     copts = COPTS,
     defines = DEFINES,
+    includes = ["."],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [

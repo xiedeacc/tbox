@@ -1,4 +1,5 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "template_rule")
 
 package(default_visibility = ["//visibility:public"])
@@ -216,6 +217,34 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
 
 DEFINES = GLOBAL_DEFINES
 
+INCLUDES = [
+    "src/libsodium/crypto_aead/aegis128l",
+    "src/libsodium/crypto_aead/aegis256",
+    "src/libsodium/crypto_core/ed25519/ref10/fe_25_5",
+    "src/libsodium/crypto_core/ed25519/ref10/fe_51",
+    "src/libsodium/crypto_generichash/blake2b/ref",
+    "src/libsodium/crypto_onetimeauth/poly1305",
+    "src/libsodium/crypto_onetimeauth/poly1305/donna",
+    "src/libsodium/crypto_onetimeauth/poly1305/sse2",
+    "src/libsodium/crypto_pwhash/argon2",
+    "src/libsodium/crypto_pwhash/scryptsalsa208sha256",
+    "src/libsodium/crypto_pwhash/scryptsalsa208sha256/nosse",
+    "src/libsodium/crypto_scalarmult/curve25519",
+    "src/libsodium/crypto_scalarmult/curve25519/ref10",
+    "src/libsodium/crypto_scalarmult/curve25519/sandy2x",
+    "src/libsodium/crypto_shorthash/siphash24/ref",
+    "src/libsodium/crypto_sign/ed25519/ref10",
+    "src/libsodium/crypto_stream/chacha20",
+    "src/libsodium/crypto_stream/chacha20/dolbeau",
+    "src/libsodium/crypto_stream/chacha20/ref",
+    "src/libsodium/crypto_stream/salsa20",
+    "src/libsodium/crypto_stream/salsa20/ref",
+    "src/libsodium/crypto_stream/salsa20/xmm6",
+    "src/libsodium/crypto_stream/salsa20/xmm6int",
+    "src/libsodium/include",
+    "src/libsodium/include/sodium",
+]
+
 LINKOPTS = GLOBAL_LINKOPTS + select({
     "@platforms//os:windows": [],
     "//conditions:default": [],
@@ -238,6 +267,7 @@ cc_library(
     ]),
     copts = COPTS,
     defines = DEFINES,
+    includes = INCLUDES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
 )
@@ -357,6 +387,7 @@ cc_library(
     ]),
     copts = COPTS,
     defines = DEFINES + ["SODIUM_STATIC"],
+    includes = INCLUDES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":utils"],
@@ -377,6 +408,7 @@ cc_library(
         ],
     }) + COPTS,
     defines = DEFINES,
+    includes = INCLUDES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
@@ -400,6 +432,7 @@ cc_library(
         ],
     }) + COPTS,
     defines = DEFINES,
+    includes = INCLUDES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
 )
@@ -422,6 +455,7 @@ cc_library(
         ],
     }) + COPTS,
     defines = DEFINES,
+    includes = INCLUDES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
@@ -445,6 +479,7 @@ cc_library(
         ],
     }) + COPTS,
     defines = DEFINES,
+    includes = INCLUDES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
@@ -471,6 +506,7 @@ cc_library(
         ],
     }) + COPTS,
     defines = DEFINES,
+    includes = INCLUDES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
@@ -493,6 +529,7 @@ cc_library(
         ],
     }) + COPTS,
     defines = DEFINES,
+    includes = INCLUDES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
@@ -520,6 +557,7 @@ cc_library(
         ],
     }) + COPTS,
     defines = DEFINES,
+    includes = INCLUDES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
@@ -545,6 +583,7 @@ cc_library(
         ],
     }) + COPTS,
     defines = DEFINES,
+    includes = INCLUDES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":common"],
@@ -569,6 +608,7 @@ cc_library(
         ],
     }) + COPTS,
     defines = DEFINES,
+    includes = INCLUDES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [

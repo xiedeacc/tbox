@@ -1,4 +1,5 @@
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "template_rule")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 load("@tbox//bazel:rules_fbthrift.bzl", "fbthrift_cpp_gen")
 
 package(default_visibility = ["//visibility:public"])
@@ -20,7 +21,7 @@ COPTS = GLOBAL_COPTS + select({
         "/Iexternal/mvfst",
     ],
     "//conditions:default": [
-        "-std=c++17",
+        "-std=c++20",
         "-isystem external/libsodium/src/libsodium/include",
         "-isystem external/fbthrift",
         "-isystem $(GENDIR)/external/fbthrift",
@@ -72,6 +73,7 @@ cc_binary(
     srcs = ["thrift/compiler/generate/build_templates.cc"],
     copts = COPTS,
     defines = DEFINES,
+    includes = ["."],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
 )
@@ -126,6 +128,7 @@ cc_library(
     ],
     copts = COPTS,
     defines = DEFINES,
+    includes = ["."],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
@@ -175,6 +178,7 @@ cc_library(
     ]),
     copts = COPTS,
     defines = DEFINES,
+    includes = ["."],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
@@ -214,6 +218,7 @@ cc_library(
     ]),
     copts = COPTS,
     defines = DEFINES,
+    includes = ["."],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
@@ -253,6 +258,7 @@ cc_library(
     ]),
     copts = COPTS,
     defines = DEFINES,
+    includes = ["."],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
@@ -283,6 +289,7 @@ cc_library(
     ]),
     copts = COPTS,
     defines = DEFINES,
+    includes = ["."],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
@@ -612,6 +619,7 @@ cc_library(
     ),
     copts = COPTS,
     defines = DEFINES,
+    includes = ["."],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [

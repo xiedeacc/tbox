@@ -1,6 +1,5 @@
 #startup --output_base=D:/x --windows_enable_symlinks
-common --noenable_bzlmod
-common --experimental_downloader_config=.bazel_downloader.cfg
+common --downloader_config=.bazel_downloader.cfg
 common --enable_platform_specific_config
 
 ######################### attention #########################
@@ -88,6 +87,7 @@ build --define cross_compiling=false
 build --features=-module_maps
 build --host_features=-module_maps
 build --conlyopt='-std=gnu17'
+build --incompatible_disallow_empty_glob=false
 #build --features=-layering_check
 #build --host_features=-layering_check
 #build --remote_cache=http://192.168.1.101/bazel_cache
@@ -97,8 +97,8 @@ build:opt --compilation_mode=opt
 build:opt --copt=-Wframe-larger-than=16384
 build:dbg --compilation_mode=dbg
 
-build:windows --cxxopt='/std:c++17'
-build:windows --host_cxxopt='/std:c++17'
+build:windows --cxxopt='/std:c++20'
+build:windows --host_cxxopt='/std:c++20'
 build:windows --compiler='msvc-cl'
 build:windows --cpu='x64_windows'
 build:windows --extra_toolchains='@openssl//:preinstalled_nmake_toolchain'
@@ -109,23 +109,23 @@ build:macos --copt='-mmacosx-version-min=10.15'
 build:macos --copt='-g'
 build:macos --copt='-O2'
 build:macos --copt='-Wall'
-build:macos --cxxopt='-std=c++17'
+build:macos --cxxopt='-std=c++20'
 build:macos --host_copt='-mmacosx-version-min=10.15'
 build:macos --host_copt='-g'
 build:macos --host_copt='-O2'
 build:macos --host_copt='-Wall'
-build:macos --host_cxxopt='-std=c++17'
+build:macos --host_cxxopt='-std=c++20'
 build:macos --dynamic_mode=off
 build:macos --workspace_status_command=bazel/workspace_status.sh
 
 build:linux --copt='-g'
 build:linux --copt='-O2'
 build:linux --copt='-Wall'
-build:linux --cxxopt='-std=c++17'
+build:linux --cxxopt='-std=c++20'
 build:linux --host_copt='-g'
 build:linux --host_copt='-O2'
 build:linux --host_copt='-Wall'
-build:linux --host_cxxopt='-std=c++17'
+build:linux --host_cxxopt='-std=c++20'
 #build:linux --workspace_status_command=bazel/workspace_status.sh
 
 build:android --noenable_platform_specific_config

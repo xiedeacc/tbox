@@ -1,4 +1,4 @@
-load("//bazel:build.bzl", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//bazel:cpplint.bzl", "cpplint")
 
 package(default_visibility = ["//visibility:public"])
@@ -14,8 +14,8 @@ cc_library(
         "-isystem $(GENDIR)/external/folly",
     ],
     deps = [
-        "@com_github_gflags_gflags//:gflags",
         "//src/common:logging",
+        "@com_github_gflags_gflags//:gflags",
         "@com_google_googletest//:gtest",
         "@folly",
     ],

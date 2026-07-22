@@ -1,3 +1,5 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 load("@tbox//bazel:proxygen.bzl", "is_external", "proxygen_cpp_gen")
 
@@ -23,7 +25,7 @@ COPTS = GLOBAL_COPTS + select({
         "/Iexternal/fizz",
         "/Iexternal/wangle",
         "/Iexternal/mvfst",
-        "/std:c++17",
+        "/std:c++20",
     ],
     "//conditions:default": [
         "-Iexternal/libdwarf/src/lib/libdwarf",
@@ -44,7 +46,7 @@ COPTS = GLOBAL_COPTS + select({
         "-isystem external/fizz",
         "-isystem external/wangle",
         "-isystem external/mvfst",
-        "-std=c++17",
+        "-std=c++20",
         "-Wno-register",
         "-fsized-deallocation",
     ],
@@ -135,7 +137,7 @@ python3 $(location :proxygen/lib/utils/gen_trace_event_constants.py) \
 --input_files=$(location :proxygen/lib/utils/samples/TraceEventType.txt),$(location :proxygen/lib/utils/samples/TraceFieldType.txt) \
 --output_scope=proxygen \
 --header_path=proxygen/lib/utils \
---install_dir=$(GENDIR)/external/proxygen/proxygen/lib/utils \
+--install_dir=$(RULEDIR)/proxygen/lib/utils \
 --fbcode_dir=external/proxygen
 """,
 )
@@ -167,6 +169,7 @@ cc_library(
     hdrs = glob(["proxygen/**/*.h"]),
     copts = COPTS,
     defines = DEFINES,
+    includes = ["."],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [

@@ -1,3 +1,4 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 
 package(default_visibility = ["//visibility:public"])
@@ -328,16 +329,27 @@ cc_library(
         "src/liblzma/simple/simple_private.h",
     ],
     copts = COPTS,
-    includes = ["src/liblzma/api"],
+    defines = DEFINES + select({
+        "@platforms//os:windows": ["LZMA_API_STATIC"],
+        "//conditions:default": [],
+    }),
+    includes = [
+        "lib",
+        "src/common",
+        "src/liblzma/api",
+        "src/liblzma/check",
+        "src/liblzma/common",
+        "src/liblzma/delta",
+        "src/liblzma/lz",
+        "src/liblzma/lzma",
+        "src/liblzma/rangecoder",
+        "src/liblzma/simple",
+    ],
     linkopts = LINKOPTS + select({
         "@platforms//os:windows": ["/machine:x64"],
         "//conditions:default": [],
     }),
     local_defines = LOCAL_DEFINES,
-    defines = DEFINES + select({
-        "@platforms//os:windows": ["LZMA_API_STATIC"],
-        "//conditions:default": [],
-    }),
 )
 
 genrule(

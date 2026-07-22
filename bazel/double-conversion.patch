@@ -1,0 +1,13 @@
+diff --git a/BUILD b/BUILD
+index b5c9bda..6d2fce7 100644
+--- a/BUILD
++++ b/BUILD
+@@ -30,6 +30,7 @@ cc_library(
+         "double-conversion/string-to-double.h",
+         "double-conversion/strtod.h",
+         "double-conversion/utils.h",
+     ],
++    includes = ["."],
+     linkopts = [
+         "-lm",
+     ],

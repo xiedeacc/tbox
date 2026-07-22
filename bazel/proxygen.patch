@@ -80,10 +80,18 @@ index 9cbb34243..8e35e9f1a 100644
      callback_.workerStarted(this);
    });
 diff --git a/proxygen/lib/services/WorkerThread.cpp b/proxygen/lib/services/WorkerThread.cpp
-index 3c422db04..03b95d4fb 100644
+index 3c422db04..74ea16cc0 100644
 --- a/proxygen/lib/services/WorkerThread.cpp
 +++ b/proxygen/lib/services/WorkerThread.cpp
-@@ -151,7 +151,7 @@ void WorkerThread::wait() {
+@@ -14,6 +14,7 @@
+ #include <folly/String.h>
+ #include <folly/experimental/io/IoUringBackend.h>
+ #include <folly/io/async/EventBaseManager.h>
++#include <gflags/gflags.h>
+ #include <glog/logging.h>
+ #include <signal.h>
+
+@@ -151,7 +152,7 @@ void WorkerThread::wait() {
  }
 
  void WorkerThread::setup() {

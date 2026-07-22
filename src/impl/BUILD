@@ -1,3 +1,4 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LOCAL_DEFINES")
 load("//bazel:build.bzl", "cc_test")
 load("//bazel:cpplint.bzl", "cpplint")
@@ -64,10 +65,10 @@ cc_library(
     local_defines = LOCAL_DEFINES,
     deps = [
         ":config_manager",
+        "//src/common:logging",
         "//src/util",
         "@aws-sdk-cpp//:aws-cpp-sdk-core",
         "@aws-sdk-cpp//:aws-cpp-sdk-route53",
-        "//src/common:logging",
         "@folly",
     ],
 )
@@ -79,8 +80,8 @@ cc_library(
     copts = COPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
-        "//src/util",
         "//src/common:logging",
+        "//src/util",
         "@folly",
     ],
 )
@@ -105,9 +106,9 @@ cc_library(
     deps = [
         "//src/common:defs",
         "//src/common:error_code",
+        "//src/common:logging",
         "//src/proto:cc_error",
         "//src/util",
-        "//src/common:logging",
         "@folly",
         "@sqlite",
     ],

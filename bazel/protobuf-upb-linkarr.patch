@@ -1,0 +1,13 @@
+diff --git a/upb/port/def.inc b/upb/port/def.inc
+index 35c8d8b9b..9365147f2 100644
+--- a/upb/port/def.inc
++++ b/upb/port/def.inc
+@@ -562,7 +562,7 @@
+ //   }
+ // }
+ 
+-#define UPB_LINKARR_ATTR
++#define UPB_LINKARR_ATTR UPB_RETAIN
+ 
+ #define UPB_LINKARR_SENTINEL UPB_RETAIN __attribute__((weak, used))
+ 

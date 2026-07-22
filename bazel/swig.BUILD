@@ -1,3 +1,5 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
 cc_binary(
     name = "swig",
     srcs = [
@@ -121,7 +123,6 @@ filegroup(
         "Lib/typemaps/*",
     ]),
     licenses = ["notice"],  # simple notice license for Lib/
-    path = "Lib",
     visibility = ["//visibility:public"],
 )
 
@@ -134,6 +135,5 @@ filegroup(
         "Lib/typemaps/*",
     ]),
     licenses = ["notice"],  # simple notice license for Lib/
-    path = "Lib",
     visibility = ["//visibility:public"],
 )

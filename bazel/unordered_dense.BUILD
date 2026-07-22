@@ -1,3 +1,4 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
 # BUILD file for ankerl::unordered_dense
 # https://github.com/martinus/unordered_dense
 

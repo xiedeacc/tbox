@@ -1,3 +1,4 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 load("@tbox//bazel:rules_fbthrift.bzl", "fbthrift_cpp_gen")
 
@@ -90,6 +91,7 @@ cc_library(
     hdrs = [":fb303_core_thrift_cpp"] + glob(["fb303/**/*.h"]),
     copts = COPTS,
     defines = DEFINES,
+    includes = ["."],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
