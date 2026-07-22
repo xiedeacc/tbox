@@ -54,7 +54,7 @@ if [[ -z "${JAVA_HOME:-}" ]]; then
     exit 1
 fi
 
-if ! bazel build //src/client:tbox_client --config=openwrt_aarch64; then
+if ! bazel build //src/client:tbox_client --config=gcc_aarch64_linux_musl; then
     print_error "Failed to build client binary"
     exit 1
 fi

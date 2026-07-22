@@ -103,48 +103,6 @@ def cc_toolchains_register():
             "aarch64": {
                 "linux": [
                     {
-                        "vendor": "openwrt",
-                        "libc": "musl",
-                        "compiler": "gcc",
-                        "triple": "aarch64-openwrt-linux-musl",
-                        "url": "https://rgit.xiedeacc.com/files/gcc12.3.0-openwrt23.4-aarch64_toolchain.tar.gz",
-                        "strip_prefix": "gcc12.3.0-openwrt23.4-aarch64_toolchain",
-                        "sha256sum": "03f9bfda848f9d044ec3f4cebf1fce1f82f9c6363d9a3ef36affae522590f52a",
-                        "sysroot": "@cc_toolchain_repo_gcc_aarch64_openwrt_linux_musl",
-                        "tool_names": {
-                            "ar": "aarch64-openwrt-linux-musl-ar",
-                            "as": "aarch64-openwrt-linux-musl-as.bin",
-                            "ld": "aarch64-openwrt-linux-musl-ld.bin",
-                            "llvm-cov": "aarch64-openwrt-linux-musl-gcov.bin",
-                            "gcov": "aarch64-openwrt-linux-musl-gcov.bin",
-                            "cpp": "aarch64-openwrt-linux-musl-cpp.bin",
-                            "gcc": "aarch64-openwrt-linux-musl-gcc.bin",
-                            "nm": "aarch64-openwrt-linux-musl-nm.bin",
-                            "objcopy": "aarch64-openwrt-linux-musl-objcopy.bin",
-                            "objdump": "aarch64-openwrt-linux-musl-objdump.bin",
-                            "strip": "aarch64-openwrt-linux-musl-strip.bin",
-                        },
-                        "cxx_builtin_include_directories": [
-                            "aarch64-openwrt-linux-musl/include/c++/12.3.0/aarch64-openwrt-linux-musl",
-                            "aarch64-openwrt-linux-musl/include/c++/12.3.0",
-                            "aarch64-openwrt-linux-musl/include/c++/12.3.0/backward",
-                            "lib/gcc/aarch64-openwrt-linux-musl/12.3.0/include",
-                            "lib/gcc/aarch64-openwrt-linux-musl/12.3.0/include-fixed",
-                            "include",
-                        ],
-                        "lib_directories": [],
-                        "sysroot_include_directories": [],
-                        "sysroot_lib_directories": [
-                            "lib/gcc/aarch64-openwrt-linux-musl/12.3.0",
-                            "lib",
-                        ],
-                        "link_libs": [
-                            "libgcc.a",
-                        ],
-                        "supports_start_end_lib": True,
-                        "debug": True,
-                    },
-                    {
                         "vendor": "generic",
                         "libc": "glibc",
                         "compiler": "clang",

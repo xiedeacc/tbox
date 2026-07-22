@@ -133,21 +133,6 @@ build:ios --noenable_platform_specific_config
 
 ################# cross compiling ###############
 
-build:openwrt_aarch64 --platforms='//bazel:linux_aarch64_platform'
-build:openwrt_aarch64 --toolchain_resolution_debug='@bazel_tools//tools/jdk:runtime_toolchain_type'
-build:openwrt_aarch64 --extra_toolchains='@cc_toolchain_config_gcc_aarch64_openwrt_linux_musl//:toolchain-gcc_aarch64_openwrt_linux_musl'
-build:openwrt_aarch64 --extra_toolchains='@remotejdk21_linux_aarch64_toolchain_config_repo//:toolchain'
-build:openwrt_aarch64 --cpu='aarch64'
-build:openwrt_aarch64 --compiler='gcc'
-build:openwrt_aarch64 --define libc=musl
-build:openwrt_aarch64 --java_runtime_version="remotejdk_21"
-build:openwrt_aarch64 --jobs=6
-#build:openwrt_aarch64 --action_env=STAGING_DIR=/root/src/software/openwrt/openwrt-aarch64_toolchain
-build:openwrt_aarch64 --action_env=LD_LIBRARY_PATH=/root/src/software/toolchains/host-libs
-build:openwrt_aarch64 --action_env=STAGING_DIR=/root/src/software/toolchains
-build:openwrt_aarch64 --copt='-g'
-build:openwrt_aarch64 --host_copt='-g'
-
 build:gcc_aarch64_linux_musl --platforms='//bazel:linux_aarch64_platform'
 build:gcc_aarch64_linux_musl --toolchain_resolution_debug='@bazel_tools//tools/jdk:runtime_toolchain_type'
 build:gcc_aarch64_linux_musl --extra_toolchains='@cc_toolchain_config_gcc_aarch64_generic_linux_musl//:toolchain-gcc_aarch64_generic_linux_musl'
