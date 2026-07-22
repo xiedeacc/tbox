@@ -150,16 +150,13 @@ chmod 644 ${CONF_DIR}/xiedeacc.com.ca.cer
 chmod 755 ${LOG_DIR}
 print_success "Permissions set"
 
-# Install systemd service file
-print_status "Installing systemd service file..."
-cp deploy/tbox_client.service /etc/systemd/system/
-print_success "Service file installed"
-
-# Reload systemd and enable service
-print_status "Reloading systemd and enabling service..."
-systemctl daemon-reload
-systemctl enable ${SERVICE_NAME}
-print_success "Service enabled"
+# Verify existing systemd service.
+print_status "Verifying systemd service exists..."
+systemctl list-unit-files ${SERVICE_NAME}.service --no-legend 2>/dev/null | grep -q "^${SERVICE_NAME}.service" || {
+    print_error "${SERVICE_NAME}.service not found"
+    exit 1
+}
+print_success "Systemd service exists"
 
 # Start the service
 print_status "Starting ${SERVICE_NAME} service..."
@@ -251,4 +248,3 @@ systemctl status ${SERVICE_NAME} --no-pager -l
 echo
 echo "Recent logs:"
 journalctl -u ${SERVICE_NAME} --no-pager -n 20
-

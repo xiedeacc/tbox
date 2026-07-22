@@ -20,7 +20,7 @@ SERVICE_USER="ubuntu"
 WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Remote deployment configuration
-REMOTE_HOST="13.215.176.217"
+REMOTE_HOST="aws"
 SSH_KEY="/home/ubuntu/.ssh/id_ed25519"
 REMOTE_USER="ubuntu"
 
@@ -102,10 +102,10 @@ print_success "SSH connection verified"
 
 # NOTE: Service will be stopped later right before swapping the binary to minimize downtime
 
-# Build all targets locally for ARM64
-print_status "Building all targets locally for ARM64 (cpu_model=neoverse-11)..."
+# Build all targets locally for ARM64 musl
+print_status "Building all targets locally for ARM64 musl..."
 cd "${WORKSPACE_ROOT}"
-if ! bazel build --define=cpu_model=neoverse-11 --config=clang_aarch64_linux_gnu //src/server:tbox_server; then
+if ! bazel build --config=gcc_aarch64_linux_musl //...; then
     print_error "Failed to build all targets"
     exit 1
 fi
@@ -113,33 +113,15 @@ print_success "All targets built successfully"
 
 # Get the cross-compilation strip tool from Bazel toolchain
 get_bazel_strip_tool() {
-    # Query Bazel for the toolchain path used in cross-compilation
-    local toolchain_info
-    toolchain_info=$(bazel query --config=clang_aarch64_linux_gnu \
-        'kind("cc_toolchain", deps(@cc_toolchain_config_aarch64_linux_generic_glibc_clang//:toolchain-aarch64_linux_generic_glibc_clang))' \
-        2>/dev/null | head -1)
-    
-    if [[ -n "$toolchain_info" ]]; then
-        # Extract the external repository path
-        local repo_path
-        repo_path=$(bazel info --config=clang_aarch64_linux_gnu output_base 2>/dev/null)
-        if [[ -n "$repo_path" ]]; then
-            local strip_path="${repo_path}/external/cc_toolchain_repo_aarch64_linux_generic_glibc_clang/bin/llvm-strip"
-            if [[ -x "$strip_path" ]]; then
-                echo "$strip_path"
-                return 0
-            fi
-        fi
-    fi
-    
-    # Fallback: try to find the toolchain in the current Bazel cache
     local bazel_base
-    bazel_base=$(bazel info output_base 2>/dev/null || echo "$HOME/.cache/bazel/_bazel_$(whoami)")
+    bazel_base=$(bazel info --config=gcc_aarch64_linux_musl output_base 2>/dev/null ||
+        bazel info output_base 2>/dev/null ||
+        echo "$HOME/.cache/bazel/_bazel_$(whoami)")
     
-    # Look for the aarch64 clang toolchain strip
     local strip_candidates=(
-        "${bazel_base}/external/cc_toolchain_repo_aarch64_linux_generic_glibc_clang/bin/llvm-strip"
-        "${bazel_base}/*/external/cc_toolchain_repo_aarch64_linux_generic_glibc_clang/bin/llvm-strip"
+        "${bazel_base}/external/cc_toolchain_repo_gcc_aarch64_generic_linux_musl/bin/aarch64-unknown-linux-musl-strip"
+        "${bazel_base}/external/cc_toolchain_repo_aarch64_linux_generic_musl_gcc/bin/aarch64-unknown-linux-musl-strip"
+        "${bazel_base}"/external/*musl*/bin/*strip
     )
     
     for strip_path in "${strip_candidates[@]}"; do
@@ -227,11 +209,11 @@ scp_file conf/server_config.json "/tmp/server_config.json"
 ssh_exec "sudo mv /tmp/server_config.json ${CONF_DIR}/server_config.json"
 print_success "Configuration file installed on remote host"
 
-# Copy and install systemd service file
-print_status "Installing systemd service file on remote host..."
-scp_file deploy/tbox_server.service "/tmp/tbox_server.service"
-ssh_exec "sudo mv /tmp/tbox_server.service /etc/systemd/system/"
-print_success "Service file installed on remote host"
+# Verify the existing systemd unit is present. The deployment script does not
+# install or override systemd configuration.
+print_status "Verifying systemd service exists on remote host..."
+ssh_exec "sudo systemctl list-unit-files ${SERVICE_NAME}.service --no-legend 2>/dev/null | grep -q '^${SERVICE_NAME}.service' || { echo '${SERVICE_NAME}.service not found on remote host' >&2; exit 1; }"
+print_success "Systemd service exists on remote host"
 
 # Stop service and swap binary to minimize downtime
 print_status "Stopping ${SERVICE_NAME} on remote host before swapping binary..."
@@ -249,12 +231,6 @@ ssh_exec "sudo chmod 644 ${CONF_DIR}/server_config.json"
 ssh_exec "sudo chmod 755 ${LOG_DIR}"
 ssh_exec "sudo chmod 755 ${DATA_DIR}"
 print_success "Permissions set on remote host"
-
-# Reload systemd and enable service on remote host
-print_status "Reloading systemd and enabling service on remote host..."
-ssh_exec "sudo systemctl daemon-reload"
-ssh_exec "sudo systemctl enable ${SERVICE_NAME}"
-print_success "Service enabled on remote host"
 
 # Start the service on remote host
 print_status "Restarting ${SERVICE_NAME} service on remote host..."
@@ -280,154 +256,6 @@ else
     exit 1
 fi
 
-# Deploy nginx if needed
-deploy_nginx_if_needed() {
-    print_status "Checking nginx installation and configuration..."
-    
-    # Check if nginx-full is installed
-    if ! ssh_exec "dpkg -l | grep -q nginx-full"; then
-        print_status "nginx-full not installed, running init_aws.sh..."
-        scp_file "${WORKSPACE_ROOT}/deploy/init_aws.sh" "/tmp/init_aws.sh"
-        ssh_exec "chmod +x /tmp/init_aws.sh"
-        ssh_exec "sudo /tmp/init_aws.sh"
-        
-        # Deploy nginx.conf after initialization
-        print_status "Deploying nginx configuration..."
-        scp_file "${WORKSPACE_ROOT}/deploy/nginx.conf" "/tmp/nginx.conf"
-        ssh_exec "sudo mv /tmp/nginx.conf /etc/nginx/nginx.conf"
-        ssh_exec "sudo chmod 644 /etc/nginx/nginx.conf"
-        ssh_exec "sudo nginx -t"  # Test configuration
-        ssh_exec "sudo systemctl reload nginx"
-        print_success "nginx configuration deployed and reloaded"
-        
-        print_success "Server initialization completed"
-        return 0
-    fi
-    
-    print_status "nginx-full is installed, checking configuration..."
-    
-    # Check if nginx.conf contains required server sections
-    local has_ip_server=false
-    local has_blog_server=false
-    
-    if ssh_exec "grep -q 'server_name.*ip\.xiedeacc\.com' /etc/nginx/nginx.conf"; then
-        has_ip_server=true
-    fi
-    
-    if ssh_exec "grep -q 'server_name.*blog\.xiedeacc\.com' /etc/nginx/nginx.conf"; then
-        has_blog_server=true
-    fi
-    
-    if [[ "$has_ip_server" == true && "$has_blog_server" == true ]]; then
-        print_success "nginx configuration contains required server sections"
-        return 0
-    else
-        print_status "nginx configuration missing required server sections, running init_aws.sh..."
-        scp_file "${WORKSPACE_ROOT}/deploy/init_aws.sh" "/tmp/init_aws.sh"
-        ssh_exec "chmod +x /tmp/init_aws.sh"
-        ssh_exec "sudo /tmp/init_aws.sh"
-        
-        # Deploy nginx.conf after initialization
-        print_status "Deploying nginx configuration..."
-        scp_file "${WORKSPACE_ROOT}/deploy/nginx.conf" "/tmp/nginx.conf"
-        ssh_exec "sudo mv /tmp/nginx.conf /etc/nginx/nginx.conf"
-        ssh_exec "sudo chmod 644 /etc/nginx/nginx.conf"
-        ssh_exec "sudo nginx -t"  # Test configuration
-        ssh_exec "sudo systemctl reload nginx"
-        print_success "nginx configuration deployed and reloaded"
-        
-        print_success "Server initialization completed"
-        return 0
-    fi
-}
-
-# Deploy nginx if needed
-deploy_nginx_if_needed
-
-# Deploy shadowsocks-server if service doesn't exist
-deploy_shadowsocks_if_needed() {
-    print_status "Checking if shadowsocks-server service exists..."
-    if ssh_exec "sudo systemctl list-unit-files shadowsocks-server.service" | grep -q "shadowsocks-server.service"; then
-        print_status "shadowsocks-server service already exists, skipping deployment"
-        return 0
-    fi
-    
-    print_status "shadowsocks-server service not found, deploying..."
-    
-    # Create shadowsocks directories
-    print_status "Creating shadowsocks directories on remote host..."
-    ssh_exec "sudo mkdir -p /etc/shadowsocks-rust"
-    ssh_exec "sudo mkdir -p /usr/local/bin"
-    
-    # Deploy shadowsocks binaries
-    print_status "Deploying shadowsocks binaries..."
-    scp_file "${WORKSPACE_ROOT}/bin/ssserver" "/tmp/ssserver"
-    scp_file "${WORKSPACE_ROOT}/bin/v2ray-plugin_linux_arm64" "/tmp/v2ray-plugin_linux_arm64"
-    scp_file "${WORKSPACE_ROOT}/bin/xray-plugin_linux_arm64" "/tmp/xray-plugin_linux_arm64"
-    
-    # Move binaries to final location and set permissions
-    ssh_exec "sudo mv /tmp/ssserver /usr/local/bin/ssserver"
-    ssh_exec "sudo mv /tmp/v2ray-plugin_linux_arm64 /usr/local/bin/v2ray-plugin_linux_arm64"
-    ssh_exec "sudo mv /tmp/xray-plugin_linux_arm64 /usr/local/bin/xray-plugin_linux_arm64"
-    ssh_exec "sudo chmod 755 /usr/local/bin/ssserver"
-    ssh_exec "sudo chmod 755 /usr/local/bin/v2ray-plugin_linux_arm64"
-    ssh_exec "sudo chmod 755 /usr/local/bin/xray-plugin_linux_arm64"
-    print_success "Shadowsocks binaries deployed"
-    
-    # Deploy shadowsocks configuration
-    print_status "Deploying shadowsocks configuration..."
-    scp_file "${WORKSPACE_ROOT}/deploy/shadowsocks-server.json" "/tmp/shadowsocks-server.json"
-    ssh_exec "sudo mv /tmp/shadowsocks-server.json /etc/shadowsocks-rust/shadowsocks-server.json"
-    ssh_exec "sudo chmod 644 /etc/shadowsocks-rust/shadowsocks-server.json"
-    print_success "Shadowsocks configuration deployed"
-    
-    # Deploy shadowsocks service file
-    print_status "Deploying shadowsocks service file..."
-    scp_file "${WORKSPACE_ROOT}/deploy/shadowsocks-server.service" "/tmp/shadowsocks-server.service"
-    ssh_exec "sudo mv /tmp/shadowsocks-server.service /etc/systemd/system/shadowsocks-server.service"
-    ssh_exec "sudo chmod 644 /etc/systemd/system/shadowsocks-server.service"
-    print_success "Shadowsocks service file deployed"
-    
-    # Enable and start shadowsocks service
-    print_status "Enabling and starting shadowsocks service..."
-    ssh_exec "sudo systemctl daemon-reload"
-    ssh_exec "sudo systemctl enable shadowsocks-server"
-    if ssh_exec "sudo systemctl start shadowsocks-server"; then
-        print_success "Shadowsocks service started successfully"
-        
-        # Check service status
-        sleep 2
-        if ssh_exec "sudo systemctl is-active --quiet shadowsocks-server"; then
-            print_success "Shadowsocks service is running properly"
-        else
-            print_error "Shadowsocks service failed to start properly"
-            ssh_exec "sudo journalctl -u shadowsocks-server --no-pager -n 10"
-        fi
-    else
-        print_error "Failed to start shadowsocks service"
-        ssh_exec "sudo journalctl -u shadowsocks-server --no-pager -n 10"
-    fi
-}
-
-# Deploy shadowsocks if needed
-deploy_shadowsocks_if_needed
-
-# Disable standalone vlmcsd because tbox_server now embeds the TCP handler.
-disable_standalone_vlmcsd_if_needed() {
-    print_status "Checking for standalone vlmcsd service..."
-    if ssh_exec "sudo systemctl list-unit-files vlmcsd.service" | grep -q "vlmcsd.service"; then
-        print_status "Disabling standalone vlmcsd service; tbox_server owns TCP port 1688"
-        ssh_exec "sudo systemctl stop vlmcsd 2>/dev/null || true"
-        ssh_exec "sudo systemctl disable vlmcsd 2>/dev/null || true"
-        return 0
-    fi
-
-    print_status "No standalone vlmcsd service found"
-}
-
-# tbox_server embeds vlmcsd now.
-disable_standalone_vlmcsd_if_needed
-
 # Clean up temporary files
 print_status "Cleaning up temporary files..."
 rm -f "$TEMP_BINARY"
@@ -442,7 +270,10 @@ print_status "Data directory: ${DATA_DIR}"
 print_status "Service name: ${SERVICE_NAME}"
 echo
 print_status "Useful remote commands:"
-SSH_CMD_BASE="ssh -i ${SSH_KEY}"
+SSH_CMD_BASE="ssh"
+if [[ -f "${SSH_KEY}" ]]; then
+    SSH_CMD_BASE="${SSH_CMD_BASE} -i ${SSH_KEY}"
+fi
 if is_ipv6 "${REMOTE_HOST}"; then
     SSH_CMD_BASE="${SSH_CMD_BASE} -6"
 fi
@@ -451,7 +282,4 @@ echo "  - View tbox logs: ${SSH_CMD_BASE} ${REMOTE_USER}@${REMOTE_HOST} 'sudo jo
 echo "  - Stop tbox service: ${SSH_CMD_BASE} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl stop ${SERVICE_NAME}'"
 echo "  - Start tbox service: ${SSH_CMD_BASE} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl start ${SERVICE_NAME}'"
 echo "  - Restart tbox service: ${SSH_CMD_BASE} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl restart ${SERVICE_NAME}'"
-echo "  - Check shadowsocks status: ${SSH_CMD_BASE} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl status shadowsocks-server'"
-echo "  - View shadowsocks logs: ${SSH_CMD_BASE} ${REMOTE_USER}@${REMOTE_HOST} 'sudo journalctl -u shadowsocks-server -f'"
-echo "  - Restart shadowsocks: ${SSH_CMD_BASE} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl restart shadowsocks-server'"
 echo "  - Check embedded vlmcsd port: ${SSH_CMD_BASE} ${REMOTE_USER}@${REMOTE_HOST} 'sudo ss -ltnp | grep :1688'"

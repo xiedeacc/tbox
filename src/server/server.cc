@@ -74,9 +74,11 @@ void RegisterSignalHandler() {
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   folly::Init init(&argc, &argv, false);
-  tbox::logging::Initialize(argv[0], std::getenv("TBOX_LOG_DIR")
-                                         ? std::getenv("TBOX_LOG_DIR")
-                                         : "./logs");
+  const char* log_dir = std::getenv("TBOX_LOG_DIR");
+  if (!log_dir) {
+    log_dir = std::getenv("GLOG_log_dir");
+  }
+  tbox::logging::Initialize(argv[0], log_dir ? log_dir : "./logs");
 
   LOG(INFO) << "Server initializing ...";
   LOG(INFO) << "Git commit: " << GIT_VERSION;
@@ -149,12 +151,6 @@ int main(int argc, char** argv) {
   tbox::server::HttpServer http_server(server_context);
   ::http_server_ptr = &http_server;
 
-  LOG(INFO) << "Starting HTTP server on "
-            << tbox::util::ConfigManager::Instance()->ServerAddr() << ":"
-            << tbox::util::ConfigManager::Instance()->HttpServerPort();
-  http_server.Start();
-  LOG(INFO) << "HTTP server started successfully";
-
   tbox::server::tcp_handler::VlmcsdHandler vlmcsd_handler(1688);
   ::vlmcsd_handler_ptr = &vlmcsd_handler;
   if (vlmcsd_handler.Start()) {
@@ -162,6 +158,12 @@ int main(int argc, char** argv) {
   } else {
     LOG(ERROR) << "Failed to start vlmcsd TCP handler";
   }
+
+  LOG(INFO) << "Starting HTTP server on "
+            << tbox::util::ConfigManager::Instance()->ServerAddr() << ":"
+            << tbox::util::ConfigManager::Instance()->HttpServerPort();
+  http_server.Start();
+  LOG(INFO) << "HTTP server started successfully";
 
   LOG(INFO) << "All servers running. Waiting for shutdown signal...";
 

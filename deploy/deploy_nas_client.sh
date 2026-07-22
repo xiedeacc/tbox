@@ -238,15 +238,10 @@ print_status "Setting ownership and permissions..."
 execute_cmd "chown -R ${SERVICE_USER}:${SERVICE_USER} ${INSTALL_DIR} && chmod 755 ${BIN_DIR}/${BINARY_NAME} && chmod 644 ${CONF_DIR}/client_config.json && chmod 644 ${CONF_DIR}/xiedeacc.com.ca.cer && chmod 755 ${LOG_DIR}"
 print_success "Permissions set"
 
-# Install systemd service file
-print_status "Installing systemd service file..."
-scp_file "deploy/tbox_client.service" "/etc/systemd/system/"
-print_success "Service file installed"
-
-# Reload systemd and enable service
-print_status "Reloading systemd and enabling service..."
-execute_cmd "systemctl daemon-reload && systemctl enable ${SERVICE_NAME}"
-print_success "Service enabled"
+# Verify existing systemd service.
+print_status "Verifying systemd service exists..."
+execute_cmd "systemctl list-unit-files ${SERVICE_NAME}.service --no-legend 2>/dev/null | grep -q '^${SERVICE_NAME}.service' || { echo '${SERVICE_NAME}.service not found' >&2; exit 1; }"
+print_success "Systemd service exists"
 
 # Start the service
 print_status "Starting ${SERVICE_NAME} service..."
@@ -282,4 +277,3 @@ echo "  - View logs: ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} 'journa
 echo "  - Stop service: ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} 'systemctl stop ${SERVICE_NAME}'"
 echo "  - Start service: ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} 'systemctl start ${SERVICE_NAME}'"
 echo "  - Restart service: ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} 'systemctl restart ${SERVICE_NAME}'"
-

@@ -87,9 +87,11 @@ void RegisterSignalHandler() {
 
 int main(int argc, char** argv) {
   // ProfilerStart("tbox_profile");
-  tbox::logging::Initialize(argv[0], std::getenv("TBOX_LOG_DIR")
-                                         ? std::getenv("TBOX_LOG_DIR")
-                                         : "./logs");
+  const char* log_dir = std::getenv("TBOX_LOG_DIR");
+  if (!log_dir) {
+    log_dir = std::getenv("GLOG_log_dir");
+  }
+  tbox::logging::Initialize(argv[0], log_dir ? log_dir : "./logs");
 
   LOG(INFO) << "Client initializing ...";
   LOG(INFO) << "CommandLine: " << tbox::logging::CommandLine(argc, argv);
