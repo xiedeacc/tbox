@@ -7,14 +7,14 @@ def cc_toolchains_register():
             "x86_64": {
                 "linux": [
                     {
-                        "distro": "generic",
+                        "vendor": "generic",
                         "libc": "glibc",
                         "compiler": "clang",
                         "triple": "x86_64-unknown-linux-gnu",
                         "url": "https://rgit.xiedeacc.com/files/clang18.1.8-linux-x86_64_toolchain.tar.gz",
                         "strip_prefix": "clang18.1.8-linux-x86_64_toolchain",
                         "sha256sum": "be64a29251dd2b7ae6e8e783f99ab395b4bf2a75f98d8a6e03bf855e9d811434",
-                        "sysroot": "@cc_toolchain_repo_x86_64_linux_generic_glibc_clang",
+                        "sysroot": "@cc_toolchain_repo_clang_x86_64_generic_linux_glibc",
                         "tool_names": {
                             "ar": "llvm-ar",
                             "as": "llvm-as",
@@ -54,7 +54,7 @@ def cc_toolchains_register():
                 ],
                 "osx": [
                     {
-                        "distro": "generic",
+                        "vendor": "generic",
                         "libc": "macosx",
                         "compiler": "clang",
                         "triple": "x86_64-apple-darwin",
@@ -103,14 +103,14 @@ def cc_toolchains_register():
             "aarch64": {
                 "linux": [
                     {
-                        "distro": "openwrt",
+                        "vendor": "openwrt",
                         "libc": "musl",
                         "compiler": "gcc",
                         "triple": "aarch64-openwrt-linux-musl",
                         "url": "https://rgit.xiedeacc.com/files/gcc12.3.0-openwrt23.4-aarch64_toolchain.tar.gz",
                         "strip_prefix": "gcc12.3.0-openwrt23.4-aarch64_toolchain",
                         "sha256sum": "03f9bfda848f9d044ec3f4cebf1fce1f82f9c6363d9a3ef36affae522590f52a",
-                        "sysroot": "@cc_toolchain_repo_aarch64_linux_openwrt_musl_gcc",
+                        "sysroot": "@cc_toolchain_repo_gcc_aarch64_openwrt_linux_musl",
                         "tool_names": {
                             "ar": "aarch64-openwrt-linux-musl-ar",
                             "as": "aarch64-openwrt-linux-musl-as.bin",
@@ -145,7 +145,7 @@ def cc_toolchains_register():
                         "debug": True,
                     },
                     {
-                        "distro": "generic",
+                        "vendor": "generic",
                         "libc": "glibc",
                         "compiler": "clang",
                         "triple": "aarch64-unknown-linux-gnu",
@@ -196,7 +196,7 @@ def cc_toolchains_register():
                         "debug": True,
                     },
                     {
-                        "distro": "generic",
+                        "vendor": "generic",
                         "libc": "musl",
                         "compiler": "gcc",
                         "triple": "aarch64-unknown-linux-musl",
@@ -244,7 +244,7 @@ def cc_toolchains_register():
                         "debug": True,
                     },
                     {
-                        "distro": "generic",
+                        "vendor": "generic",
                         "libc": "musl",
                         "compiler": "clang",
                         "cxx_runtime": "libstdc++",
@@ -252,7 +252,7 @@ def cc_toolchains_register():
                         "url": "https://rgit.xiedeacc.com/files/clang18.1.8-linux-x86_64_toolchain.tar.gz",
                         "strip_prefix": "clang18.1.8-linux-x86_64_toolchain",
                         "sha256sum": "be64a29251dd2b7ae6e8e783f99ab395b4bf2a75f98d8a6e03bf855e9d811434",
-                        "sysroot": "@cc_toolchain_repo_aarch64_linux_generic_musl_gcc",
+                        "sysroot": "@cc_toolchain_repo_gcc_aarch64_generic_linux_musl",
                         "tool_names": {
                             "ar": "llvm-ar",
                             "as": "llvm-as",
