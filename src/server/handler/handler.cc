@@ -8,7 +8,7 @@
 #include <fstream>
 #include <string>
 
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/util/util.h"
 
 namespace tbox {

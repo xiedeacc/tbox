@@ -11,10 +11,10 @@
 namespace tbox {
 namespace client {
 
-static folly::Singleton<AuthenticationManager> authentication_manager;
-
 std::shared_ptr<AuthenticationManager> AuthenticationManager::Instance() {
-  return authentication_manager.try_get();
+  static std::shared_ptr<AuthenticationManager> instance(
+      new AuthenticationManager());
+  return instance;
 }
 
 void AuthenticationManager::Init(

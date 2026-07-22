@@ -19,7 +19,7 @@
 
 #include <optional>
 
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "grpc++/grpc++.h"
 #include "grpc++/impl/codegen/client_unary_call.h"
 #include "grpc++/impl/codegen/proto_utils.h"

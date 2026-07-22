@@ -5,9 +5,11 @@
 
 #include <signal.h>
 
+#include <cstdlib>
+
 #include "folly/init/Init.h"
 #include "gflags/gflags.h"
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/impl/cert_manager.h"
 #include "src/impl/config_manager.h"
 #include "src/impl/ddns_manager.h"
@@ -15,11 +17,13 @@
 #include "src/server/grpc_server_impl.h"
 #include "src/server/http_server_impl.h"
 #include "src/server/server_context.h"
+#include "src/server/tcp_handler/vlmcsd_handler.h"
 #include "src/server/version_info.h"
 
 // https://github.com/grpc/grpc/issues/24884
 tbox::server::HttpServer* http_server_ptr = nullptr;
 tbox::server::GrpcServer* grpc_server_ptr = nullptr;
+tbox::server::tcp_handler::VlmcsdHandler* vlmcsd_handler_ptr = nullptr;
 tbox::impl::DDNSManager* ddns_manager_ptr = nullptr;
 tbox::impl::CertManager* cert_manager_ptr = nullptr;
 bool shutdown_required = false;
@@ -54,6 +58,9 @@ void ShutdownCheckingThread(void) {
   if (grpc_server_ptr) {
     grpc_server_ptr->Shutdown();
   }
+  if (vlmcsd_handler_ptr) {
+    vlmcsd_handler_ptr->Shutdown();
+  }
 }
 
 void RegisterSignalHandler() {
@@ -65,19 +72,15 @@ void RegisterSignalHandler() {
 }
 
 int main(int argc, char** argv) {
+  gflags::ParseCommandLineFlags(&argc, &argv, false);
+  folly::Init init(&argc, &argv, false);
+  tbox::logging::Initialize(argv[0], std::getenv("TBOX_LOG_DIR")
+                                         ? std::getenv("TBOX_LOG_DIR")
+                                         : "./logs");
+
   LOG(INFO) << "Server initializing ...";
   LOG(INFO) << "Git commit: " << GIT_VERSION;
-
-  gflags::ParseCommandLineFlags(&argc, &argv, false);
-  FLAGS_log_dir = "./log";
-  FLAGS_stop_logging_if_full_disk = true;
-  FLAGS_logbufsecs = 0;
-
-  folly::Init init(&argc, &argv, false);
-  google::EnableLogCleaner(7);
-  // google::InitGoogleLogging(argv[0]); // already called in folly::Init
-  google::SetStderrLogging(google::GLOG_INFO);
-  LOG(INFO) << "CommandLine: " << google::GetArgv();
+  LOG(INFO) << "CommandLine: " << tbox::logging::CommandLine(argc, argv);
 
   if (!tbox::util::ConfigManager::Instance()->Init(
           "./conf/server_config.json")) {
@@ -152,6 +155,14 @@ int main(int argc, char** argv) {
   http_server.Start();
   LOG(INFO) << "HTTP server started successfully";
 
+  tbox::server::tcp_handler::VlmcsdHandler vlmcsd_handler(1688);
+  ::vlmcsd_handler_ptr = &vlmcsd_handler;
+  if (vlmcsd_handler.Start()) {
+    LOG(INFO) << "vlmcsd TCP handler started successfully";
+  } else {
+    LOG(ERROR) << "Failed to start vlmcsd TCP handler";
+  }
+
   LOG(INFO) << "All servers running. Waiting for shutdown signal...";
 
   if (shutdown_thread.joinable()) {
@@ -159,6 +170,7 @@ int main(int argc, char** argv) {
   }
 
   LOG(INFO) << "Server shutdown complete";
+  tbox::logging::Shutdown();
 
   return 0;
 }

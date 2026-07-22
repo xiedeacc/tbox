@@ -71,7 +71,7 @@ cc_library(
         "@boost//:iostreams",
         "@boost//:uuid",
         "@c-ares",
-        "@com_github_glog_glog//:glog",
+        "//src/common:logging",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",

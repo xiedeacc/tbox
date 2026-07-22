@@ -5,14 +5,13 @@
 
 #include "folly/init/Init.h"
 #include "gflags/gflags.h"
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "gtest/gtest.h"
 
 int main(int argc, char** argv) {
   folly::Init init(&argc, &argv, false);
-  // google::InitGoogleLogging(argv[0]);
-  google::SetStderrLogging(google::GLOG_INFO);
+  tbox::logging::Initialize(argv[0], "./logs");
   ::testing::InitGoogleTest(&argc, argv);
-  google::ParseCommandLineFlags(&argc, &argv, false);
+  gflags::ParseCommandLineFlags(&argc, &argv, false);
   return RUN_ALL_TESTS();
 }

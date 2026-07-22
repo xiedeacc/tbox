@@ -12,8 +12,7 @@
 #include <string>
 
 #include "external/sqlite/sqlite3.h"
-#include "folly/Singleton.h"
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/common/error.h"
 #include "src/impl/session_manager.h"
 #include "src/impl/sqlite_manager.h"
@@ -27,11 +26,10 @@ namespace impl {
  *
  * Singleton class that manages user registration, login, logout, and password
  * management. Works with SqliteManager for persistence and SessionManager for
- * authentication tokens. Thread-safe singleton using folly::Singleton.
+ * authentication tokens. Thread-safe singleton.
  */
 class UserManager final {
  private:
-  friend class folly::Singleton<UserManager>;
   UserManager() {}
 
  public:

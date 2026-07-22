@@ -10,7 +10,7 @@
 #include <future>
 
 #include "fmt/core.h"
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/async_grpc/execution_context.h"
 #include "src/impl/config_manager.h"
 #include "src/server/version_info.h"

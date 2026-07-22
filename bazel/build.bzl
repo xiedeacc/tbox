@@ -20,7 +20,7 @@ def cc_test(
     test_main = []
     test_deps = [
         "@com_google_googletest//:gtest",
-        "@com_github_glog_glog//:glog",
+        "//src/common:logging",
     ]
 
     if autolink_main:
@@ -29,8 +29,9 @@ def cc_test(
     test_main = ["//src/test:test_main"]
     native.cc_test(
         linkstatic = True,
-        deps = depset(test_main + test_deps + deps).to_list() + [
-            "@mimalloc//:mimalloc",
-        ],
+        deps = depset(test_main + test_deps + deps).to_list() + select({
+            "@tbox//bazel:libc_musl": [],
+            "//conditions:default": ["@mimalloc//:mimalloc"],
+        }),
         **kwargs
     )

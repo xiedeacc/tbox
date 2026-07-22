@@ -14,7 +14,7 @@ BINARY_NAME="tbox_client"
 INSTALL_DIR="/usr/local/tbox"
 BIN_DIR="${INSTALL_DIR}/bin"
 CONF_DIR="${INSTALL_DIR}/conf"
-LOG_DIR="${INSTALL_DIR}/log"
+LOG_DIR="${INSTALL_DIR}/logs"
 SERVICE_USER="tbox"
 WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 

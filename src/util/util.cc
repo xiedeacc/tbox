@@ -30,7 +30,7 @@
 #include "fmt/core.h"
 #include "folly/Range.h"
 #include "folly/String.h"
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "google/protobuf/json/json.h"
 #include "openssl/evp.h"
 #include "openssl/rand.h"

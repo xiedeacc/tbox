@@ -16,7 +16,7 @@
 #include "boost/beast/websocket/stream.hpp"
 #include "folly/MPMCQueue.h"
 #include "folly/executors/CPUThreadPoolExecutor.h"
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/proto/service.pb.h"
 
 namespace tbox {

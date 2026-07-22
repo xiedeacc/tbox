@@ -14,16 +14,15 @@
 #include <iostream>
 #include <thread>
 
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/util/util.h"
 
 namespace tbox {
 namespace impl {
 
-static folly::Singleton<CertManager> cert_manager;
-
 std::shared_ptr<CertManager> CertManager::Instance() {
-  return cert_manager.try_get();
+  static std::shared_ptr<CertManager> instance(new CertManager());
+  return instance;
 }
 
 CertManager::CertManager()

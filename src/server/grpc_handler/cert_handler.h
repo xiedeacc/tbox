@@ -8,7 +8,7 @@
 
 #include <memory>
 
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/async_grpc/rpc_handler.h"
 #include "src/proto/service.pb.h"
 #include "src/server/grpc_handler/meta.h"

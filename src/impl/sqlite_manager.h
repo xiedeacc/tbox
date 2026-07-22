@@ -10,7 +10,7 @@
 #include <string>
 
 #include "external/sqlite/sqlite3.h"
-#include "folly/Singleton.h"
+#include "src/common/logging.h"
 #include "src/common/error.h"
 #include "src/util/util.h"
 
@@ -22,11 +22,10 @@ namespace util {
  *
  * Singleton class that manages SQLite database connections and operations.
  * Handles user database initialization and provides prepared statement
- * and query execution interfaces. Thread-safe singleton using folly::Singleton.
+ * and query execution interfaces. Thread-safe singleton.
  */
 class SqliteManager final {
  private:
-  friend class folly::Singleton<SqliteManager>;
   SqliteManager() {}
 
  public:

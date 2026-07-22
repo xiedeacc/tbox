@@ -635,6 +635,13 @@ new_git_repository(
     tag = "v1.15.3",
 )
 
+new_git_repository(
+    name = "vlmcsd",
+    build_file = "//bazel:vlmcsd.BUILD",
+    commit = "70e03572b254688b8c3557f898e7ebd765d29ae1",
+    remote = "https://github.com/Wind4/vlmcsd.git",
+)
+
 http_archive(
     name = "sqlite",
     build_file = "//bazel:sqlite.BUILD",

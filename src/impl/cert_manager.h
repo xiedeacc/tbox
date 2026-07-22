@@ -15,8 +15,6 @@
 #include <thread>
 #include <vector>
 
-#include "folly/Singleton.h"
-
 namespace tbox {
 namespace impl {
 
@@ -73,7 +71,6 @@ class CertManager final {
   };
 
  private:
-  friend class folly::Singleton<CertManager>;
   CertManager();
 
   /// @brief Get the file extension for a certificate type.

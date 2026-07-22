@@ -14,7 +14,7 @@ BINARY_NAME="tbox_server"
 INSTALL_DIR="/usr/local/tbox"
 BIN_DIR="${INSTALL_DIR}/bin"
 CONF_DIR="${INSTALL_DIR}/conf"
-LOG_DIR="${INSTALL_DIR}/log"
+LOG_DIR="${INSTALL_DIR}/logs"
 DATA_DIR="${INSTALL_DIR}/data"
 SERVICE_USER="ubuntu"
 WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -412,60 +412,21 @@ deploy_shadowsocks_if_needed() {
 # Deploy shadowsocks if needed
 deploy_shadowsocks_if_needed
 
-# Deploy vlmcsd-server if service doesn't exist
-deploy_vlmcsd_if_needed() {
-    print_status "Checking if vlmcsd service exists..."
+# Disable standalone vlmcsd because tbox_server now embeds the TCP handler.
+disable_standalone_vlmcsd_if_needed() {
+    print_status "Checking for standalone vlmcsd service..."
     if ssh_exec "sudo systemctl list-unit-files vlmcsd.service" | grep -q "vlmcsd.service"; then
-        print_status "vlmcsd service already exists, skipping deployment"
+        print_status "Disabling standalone vlmcsd service; tbox_server owns TCP port 1688"
+        ssh_exec "sudo systemctl stop vlmcsd 2>/dev/null || true"
+        ssh_exec "sudo systemctl disable vlmcsd 2>/dev/null || true"
         return 0
     fi
-    
-    print_status "vlmcsd service not found, deploying..."
-    
-    # Create vlmcsd directories
-    print_status "Creating vlmcsd directories on remote host..."
-    ssh_exec "sudo mkdir -p /usr/local/bin"
-    ssh_exec "sudo mkdir -p /var/run"
-    
-    # Deploy vlmcsd binary
-    print_status "Deploying vlmcsd binary..."
-    scp_file "${WORKSPACE_ROOT}/bin/vlmcsd-armv7el-uclibc-static" "/tmp/vlmcsd"
-    
-    # Move binary to final location and set permissions
-    ssh_exec "sudo mv /tmp/vlmcsd /usr/local/bin/vlmcsd"
-    ssh_exec "sudo chmod 755 /usr/local/bin/vlmcsd"
-    print_success "vlmcsd binary deployed"
-    
-    # Deploy vlmcsd service file
-    print_status "Deploying vlmcsd service file..."
-    scp_file "${WORKSPACE_ROOT}/deploy/vlmcsd.service" "/tmp/vlmcsd.service"
-    ssh_exec "sudo mv /tmp/vlmcsd.service /etc/systemd/system/vlmcsd.service"
-    ssh_exec "sudo chmod 644 /etc/systemd/system/vlmcsd.service"
-    print_success "vlmcsd service file deployed"
-    
-    # Enable and start vlmcsd service
-    print_status "Enabling and starting vlmcsd service..."
-    ssh_exec "sudo systemctl daemon-reload"
-    ssh_exec "sudo systemctl enable vlmcsd"
-    if ssh_exec "sudo systemctl start vlmcsd"; then
-        print_success "vlmcsd service started successfully"
-        
-        # Check service status
-        sleep 2
-        if ssh_exec "sudo systemctl is-active --quiet vlmcsd"; then
-            print_success "vlmcsd service is running properly"
-        else
-            print_error "vlmcsd service failed to start properly"
-            ssh_exec "sudo journalctl -u vlmcsd --no-pager -n 10"
-        fi
-    else
-        print_error "Failed to start vlmcsd service"
-        ssh_exec "sudo journalctl -u vlmcsd --no-pager -n 10"
-    fi
+
+    print_status "No standalone vlmcsd service found"
 }
 
-# Deploy vlmcsd if needed
-deploy_vlmcsd_if_needed
+# tbox_server embeds vlmcsd now.
+disable_standalone_vlmcsd_if_needed
 
 # Clean up temporary files
 print_status "Cleaning up temporary files..."
@@ -493,6 +454,4 @@ echo "  - Restart tbox service: ${SSH_CMD_BASE} ${REMOTE_USER}@${REMOTE_HOST} 's
 echo "  - Check shadowsocks status: ${SSH_CMD_BASE} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl status shadowsocks-server'"
 echo "  - View shadowsocks logs: ${SSH_CMD_BASE} ${REMOTE_USER}@${REMOTE_HOST} 'sudo journalctl -u shadowsocks-server -f'"
 echo "  - Restart shadowsocks: ${SSH_CMD_BASE} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl restart shadowsocks-server'"
-echo "  - Check vlmcsd status: ${SSH_CMD_BASE} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl status vlmcsd'"
-echo "  - View vlmcsd logs: ${SSH_CMD_BASE} ${REMOTE_USER}@${REMOTE_HOST} 'sudo journalctl -u vlmcsd -f'"
-echo "  - Restart vlmcsd: ${SSH_CMD_BASE} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl restart vlmcsd'"
+echo "  - Check embedded vlmcsd port: ${SSH_CMD_BASE} ${REMOTE_USER}@${REMOTE_HOST} 'sudo ss -ltnp | grep :1688'"

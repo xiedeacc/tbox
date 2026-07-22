@@ -16,7 +16,7 @@
 
 #include <cstdlib>
 
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "grpc++/impl/codegen/proto_utils.h"
 #include "src/async_grpc/server.h"
 

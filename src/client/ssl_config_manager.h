@@ -16,8 +16,7 @@
 #include <string>
 #include <thread>
 
-#include "folly/Singleton.h"
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "grpcpp/grpcpp.h"
 #include "src/proto/config.pb.h"
 #include "src/proto/service.grpc.pb.h"
@@ -55,7 +54,6 @@ class SSLConfigManager {
   bool IsRunning() const { return running_.load(); }
 
  private:
-  friend class folly::Singleton<SSLConfigManager>;
   SSLConfigManager();
 
   // Monitor certificate changes every 5 seconds

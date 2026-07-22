@@ -18,7 +18,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/async_grpc/rpc_handler.h"
 #include "src/server/grpc_handler/meta.h"
 #include "src/util/util.h"

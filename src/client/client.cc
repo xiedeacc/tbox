@@ -6,53 +6,61 @@
 // #include "gperftools/profiler.h"
 
 #include <csignal>
+#include <cstdlib>
+#include <cstring>
 
-#include "folly/init/Init.h"
-#include "gflags/gflags.h"
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/client/grpc_client.h"
 // #include "src/client/websocket_client.h"  // WebSocket disabled for now
 #include "src/impl/config_manager.h"
-#include "src/impl/ddns_manager.h"
 
 namespace {
 
 // Signal-safe shutdown state
-std::atomic<bool> shutdown_required(false);
-std::atomic<int> received_signal(0);
-std::mutex mutex;
-std::condition_variable cv;
 // tbox::client::WebSocketClient* websocket_client_ptr = nullptr;  // WebSocket
 // disabled
 tbox::client::GrpcClient* grpc_client_ptr = nullptr;
-tbox::impl::DDNSManager* ddns_manager_ptr = nullptr;
+
+std::atomic<bool>& ShutdownRequired() {
+  static std::atomic<bool> shutdown_required(false);
+  return shutdown_required;
+}
+
+std::atomic<int>& ReceivedSignal() {
+  static std::atomic<int> received_signal(0);
+  return received_signal;
+}
+
+std::mutex& ShutdownMutex() {
+  static std::mutex mutex;
+  return mutex;
+}
+
+std::condition_variable& ShutdownCondition() {
+  static std::condition_variable cv;
+  return cv;
+}
 
 /// @brief Handle signals for graceful shutdown.
 /// @param sig Signal number received.
 /// @note This function is async-signal-safe - only sets atomic flags.
 void SignalHandler(int sig) {
-  received_signal.store(sig);
-  shutdown_required.store(true);
+  ReceivedSignal().store(sig);
+  ShutdownRequired().store(true);
   // Note: cv.notify_all() is not async-signal-safe, but in practice
   // it usually works. For strict safety, use a self-pipe pattern.
-  cv.notify_all();
+  ShutdownCondition().notify_all();
 }
 
 /// @brief Thread function that waits for shutdown signal.
 void ShutdownCheckingThread(void) {
-  std::unique_lock<std::mutex> lock(mutex);
-  cv.wait(lock, []() { return shutdown_required.load(); });
+  std::unique_lock<std::mutex> lock(ShutdownMutex());
+  ShutdownCondition().wait(lock, []() { return ShutdownRequired().load(); });
 
   // Log the signal information (safe here, not in signal handler)
-  int sig = received_signal.load();
+  int sig = ReceivedSignal().load();
   if (sig > 0) {
     LOG(INFO) << "Got signal: " << strsignal(sig) << " (" << sig << ")";
-  }
-
-  // Stop DDNS manager first
-  if (ddns_manager_ptr && ddns_manager_ptr->IsRunning()) {
-    ddns_manager_ptr->Stop();
-    LOG(INFO) << "DDNS manager stopped";
   }
 
   // Stop gRPC client gracefully (this will stop report manager)
@@ -79,18 +87,12 @@ void RegisterSignalHandler() {
 
 int main(int argc, char** argv) {
   // ProfilerStart("tbox_profile");
+  tbox::logging::Initialize(argv[0], std::getenv("TBOX_LOG_DIR")
+                                         ? std::getenv("TBOX_LOG_DIR")
+                                         : "./logs");
+
   LOG(INFO) << "Client initializing ...";
-
-  gflags::ParseCommandLineFlags(&argc, &argv, false);
-  FLAGS_log_dir = "./log";
-  FLAGS_stop_logging_if_full_disk = true;
-  FLAGS_logbufsecs = 0;
-
-  folly::Init init(&argc, &argv, false);
-  google::EnableLogCleaner(7);
-  // google::InitGoogleLogging(argv[0]); // already called in folly::Init
-  google::SetStderrLogging(google::GLOG_INFO);
-  LOG(INFO) << "CommandLine: " << google::GetArgv();
+  LOG(INFO) << "CommandLine: " << tbox::logging::CommandLine(argc, argv);
 
   // Initialize configuration
   auto config_manager = tbox::util::ConfigManager::Instance();
@@ -100,21 +102,6 @@ int main(int argc, char** argv) {
     return 1;
   }
   LOG(INFO) << "Configuration initialized successfully";
-
-  // Initialize DDNS manager singleton
-  auto ddns_manager = tbox::impl::DDNSManager::Instance();
-  if (ddns_manager->Init()) {
-    LOG(INFO) << "DDNS manager initialized";
-    ddns_manager_ptr = ddns_manager.get();
-
-    // Start DDNS manager
-    if (!ddns_manager->IsRunning()) {
-      ddns_manager->Start();
-      LOG(INFO) << "DDNS manager started";
-    }
-  } else {
-    LOG(WARNING) << "Failed to initialize DDNS manager, continuing without it";
-  }
 
   RegisterSignalHandler();
 
@@ -140,6 +127,7 @@ int main(int argc, char** argv) {
   }
 
   LOG(INFO) << "Client shutdown complete";
+  tbox::logging::Shutdown();
   // ProfilerStop();
   return 0;
 }

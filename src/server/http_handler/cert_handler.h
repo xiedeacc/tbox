@@ -6,7 +6,7 @@
 #ifndef TBOX_SERVER_HTTP_HANDLER_CERT_HANDLER_H
 #define TBOX_SERVER_HTTP_HANDLER_CERT_HANDLER_H
 
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "proxygen/httpserver/RequestHandler.h"
 #include "src/proto/service.pb.h"
 #include "src/server/handler/handler.h"

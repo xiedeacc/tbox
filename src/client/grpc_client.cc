@@ -9,7 +9,7 @@
 #include <exception>
 #include <vector>
 
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/client/authentication_manager.h"
 #include "src/client/report_manager.h"
 #include "src/client/ssl_config_manager.h"

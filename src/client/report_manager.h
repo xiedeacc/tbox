@@ -13,7 +13,6 @@
 #include <mutex>
 #include <thread>
 
-#include "folly/Singleton.h"
 #include "grpcpp/grpcpp.h"
 #include "src/proto/service.grpc.pb.h"
 
@@ -54,7 +53,6 @@ class ReportManager final {
   bool ReportClientIP();
 
  private:
-  friend class folly::Singleton<ReportManager>;
   ReportManager();
 
   /// @brief The main loop that runs in the background thread.

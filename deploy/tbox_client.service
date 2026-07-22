@@ -21,12 +21,10 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectHome=yes
 ProtectSystem=strict
-ReadWritePaths=/usr/local/tbox/log /usr/local/tbox/conf /etc/nginx/ssl
+ReadWritePaths=/usr/local/tbox/logs /usr/local/tbox/conf /etc/nginx/ssl
 
 # Environment
-Environment="GLOG_log_dir=/usr/local/tbox/log"
-Environment="GLOG_logtostderr=0"
-Environment="GLOG_alsologtostderr=1"
+Environment="TBOX_LOG_DIR=/usr/local/tbox/logs"
 
 # Resource limits
 LimitNOFILE=65536

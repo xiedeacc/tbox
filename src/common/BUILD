@@ -14,6 +14,17 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES
 LINKOPTS = GLOBAL_LINKOPTS
 
 cc_library(
+    name = "logging",
+    srcs = ["logging.cc"],
+    hdrs = ["logging.h"],
+    copts = COPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        "@spdlog",
+    ],
+)
+
+cc_library(
     name = "defs",
     hdrs = ["defs.h"],
     deps = [

@@ -11,8 +11,7 @@
 #include <mutex>
 #include <string>
 
-#include "folly/Singleton.h"
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "grpcpp/grpcpp.h"
 #include "src/impl/config_manager.h"
 #include "src/proto/service.grpc.pb.h"
@@ -66,7 +65,6 @@ class AuthenticationManager final {
   bool NeedsRefresh() const;
 
  private:
-  friend class folly::Singleton<AuthenticationManager>;
   AuthenticationManager() : stub_(nullptr) {}
 
   std::shared_ptr<tbox::proto::TBOXService::Stub> stub_;

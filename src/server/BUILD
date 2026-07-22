@@ -75,6 +75,11 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
     "//conditions:default": [],
 })
 
+BINARY_LINKOPTS = LINKOPTS + select({
+    "@tbox//bazel:libc_musl": ["-static"],
+    "//conditions:default": [],
+})
+
 cc_library(
     name = "server_context",
     hdrs = ["server_context.h"],
@@ -135,7 +140,8 @@ cc_binary(
     name = "tbox_server",
     srcs = ["server.cc"],
     copts = COPTS,
-    linkopts = LINKOPTS,
+    linkopts = BINARY_LINKOPTS,
+    linkstatic = True,
     local_defines = LOCAL_DEFINES,
     deps = [
         ":grpc_server_impl",
@@ -146,12 +152,15 @@ cc_binary(
         "//src/impl:user_manager",
         "//src/proto:cc_grpc_service",
         "//src/server/http_handler",
+        "//src/server/tcp_handler",
         "@boost//:url",
         "@folly",
         "@libsodium//:sodium",
-        "@mimalloc",
         "@openssl//:crypto",
         "@openssl//:ssl",
         "@xz//:lzma",
-    ],
+    ] + select({
+        "@tbox//bazel:libc_musl": [],
+        "//conditions:default": ["@mimalloc"],
+    }),
 )

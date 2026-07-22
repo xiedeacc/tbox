@@ -20,7 +20,7 @@
 #include <memory>
 
 #include "completion_queue_pool.h"
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "grpc++/grpc++.h"
 #include "grpc++/impl/codegen/async_stream.h"
 #include "grpc++/impl/codegen/async_unary_call.h"

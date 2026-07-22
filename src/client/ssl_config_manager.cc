@@ -15,7 +15,7 @@
 #include <mutex>
 #include <sstream>
 
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/async_grpc/client.h"
 #include "src/async_grpc/common/time.h"
 #include "src/client/authentication_manager.h"
@@ -26,10 +26,9 @@
 namespace tbox {
 namespace client {
 
-static folly::Singleton<SSLConfigManager> ssl_config_manager;
-
 std::shared_ptr<SSLConfigManager> SSLConfigManager::Instance() {
-  return ssl_config_manager.try_get();
+  static std::shared_ptr<SSLConfigManager> instance(new SSLConfigManager());
+  return instance;
 }
 
 SSLConfigManager::SSLConfigManager() : running_(false) {}

@@ -14,7 +14,7 @@
 #include <exception>
 #include <vector>
 
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/async_grpc/client.h"
 #include "src/async_grpc/common/time.h"
 #include "src/client/authentication_manager.h"
@@ -26,10 +26,9 @@
 namespace tbox {
 namespace client {
 
-static folly::Singleton<ReportManager> report_manager;
-
 std::shared_ptr<ReportManager> ReportManager::Instance() {
-  return report_manager.try_get();
+  static std::shared_ptr<ReportManager> instance(new ReportManager());
+  return instance;
 }
 
 ReportManager::ReportManager()

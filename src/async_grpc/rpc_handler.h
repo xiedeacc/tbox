@@ -17,7 +17,7 @@
 #ifndef CPP_GRPC_RPC_HANDLER_H
 #define CPP_GRPC_RPC_HANDLER_H
 
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "google/protobuf/message.h"
 #include "src/async_grpc/execution_context.h"
 #include "src/async_grpc/rpc.h"

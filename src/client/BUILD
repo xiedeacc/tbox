@@ -69,6 +69,11 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
     "//conditions:default": [],
 })
 
+BINARY_LINKOPTS = LINKOPTS + select({
+    "@tbox//bazel:libc_musl": ["-static"],
+    "//conditions:default": [],
+})
+
 cc_library(
     name = "websocket_client",
     srcs = ["websocket_client.cc"],
@@ -81,7 +86,7 @@ cc_library(
         "@boost//:asio",
         "@boost//:beast",
         "@boost//:json",
-        "@com_github_glog_glog//:glog",
+        "//src/common:logging",
         "@folly",
         "@simdjson",
     ],
@@ -98,7 +103,7 @@ cc_library(
         "//src/impl:config_manager",
         "//src/proto:cc_grpc_service",
         "//src/util",
-        "@com_github_glog_glog//:glog",
+        "//src/common:logging",
         "@com_github_grpc_grpc//:grpc++",
         "@folly",
     ],
@@ -119,7 +124,7 @@ cc_library(
         "//src/proto:cc_grpc_service",
         "//src/server/grpc_handler:meta",
         "//src/util",
-        "@com_github_glog_glog//:glog",
+        "//src/common:logging",
         "@com_github_grpc_grpc//:grpc++",
         "@folly",
     ],
@@ -140,7 +145,7 @@ cc_library(
         "//src/proto:cc_grpc_service",
         "//src/server/grpc_handler:meta",
         "//src/util",
-        "@com_github_glog_glog//:glog",
+        "//src/common:logging",
         "@folly",
     ],
 )
@@ -157,10 +162,9 @@ cc_library(
         ":report_manager",
         ":ssl_config_manager",
         "//src/impl:config_manager",
-        "//src/impl:ddns_manager",
         "//src/proto:cc_grpc_service",
         "//src/util",
-        "@com_github_glog_glog//:glog",
+        "//src/common:logging",
         "@com_github_grpc_grpc//:grpc++",
         "@folly",
     ],
@@ -191,7 +195,7 @@ cc_test(
     deps = [
         ":ssl_config_manager",
         "//src/util",
-        "@com_github_glog_glog//:glog",
+        "//src/common:logging",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -207,7 +211,7 @@ cc_test(
         "//src/impl:config_manager",
         "//src/proto:cc_grpc_service",
         "//src/proto:cc_service",
-        "@com_github_glog_glog//:glog",
+        "//src/common:logging",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_googletest//:gtest_main",
     ],
@@ -221,7 +225,7 @@ cc_test(
     local_defines = LOCAL_DEFINES,
     deps = [
         ":report_manager",
-        "@com_github_glog_glog//:glog",
+        "//src/common:logging",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -234,7 +238,7 @@ cc_test(
     local_defines = LOCAL_DEFINES,
     deps = [
         ":grpc_client",
-        "@com_github_glog_glog//:glog",
+        "//src/common:logging",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -243,7 +247,8 @@ cc_binary(
     name = "tbox_client",
     srcs = ["client.cc"],
     copts = COPTS,
-    linkopts = LINKOPTS,
+    linkopts = BINARY_LINKOPTS,
+    linkstatic = True,
     local_defines = LOCAL_DEFINES,
     deps = [
         ":grpc_client",
@@ -253,9 +258,11 @@ cc_binary(
         "@boost//:url",
         "@folly",
         "@libsodium//:sodium",
-        "@mimalloc",
         "@openssl//:crypto",
         "@openssl//:ssl",
         "@xz//:lzma",
-    ],
+    ] + select({
+        "@tbox//bazel:libc_musl": [],
+        "//conditions:default": ["@mimalloc"],
+    }),
 )

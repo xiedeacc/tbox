@@ -5,7 +5,7 @@
 
 #include "src/client/report_manager.h"
 
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "gtest/gtest.h"
 
 namespace tbox {

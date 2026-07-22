@@ -67,7 +67,7 @@ cc_library(
         "//src/util",
         "@aws-sdk-cpp//:aws-cpp-sdk-core",
         "@aws-sdk-cpp//:aws-cpp-sdk-route53",
-        "@com_github_glog_glog//:glog",
+        "//src/common:logging",
         "@folly",
     ],
 )
@@ -80,7 +80,7 @@ cc_library(
     local_defines = LOCAL_DEFINES,
     deps = [
         "//src/util",
-        "@com_github_glog_glog//:glog",
+        "//src/common:logging",
         "@folly",
     ],
 )
@@ -107,7 +107,7 @@ cc_library(
         "//src/common:error_code",
         "//src/proto:cc_error",
         "//src/util",
-        "@com_github_glog_glog//:glog",
+        "//src/common:logging",
         "@folly",
         "@sqlite",
     ],
@@ -159,7 +159,7 @@ cc_test(
     local_defines = LOCAL_DEFINES,
     deps = [
         ":ddns_manager",
-        "@com_github_glog_glog//:glog",
+        "//src/common:logging",
         "@com_google_googletest//:gtest_main",
     ],
 )

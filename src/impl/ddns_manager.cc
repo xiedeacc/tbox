@@ -32,17 +32,16 @@
 #include "aws/route53/model/ListResourceRecordSetsRequest.h"
 #include "aws/route53/model/ResourceRecord.h"
 #include "aws/route53/model/ResourceRecordSet.h"
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/impl/config_manager.h"
 #include "src/util/util.h"
 
 namespace tbox {
 namespace impl {
 
-static folly::Singleton<DDNSManager> ddns_manager;
-
 std::shared_ptr<DDNSManager> DDNSManager::Instance() {
-  return ddns_manager.try_get();
+  static std::shared_ptr<DDNSManager> instance(new DDNSManager());
+  return instance;
 }
 
 DDNSManager::DDNSManager() : running_(false), should_stop_(false) {}

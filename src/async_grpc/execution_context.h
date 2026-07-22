@@ -17,7 +17,7 @@
 #ifndef CPP_GRPC_EXECUTION_CONTEXT_H
 #define CPP_GRPC_EXECUTION_CONTEXT_H
 
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/async_grpc/common/mutex.h"
 
 namespace async_grpc {

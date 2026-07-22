@@ -8,10 +8,9 @@
 namespace tbox {
 namespace util {
 
-static folly::Singleton<ConfigManager> config_manager;
-
 std::shared_ptr<ConfigManager> ConfigManager::Instance() {
-  return config_manager.try_get();
+  static std::shared_ptr<ConfigManager> instance(new ConfigManager());
+  return instance;
 }
 
 bool ConfigManager::Init(const std::string& base_config_path) {

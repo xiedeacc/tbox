@@ -21,7 +21,7 @@
 #include <deque>
 #include <memory>
 
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/async_grpc/common/mutex.h"
 #include "src/async_grpc/common/time.h"
 

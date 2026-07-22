@@ -17,7 +17,7 @@
 #include "aws/route53/model/ChangeResourceRecordSetsRequest.h"
 #include "aws/route53/model/ResourceRecord.h"
 #include "aws/route53/model/ResourceRecordSet.h"
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/impl/session_manager.h"
 #include "src/impl/user_manager.h"
 #include "src/proto/service.pb.h"

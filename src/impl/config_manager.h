@@ -9,8 +9,7 @@
 #include <memory>
 #include <string>
 
-#include "folly/Singleton.h"
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/proto/config.pb.h"
 #include "src/util/util.h"
 
@@ -21,11 +20,10 @@ namespace util {
  * @brief Configuration manager for application settings.
  *
  * Singleton class that manages application configuration loaded from JSON
- * files. Thread-safe singleton implementation using folly::Singleton.
+ * files. Thread-safe singleton implementation.
  */
 class ConfigManager {
  private:
-  friend class folly::Singleton<ConfigManager>;
   ConfigManager() = default;
 
  public:

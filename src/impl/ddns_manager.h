@@ -15,8 +15,6 @@
 #include <thread>
 #include <vector>
 
-#include "folly/Singleton.h"
-
 namespace Aws {
 namespace Route53 {
 class Route53Client;
@@ -65,7 +63,6 @@ class DDNSManager final {
   static constexpr const char* kAwsRegion = "us-east-1";  ///< AWS region
 
  private:
-  friend class folly::Singleton<DDNSManager>;
   DDNSManager();
 
   /// @brief Check if a specific IP is in the list.

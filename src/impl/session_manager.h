@@ -12,8 +12,7 @@
 #include <unordered_map>
 
 #include "absl/base/internal/spinlock.h"
-#include "folly/Singleton.h"
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "src/common/defs.h"
 #include "src/util/util.h"
 
@@ -42,7 +41,6 @@ class Session final {
  */
 class SessionManager final {
  private:
-  friend class folly::Singleton<SessionManager>;
   SessionManager() {}
 
  public:

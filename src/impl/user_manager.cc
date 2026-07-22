@@ -8,10 +8,9 @@
 namespace tbox {
 namespace impl {
 
-static folly::Singleton<UserManager> user_manager;
-
 std::shared_ptr<UserManager> UserManager::Instance() {
-  return user_manager.try_get();
+  static std::shared_ptr<UserManager> instance(new UserManager());
+  return instance;
 }
 
 }  // namespace impl

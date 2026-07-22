@@ -9,7 +9,7 @@
 #include <set>
 
 #include "folly/IPAddress.h"
-#include "glog/logging.h"
+#include "src/common/logging.h"
 #include "gtest/gtest.h"
 
 namespace tbox {
