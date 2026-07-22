@@ -87,6 +87,7 @@ build -c opt
 build --define cross_compiling=false
 build --features=-module_maps
 build --host_features=-module_maps
+build --conlyopt='-std=gnu17'
 #build --features=-layering_check
 #build --host_features=-layering_check
 #build --remote_cache=http://192.168.1.101/bazel_cache
@@ -138,8 +139,11 @@ build:openwrt_aarch64 --extra_toolchains='@cc_toolchain_config_aarch64_linux_ope
 build:openwrt_aarch64 --extra_toolchains='@remotejdk21_linux_aarch64_toolchain_config_repo//:toolchain'
 build:openwrt_aarch64 --cpu='aarch64'
 build:openwrt_aarch64 --compiler='gcc'
+build:openwrt_aarch64 --define libc=musl
 build:openwrt_aarch64 --java_runtime_version="remotejdk_21"
 #build:openwrt_aarch64 --action_env=STAGING_DIR=/root/src/software/openwrt/openwrt-aarch64_toolchain
+build:openwrt_aarch64 --action_env=LD_LIBRARY_PATH=/root/src/software/toolchains/host-libs
+build:openwrt_aarch64 --action_env=STAGING_DIR=/root/src/software/toolchains
 build:openwrt_aarch64 --copt='-g'
 build:openwrt_aarch64 --host_copt='-g'
 
@@ -149,7 +153,10 @@ build:gcc_aarch64_linux_musl --extra_toolchains='@cc_toolchain_config_aarch64_li
 build:gcc_aarch64_linux_musl --extra_toolchains='@remotejdk21_linux_aarch64_toolchain_config_repo//:toolchain'
 build:gcc_aarch64_linux_musl --cpu='aarch64'
 build:gcc_aarch64_linux_musl --compiler='gcc'
+build:gcc_aarch64_linux_musl --define libc=musl
 build:gcc_aarch64_linux_musl --java_runtime_version="remotejdk_21"
+build:gcc_aarch64_linux_musl --action_env=LD_LIBRARY_PATH=/root/src/software/toolchains/host-libs
+build:gcc_aarch64_linux_musl --action_env=STAGING_DIR=/root/src/software/toolchains
 build:gcc_aarch64_linux_musl --copt='-g'
 build:gcc_aarch64_linux_musl --host_copt='-g'
 
@@ -159,22 +166,19 @@ build:clang_aarch64_linux_gnu --extra_toolchains='@cc_toolchain_config_aarch64_l
 build:clang_aarch64_linux_gnu --extra_toolchains='@remotejdk21_linux_aarch64_toolchain_config_repo//:toolchain'
 build:clang_aarch64_linux_gnu --cpu='aarch64'
 build:clang_aarch64_linux_gnu --compiler='clang'
+build:clang_aarch64_linux_gnu --define libc=glibc
+build:clang_aarch64_linux_gnu --action_env=LD_LIBRARY_PATH=/root/src/software/toolchains/host-libs
 build:clang_aarch64_linux_gnu --copt='-g'
 build:clang_aarch64_linux_gnu --host_copt='-g'
 
-build:clang_macosx_x86_64 --platforms='//bazel:osx_x86_64_platform'
-build:clang_macosx_x86_64 --toolchain_resolution_debug='@bazel_tools//tools/jdk:runtime_toolchain_type'
-build:clang_macosx_x86_64 --extra_toolchains='@cc_toolchain_config_x86_64_osx_generic_macosx_clang//:toolchain-x86_64_osx_generic_macosx_clang'
-build:clang_macosx_x86_64 --extra_toolchains='@remotejdk21_linux_toolchain_config_repo//:toolchain'
-build:clang_macosx_x86_64 --cpu='x86_64'
-build:clang_macosx_x86_64 --compiler='clang'
-build:clang_macosx_x86_64 --copt='-mmacosx-version-min=10.15'
-
-build:clang --platforms='//bazel:linux_x86_64_platform'
-build:clang --toolchain_resolution_debug='@bazel_tools//tools/cpp:toolchain_type'
-build:clang --extra_toolchains='@cc_toolchain_config_x86_64_linux_generic_glibc_clang//:toolchain-x86_64_linux_generic_glibc_clang'
-build:clang --extra_toolchains='@remotejdk21_linux_toolchain_config_repo//:toolchain'
-build:clang --cpu='x86_64'
-build:clang --compiler='clang'
-build:clang --copt='-g'
-build:clang --host_copt='-g'
+build:clang_aarch64_linux_musl --platforms='//bazel:linux_aarch64_platform'
+build:clang_aarch64_linux_musl --toolchain_resolution_debug='@bazel_tools//tools/cpp:toolchain_type'
+build:clang_aarch64_linux_musl --extra_toolchains='@cc_toolchain_config_aarch64_linux_generic_musl_clang//:toolchain-aarch64_linux_generic_musl_clang'
+build:clang_aarch64_linux_musl --extra_toolchains='@remotejdk21_linux_aarch64_toolchain_config_repo//:toolchain'
+build:clang_aarch64_linux_musl --cpu='aarch64'
+build:clang_aarch64_linux_musl --compiler='clang'
+build:clang_aarch64_linux_musl --define libc=musl
+build:clang_aarch64_linux_musl --action_env=LD_LIBRARY_PATH=/root/src/software/toolchains/host-libs
+build:clang_aarch64_linux_musl --action_env=STAGING_DIR=/root/src/software/toolchains
+build:clang_aarch64_linux_musl --copt='-g'
+build:clang_aarch64_linux_musl --host_copt='-g'

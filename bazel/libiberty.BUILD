@@ -812,6 +812,11 @@ template_rule(
         },
         "//conditions:default": {},
     }) | select({
+        "@tbox//bazel:libc_musl": {
+            "#define HAVE_CANONICALIZE_FILE_NAME 1": "/* #undef HAVE_CANONICALIZE_FILE_NAME */",
+        },
+        "//conditions:default": {},
+    }) | select({
         "@platforms//os:osx": {
             "#define HAVE_CANONICALIZE_FILE_NAME 1": "/* #undef HAVE_CANONICALIZE_FILE_NAME */",
             "#define HAVE_DECL_BASENAME 1": "#define HAVE_DECL_BASENAME 0",

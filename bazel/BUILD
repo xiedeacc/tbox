@@ -24,6 +24,16 @@ config_setting(
 )
 
 config_setting(
+    name = "libc_glibc",
+    define_values = {"libc": "glibc"},
+)
+
+config_setting(
+    name = "libc_musl",
+    define_values = {"libc": "musl"},
+)
+
+config_setting(
     name = "msvc",
     values = {"compiler": "msvc-cl"},
 )

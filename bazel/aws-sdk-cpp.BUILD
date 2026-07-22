@@ -66,8 +66,6 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     ],
     "@platforms//cpu:aarch64": [
         "AWS_ARCH_ARM64",
-        "AWS_HAVE_ARMv8_1",
-        "AWS_USE_CPU_EXTENSIONS",
     ],
     "//conditions:default": [],
 }) + select({
@@ -106,9 +104,7 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "@platforms//os:linux": [
         "_GNU_SOURCE",
         "AWS_HAVE_POSIX_LARGE_FILE_SUPPORT",
-        "AWS_HAVE_EXECINFO",
         "AWS_HAVE_LINUX_IF_LINK_H",
-        "AWS_AFFINITY_METHOD=AWS_AFFINITY_METHOD_PTHREAD_ATTR",
         "AWS_PTHREAD_GETNAME_TAKES_3ARGS",
         "AWS_PTHREAD_SETNAME_TAKES_2ARGS",
         "HAVE_SYSCONF",
@@ -123,6 +119,14 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
         "AWS_HAVE_EXECINFO",
     ],
     "//conditions:default": [],
+}) + select({
+    "@tbox//bazel:libc_musl": [
+        "AWS_AFFINITY_METHOD=AWS_AFFINITY_METHOD_NONE",
+    ],
+    "//conditions:default": [
+        "AWS_AFFINITY_METHOD=AWS_AFFINITY_METHOD_PTHREAD_ATTR",
+        "AWS_HAVE_EXECINFO",
+    ],
 })
 
 LINKOPTS = GLOBAL_LINKOPTS + select({
@@ -159,7 +163,7 @@ write_file(
         "#define AWS_HAVE_GCC_INLINE_ASM",
         "/* #undef AWS_HAVE_MSVC_INTRINSICS_X64 */",
         "#define AWS_HAVE_POSIX_LARGE_FILE_SUPPORT",
-        "#define AWS_HAVE_EXECINFO",
+        "{{HAVE_EXECINFO}}",
         "/* #undef AWS_HAVE_WINAPI_DESKTOP */",
         "#define AWS_HAVE_LINUX_IF_LINK_H",
         "{{AVX2_INTRINSICS}}",
@@ -190,11 +194,11 @@ template_rule(
         },
         "@platforms//cpu:aarch64": {
             "{{ARM32_CRC}}": "/* #undef AWS_HAVE_ARM32_CRC */",
-            "{{ARMv8_1}}": "#define AWS_HAVE_ARMv8_1",
+            "{{ARMv8_1}}": "/* #undef AWS_HAVE_ARMv8_1 */",
             "{{ARCH_ARM64}}": "#define AWS_ARCH_ARM64",
             "{{ARCH_INTEL}}": "/* #undef AWS_ARCH_INTEL */",
             "{{ARCH_INTEL_X64}}": "/* #undef AWS_ARCH_INTEL_X64 */",
-            "{{USE_CPU_EXTENSIONS}}": "#define AWS_USE_CPU_EXTENSIONS",
+            "{{USE_CPU_EXTENSIONS}}": "/* #undef AWS_USE_CPU_EXTENSIONS */",
             "{{AVX2_INTRINSICS}}": "/* #undef AWS_HAVE_AVX2_INTRINSICS */",
             "{{MM256_EXTRACT}}": "/* #undef AWS_HAVE_MM256_EXTRACT_EPI64 */",
             "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
@@ -231,6 +235,7 @@ template_rule(
         },
         "@tbox//bazel:cpu_model_neoverse11": {
             "{{ARM32_CRC}}": "#define AWS_HAVE_ARM32_CRC",
+            "{{ARMv8_1}}": "#define AWS_HAVE_ARMv8_1",
             "{{USE_CPU_EXTENSIONS}}": "#define AWS_USE_CPU_EXTENSIONS",
         },
         "//conditions:default": {
@@ -238,6 +243,13 @@ template_rule(
             "{{MM256_EXTRACT}}": "/* #undef AWS_HAVE_MM256_EXTRACT_EPI64 */",
             "{{CLMUL}}": "/* #undef AWS_HAVE_CLMUL */",
             "{{USE_CPU_EXTENSIONS}}": "/* #undef AWS_USE_CPU_EXTENSIONS */",
+        },
+    }) | select({
+        "@tbox//bazel:libc_musl": {
+            "{{HAVE_EXECINFO}}": "/* #undef AWS_HAVE_EXECINFO */",
+        },
+        "//conditions:default": {
+            "{{HAVE_EXECINFO}}": "#define AWS_HAVE_EXECINFO",
         },
     }),
 )
@@ -399,7 +411,6 @@ cc_library(
         ),
         "@platforms//cpu:aarch64": glob(
             [
-                "crt/aws-crt-cpp/crt/aws-checksums/source/arm/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-checksums/source/generic/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/arm/**/*.c",
                 "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/**/*.c",
@@ -444,7 +455,9 @@ cc_library(
             # Use generic cpuid for ARM as this submodule layout lacks arch/arm/cpuid.c
             "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",
             "@tbox//bazel:aws_cpu_stubs_small.c",
-        ],
+        ] + glob([
+            "crt/aws-crt-cpp/crt/aws-checksums/source/arm/**/*.c",
+        ]),
         "//conditions:default": [
             "crt/aws-crt-cpp/crt/aws-c-common/source/arch/generic/cpuid.c",
             "@tbox//bazel:aws_cpu_stubs_small.c",

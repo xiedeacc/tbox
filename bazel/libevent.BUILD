@@ -10,6 +10,7 @@ COPTS = GLOBAL_COPTS + select({
         "-O3",
         "-fno-strict-aliasing",
         "-I$(GENDIR)/external/libevent/include",
+        "-Iexternal/libevent/compat",
     ],
 })
 
@@ -115,6 +116,7 @@ cc_library(
         ":event-config_h",
     ] + glob(
         [
+            "compat/**/*.h",
             "include/**/*.h",
             "*.h",
         ],
@@ -152,6 +154,7 @@ cc_library(
         ":event-config_h",
     ] + glob(
         [
+            "compat/**/*.h",
             "include/**/*.h",
             "*.h",
         ],
@@ -196,6 +199,7 @@ cc_library(
         ":event-config_h",
     ] + glob(
         [
+            "compat/**/*.h",
             "include/**/*.h",
             "*.h",
         ],
@@ -1051,6 +1055,12 @@ template_rule(
     }) | select({
         "@tbox//bazel:linux_aarch64": {
             "#define EVENT__HAVE_EPOLL_PWAIT2 1": "/* #undef EVENT__HAVE_EPOLL_PWAIT2 */",
+        },
+        "//conditions:default": {
+        },
+    }) | select({
+        "@tbox//bazel:libc_musl": {
+            "#define EVENT__HAVE_MMAP64 1": "/* #undef EVENT__HAVE_MMAP64 */",
         },
         "//conditions:default": {
         },
