@@ -3,6 +3,23 @@ load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_java//java:defs.bzl", "java_library")
 
 selects.config_setting_group(
+    name = "linux_x86_64_glibc",
+    match_all = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+        "@tbox//bazel:libc_glibc",
+    ],
+)
+
+selects.config_setting_group(
+    name = "linux_aarch64",
+    match_all = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+selects.config_setting_group(
     name = "linux_musl",
     match_all = [
         "@platforms//os:linux",
@@ -15,8 +32,9 @@ cc_binary(
     linkshared = True,
     tags = ["ignore"],
     target_compatible_with = select({
+        ":linux_aarch64": ["@platforms//:incompatible"],
         ":linux_musl": ["@platforms//:incompatible"],
-        "@platforms//os:linux": [],
+        ":linux_x86_64_glibc": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     visibility = ["//visibility:public"],
@@ -58,8 +76,9 @@ java_library(
     srcs = ["Loader.java"],
     tags = ["ignore"],
     target_compatible_with = select({
+        ":linux_aarch64": ["@platforms//:incompatible"],
         ":linux_musl": ["@platforms//:incompatible"],
-        "@platforms//os:linux": [],
+        ":linux_x86_64_glibc": [],
         "@platforms//os:osx": [],
         "@platforms//os:windows": [],
         "//conditions:default": ["@platforms//:incompatible"],

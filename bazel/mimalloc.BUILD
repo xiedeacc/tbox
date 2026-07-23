@@ -1,3 +1,4 @@
+load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 
@@ -35,6 +36,15 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
 
 package(default_visibility = ["//visibility:public"])
 
+selects.config_setting_group(
+    name = "linux_aarch64_glibc",
+    match_all = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+        "@tbox//bazel:libc_glibc",
+    ],
+)
+
 cc_library(
     name = "mimalloc",
     srcs = [
@@ -44,10 +54,10 @@ cc_library(
         "include/**/*.h",
         "src/*.h",
     ]),
-    copts = COPTS + [
-        "-DMI_MALLOC_OVERRIDE=1",
-        "-fPIC",
-    ],
+    copts = COPTS + select({
+        ":linux_aarch64_glibc": [],
+        "//conditions:default": ["-DMI_MALLOC_OVERRIDE=1"],
+    }) + ["-fPIC"],
     defines = DEFINES,
     includes = [
         "include",

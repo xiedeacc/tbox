@@ -147,6 +147,18 @@ build:gcc_aarch64_linux_musl --action_env=STAGING_DIR=/root/src/software/toolcha
 build:gcc_aarch64_linux_musl --copt='-g'
 build:gcc_aarch64_linux_musl --host_copt='-g'
 
+build:gcc_aarch64_linux_gnu --platforms='//bazel:linux_aarch64_platform'
+build:gcc_aarch64_linux_gnu --toolchain_resolution_debug='@bazel_tools//tools/cpp:toolchain_type'
+build:gcc_aarch64_linux_gnu --extra_toolchains='@cc_toolchain_config_gcc_aarch64_generic_linux_glibc//:toolchain-gcc_aarch64_generic_linux_glibc'
+build:gcc_aarch64_linux_gnu --cpu='aarch64'
+build:gcc_aarch64_linux_gnu --compiler='gcc'
+build:gcc_aarch64_linux_gnu --define libc=glibc
+build:gcc_aarch64_linux_gnu --java_runtime_version="remotejdk_21"
+build:gcc_aarch64_linux_gnu --jobs=6
+build:gcc_aarch64_linux_gnu --action_env=LD_LIBRARY_PATH=/root/src/software/toolchains/host-libs
+build:gcc_aarch64_linux_gnu --copt='-g'
+build:gcc_aarch64_linux_gnu --host_copt='-g'
+
 build:clang_aarch64_linux_gnu --platforms='//bazel:linux_aarch64_platform'
 build:clang_aarch64_linux_gnu --toolchain_resolution_debug='@bazel_tools//tools/cpp:toolchain_type'
 build:clang_aarch64_linux_gnu --extra_toolchains='@cc_toolchain_config_clang_aarch64_generic_linux_glibc//:toolchain-clang_aarch64_generic_linux_glibc'

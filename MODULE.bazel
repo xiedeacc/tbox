@@ -634,10 +634,12 @@ use_repo(
     "cc_toolchain_config_clang_aarch64_generic_linux_musl",
     "cc_toolchain_config_clang_x86_64_generic_linux_glibc",
     "cc_toolchain_config_clang_x86_64_generic_osx_macosx",
+    "cc_toolchain_config_gcc_aarch64_generic_linux_glibc",
     "cc_toolchain_config_gcc_aarch64_generic_linux_musl",
     "cc_toolchain_repo_clang_aarch64_generic_linux_glibc",
     "cc_toolchain_repo_clang_aarch64_generic_linux_musl",
     "cc_toolchain_repo_clang_x86_64_generic_linux_glibc",
     "cc_toolchain_repo_clang_x86_64_generic_osx_macosx",
+    "cc_toolchain_repo_gcc_aarch64_generic_linux_glibc",
     "cc_toolchain_repo_gcc_aarch64_generic_linux_musl",
 )
