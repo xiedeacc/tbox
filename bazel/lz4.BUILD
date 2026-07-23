@@ -59,6 +59,7 @@ cc_library(
         "lib/lz4frame.c",
         "lib/lz4hc.c",
         "lib/xxhash.c",
+        "lib/xxhash.h",
     ],
     hdrs = [
         "lib/lz4.h",
@@ -66,15 +67,13 @@ cc_library(
         "lib/lz4frame.h",
         "lib/lz4frame_static.h",
         "lib/lz4hc.h",
-        "lib/xxhash.c",
-        "lib/xxhash.h",
     ],
     copts = COPTS,
     defines = DEFINES,
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
+    strip_include_prefix = "lib",
     textual_hdrs = [
-        "lib/xxhash.c",
         "lib/lz4.c",
     ],
 )
@@ -101,6 +100,7 @@ cc_library(
     ],
     copts = COPTS,
     defines = DEFINES,
+    includes = ["programs"],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
     deps = [":lz4"],

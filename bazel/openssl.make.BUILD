@@ -117,6 +117,9 @@ configure_make(
             "darwin64-arm64-cc",
         ],
         "//conditions:default": [],
+    }) + select({
+        "@platforms//os:linux": ["-fPIC"],
+        "//conditions:default": [],
     }) + ["no-shared"],
     env = select({
         "@platforms//os:osx": {"ARFLAGS": "-static -o"},

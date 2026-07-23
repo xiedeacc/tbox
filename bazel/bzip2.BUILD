@@ -83,6 +83,7 @@ cc_library(
     hdrs = ["bzlib.h"],
     copts = COPTS,
     defines = DEFINES,
+    includes = ["."],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
 )

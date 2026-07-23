@@ -4,6 +4,14 @@ load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOP
 
 package(default_visibility = ["//visibility:public"])
 
+selects.config_setting_group(
+    name = "linux_aarch64_glibc",
+    match_all = [
+        "@tbox//bazel:libc_glibc",
+        "@tbox//bazel:linux_aarch64",
+    ],
+)
+
 COPTS = GLOBAL_COPTS + select({
     "@platforms//os:windows": [
         "/Ox",
@@ -209,6 +217,7 @@ cc_library(
             "folly/hash/detail/Crc32cDetail.cpp",
             "folly/io/tool/HugePageUtil.cpp",
             "folly/json/tool/JSONSchemaTester.cpp",
+            "folly/memset_select_aarch64.cpp",
             "folly/rust/**",
             "folly/tool/BenchmarkCompare.cpp",
             "folly/build/**",
@@ -237,6 +246,11 @@ cc_library(
             "folly/debugging/exception_tracer/StackTrace.cpp",
             "folly/executors/ManualExecutor.cpp",
         ],
+    }) + select({
+        ":linux_aarch64_glibc": [
+            "folly/memset_select_aarch64.cpp",
+        ],
+        "//conditions:default": [],
     }),
     hdrs = [
         "folly/io/async/test/ScopedBoundPort.h",
@@ -290,7 +304,11 @@ cc_library(
         "@libevent//:event",
         "@libevent//:event_openssl",
         "@libsodium//:sodium",
+        "@lz4",
         "@openssl",
+        "@org_bzip_bzip2//:bz2lib",
+        "@org_lzma_lzma//:lzma",
+        "@zlib",
         "@zstd",
     ] + select({
         "@platforms//os:windows": [],
@@ -398,6 +416,11 @@ template_rule(
         "@tbox//bazel:linux_aarch64": {
             "#define FOLLY_HAVE_SWAPCONTEXT 1": "",
             "#define FOLLY_HAVE_BACKTRACE 1": "",
+        },
+        "//conditions:default": {},
+    }) | select({
+        "@tbox//bazel:libc_musl": {
+            "#define FOLLY_HAVE_IFUNC 1": "/* #undef FOLLY_HAVE_IFUNC */",
         },
         "//conditions:default": {},
     }) | select({

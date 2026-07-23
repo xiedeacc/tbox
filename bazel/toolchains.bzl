@@ -14,7 +14,7 @@ def cc_toolchains_register():
                         "url": "https://rgit.xiedeacc.com/files/clang18.1.8-linux-x86_64_toolchain.tar.gz",
                         "strip_prefix": "clang18.1.8-linux-x86_64_toolchain",
                         "sha256sum": "be64a29251dd2b7ae6e8e783f99ab395b4bf2a75f98d8a6e03bf855e9d811434",
-                        "sysroot": "@cc_toolchain_repo_clang_x86_64_generic_linux_glibc",
+                        "sysroot": "@@+cc_toolchains_extension+cc_toolchain_repo_clang_x86_64_generic_linux_glibc//:BUILD.bazel",
                         "tool_names": {
                             "ar": "llvm-ar",
                             "as": "llvm-as",
@@ -61,7 +61,7 @@ def cc_toolchains_register():
                         "url": "https://rgit.xiedeacc.com/files/clang18.1.8-linux-x86_64_toolchain.tar.gz",
                         "strip_prefix": "clang18.1.8-linux-x86_64_toolchain",
                         "sha256sum": "be64a29251dd2b7ae6e8e783f99ab395b4bf2a75f98d8a6e03bf855e9d811434",
-                        "sysroot": "@macosx14.2-x86_64_sysroot",
+                        "sysroot": "@@+http_archive+macosx14.2-x86_64_sysroot//:BUILD.bazel",
                         "tool_names": {
                             "ar": "x86_64-apple-darwin23.3-libtool",
                             "as": "x86_64-apple-darwin23.3-as",
@@ -110,7 +110,7 @@ def cc_toolchains_register():
                         "url": "https://rgit.xiedeacc.com/files/clang18.1.8-linux-x86_64_toolchain.tar.gz",
                         "strip_prefix": "clang18.1.8-linux-x86_64_toolchain",
                         "sha256sum": "be64a29251dd2b7ae6e8e783f99ab395b4bf2a75f98d8a6e03bf855e9d811434",
-                        "sysroot": "@clang18.1.8-aarch64_sysroot",
+                        "sysroot": "@@+http_archive+clang18.1.8-aarch64_sysroot//:BUILD.bazel",
                         "tool_names": {
                             "ar": "llvm-ar",
                             "as": "llvm-as",
@@ -161,7 +161,7 @@ def cc_toolchains_register():
                         "url": "https://rgit.xiedeacc.com/files/gcc14.2.0-aarch64-unknown-linux-musl.tar.gz",
                         "strip_prefix": "gcc14.2.0-aarch64-unknown-linux-musl",
                         "sha256sum": "df50a1807433bf1f8eaeaeaecf8c53aa12e72e5285fb539c7b64532833f017a4",
-                        "sysroot": "@linux-aarch64-musl_sysroot",
+                        "sysroot": "@@+http_archive+linux-aarch64-musl_sysroot//:BUILD.bazel",
                         #"url": "/zfs/www/files/gcc14.2.0-aarch64-unknown-linux-musl",
                         #"sysroot": "/zfs/www/files/linux-aarch64-musl_sysroot",
                         "tool_names": {
@@ -210,7 +210,7 @@ def cc_toolchains_register():
                         "url": "https://rgit.xiedeacc.com/files/clang18.1.8-linux-x86_64_toolchain.tar.gz",
                         "strip_prefix": "clang18.1.8-linux-x86_64_toolchain",
                         "sha256sum": "be64a29251dd2b7ae6e8e783f99ab395b4bf2a75f98d8a6e03bf855e9d811434",
-                        "sysroot": "@cc_toolchain_repo_gcc_aarch64_generic_linux_musl",
+                        "sysroot": "@@+cc_toolchains_extension+cc_toolchain_repo_gcc_aarch64_generic_linux_musl//:BUILD.bazel",
                         "tool_names": {
                             "ar": "llvm-ar",
                             "as": "llvm-as",

@@ -11,7 +11,6 @@ COPTS = GLOBAL_COPTS + select({
         "-O3",
         "-fno-strict-aliasing",
         "-I$(GENDIR)/external/libevent/include",
-        "-Iexternal/libevent/compat",
     ],
 })
 
@@ -132,7 +131,10 @@ cc_library(
         "//conditions:default": [],
     }),
     defines = DEFINES,
-    includes = ["include"],
+    includes = [
+        "compat",
+        "include",
+    ],
     linkopts = LINKOPTS + [
     ],
     local_defines = LOCAL_DEFINES,
@@ -169,7 +171,10 @@ cc_library(
         "//conditions:default": [],
     }),
     defines = DEFINES,
-    includes = ["include"],
+    includes = [
+        "compat",
+        "include",
+    ],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES + [
         "HAVE_CONFIG_H",
@@ -214,7 +219,10 @@ cc_library(
         "//conditions:default": [],
     }),
     defines = DEFINES,
-    includes = ["include"],
+    includes = [
+        "compat",
+        "include",
+    ],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES + [
         "HAVE_CONFIG_H",

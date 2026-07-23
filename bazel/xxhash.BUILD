@@ -31,6 +31,7 @@ cc_library(
     hdrs = ["xxhash.h"],
     copts = COPTS,
     defines = DEFINES,
+    includes = ["."],
     linkopts = LINKOPTS,
     local_defines = LOCAL_DEFINES,
 )
