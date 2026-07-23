@@ -206,10 +206,46 @@ platform(
 )
 
 platform(
+    name = "linux_x86_64_glibc_platform",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+        "@cc_toolchains//toolchain:libc_glibc",
+    ],
+)
+
+platform(
+    name = "linux_x86_64_musl_platform",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+        "@cc_toolchains//toolchain:libc_musl",
+    ],
+)
+
+platform(
     name = "linux_aarch64_platform",
     constraint_values = [
         "@platforms//os:linux",
         "@platforms//cpu:aarch64",
+    ],
+)
+
+platform(
+    name = "linux_aarch64_glibc_platform",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+        "@cc_toolchains//toolchain:libc_glibc",
+    ],
+)
+
+platform(
+    name = "linux_aarch64_musl_platform",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+        "@cc_toolchains//toolchain:libc_musl",
     ],
 )
 
