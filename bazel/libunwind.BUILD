@@ -10,22 +10,11 @@ COPTS = [
     "-Wall",
     "-Wsign-compare",
     "-isystem external/xz/src/liblzma/lzma",
-    "-I$(GENDIR)/external/libunwind/include",
-    "-Iexternal/libunwind/include",
-    "-I$(GENDIR)/external/libunwind/include/tdep",
-    "-Iexternal/libunwind/src",
-    "-Iexternal/libunwind/include/tdep",
-    "-Iexternal/libunwind/src/mi",
-    "-Iexternal/libunwind/src/dwarf",
 ]
 
-X86_64_COPTS = [
-    "-Iexternal/libunwind/src/x86_64",
-]
+X86_64_COPTS = []
 
-AARCH64_COPTS = [
-    "-Iexternal/libunwind/src/aarch64",
-]
+AARCH64_COPTS = []
 
 LOCAL_DEFINES = [
     "HAVE_CONFIG_H",
@@ -158,6 +147,7 @@ cc_library(
         "include/tdep/jmpbuf.h",
         "include/unwind.h",
         "src/coredump/_UCD_internal.h",
+        "src/coredump/_UCD_lib.h",
         "src/coredump/ucd_file_table.h",
         "src/elf64.h",
         "src/elfxx.h",
@@ -200,6 +190,7 @@ cc_library(
         "include",
         "include/tdep",
         "src",
+        "src/coredump",
         "src/dwarf",
         "src/mi",
     ] + select({

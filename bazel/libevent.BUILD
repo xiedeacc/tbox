@@ -74,11 +74,8 @@ cc_library(
         "http.c",
         "listener.c",
         "log.c",
-        "sha1.c",
         "signal.c",
         "strlcpy.c",
-        "watch.c",
-        "ws.c",
     ] + select({
         "@platforms//os:windows": [
             "buffer_iocp.c",
@@ -101,7 +98,6 @@ cc_library(
             "evthread_pthread.c",
             "poll.c",
             "select.c",
-            "signalfd.c",
         ],
         "//conditions:default": [],
         #}) + select({
@@ -146,7 +142,6 @@ cc_library(
     name = "event_openssl",
     srcs = [
         "bufferevent_openssl.c",
-        "bufferevent_ssl.c",
     ],
     hdrs = [
         "arc4random.c",

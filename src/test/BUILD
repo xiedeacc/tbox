@@ -15,8 +15,8 @@ cc_library(
     ],
     deps = [
         "//src/common:logging",
-        "@com_github_gflags_gflags//:gflags",
         "@com_google_googletest//:gtest",
         "@folly",
+        "@gflags",
     ],
 )

@@ -86,6 +86,7 @@ build -c opt
 build --define cross_compiling=false
 build --features=-module_maps
 build --host_features=-module_maps
+build --jobs=8
 build --conlyopt='-std=gnu17'
 build --incompatible_disallow_empty_glob=false
 #build --features=-layering_check

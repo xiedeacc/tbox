@@ -1,5 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "template_rule")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -59,6 +59,15 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
 
 DEFINES = GLOBAL_DEFINES
 
+template_rule(
+    name = "quic_logging_config_h",
+    src = "quic/quic-logging-config.h.in",
+    out = "quic/quic-logging-config.h",
+    substitutions = {
+        "@MVFST_LOGGING_BACKEND@": "GLOG",
+    },
+)
+
 cc_library(
     name = "mvfst",
     srcs = glob(
@@ -69,6 +78,10 @@ cc_library(
             "quic/common/events/LibevQuicEventBase.cpp",
             "quic/common/udpsocket/LibevQuicAsyncUDPSocket.cpp",
             "quic/api/QuicBatchWriterFactoryMobile.cpp",
+            "quic/api/QuicBatchWriterFactoryMobileGSO.cpp",
+            "quic/congestion_control/CongestionControllerFactoryMobile.cpp",
+            "quic/congestion_control/PacerFactoryMobile.cpp",
+            "quic/fizz/handshake/FizzPacketNumberCipher.cpp",
             "quic/server/QuicServerBackendIoUring.cpp",
             "quic/server/QuicServerBackend.cpp",
             "quic/samples/**",
@@ -77,14 +90,15 @@ cc_library(
             "quic/tools/tperf/**/*.cpp",
         ],
     ) + select({
-        "@platforms//os:linux": ["quic/server/QuicServerBackendIoUring.cpp"],
+        "@platforms//os:linux": [],
         "@platforms//os:osx": [],
         "@platforms//os:windows": [],
         "//conditions:default": [],
     }),
-    hdrs = glob(
+    hdrs = [":quic_logging_config_h"] + glob(
         [
             "quic/**/*.h",
+            "quic/**/*.hpp",
         ],
         exclude = [
             "quic/samples/**/*.h",

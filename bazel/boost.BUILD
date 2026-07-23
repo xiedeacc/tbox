@@ -857,6 +857,7 @@ boost_library(
         ":iterator",
         ":predef",
         ":range",
+        ":scope",
         ":scoped_array",
         ":smart_ptr",
         ":static_assert",
@@ -864,6 +865,10 @@ boost_library(
         ":throw_exception",
         ":type_traits",
     ],
+)
+
+boost_library(
+    name = "scope",
 )
 
 boost_library(
@@ -1928,9 +1933,6 @@ boost_library(
 
 boost_library(
     name = "static_assert",
-    hdrs = [
-        "libs/config/include/boost/config/workaround.hpp",
-    ],
 )
 
 boost_library(
@@ -1952,10 +1954,19 @@ boost_library(
 )
 
 boost_library(
+    name = "compat",
+)
+
+boost_library(
     name = "system",
+    includes = [
+        "libs/compat/include",
+        "libs/url/src/detail",
+    ],
     deps = [
         ":assert",
         ":cerrno",
+        ":compat",
         ":config",
         ":core",
         ":cstdint",
@@ -2553,13 +2564,17 @@ boost_library(
 
 boost_library(
     name = "json",
+    exclude_src = ["libs/json/src/boost_json_gdb_printers.py"],
+    includes = ["libs/compat/include"],
     deps = [
         ":align",
         ":assert",
+        ":compat",
         ":config",
         ":container",
         ":core",
         ":describe",
+        ":endian",
         ":exception",
         ":mp11",
         ":shared_ptr",
@@ -2627,13 +2642,18 @@ boost_library(
 boost_library(
     name = "url",
     srcs = glob([
+        "libs/url/src/detail/**/*.hpp",
         "libs/url/src/detail/**/*.cpp",
+        "libs/url/src/grammar/**/*.hpp",
         "libs/url/src/grammar/**/*.cpp",
+        "libs/url/src/rfc/**/*.hpp",
         "libs/url/src/rfc/**/*.cpp",
     ]),
+    includes = ["libs/compat/include"],
     deps = [
         ":align",
         ":assert",
+        ":compat",
         ":config",
         ":core",
         ":mp11",

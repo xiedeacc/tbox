@@ -1,5 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
+load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES", "template_rule")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -47,6 +47,15 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
     "//conditions:default": [],
 })
 
+template_rule(
+    name = "wangle_config_h",
+    src = "wangle/wangle-config.h.in",
+    out = "wangle/wangle-config.h",
+    substitutions = {
+        "@WANGLE_LOGGING_BACKEND@": "XLOG",
+    },
+)
+
 cc_library(
     name = "wangle",
     srcs = glob(
@@ -66,7 +75,7 @@ cc_library(
             "wangle/example/**",
             "wangle/**/test/**",
         ],
-    ),
+    ) + [":wangle_config_h"],
     copts = COPTS,
     defines = DEFINES,
     includes = ["."],
