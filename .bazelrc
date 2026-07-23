@@ -196,3 +196,28 @@ build:clang_x86_64_linux_gnu --action_env=LD_LIBRARY_PATH=/root/src/software/too
 build:clang_x86_64_linux_gnu --host_action_env=LD_LIBRARY_PATH=/root/src/software/toolchains/host-libs
 build:clang_x86_64_linux_gnu --copt='-g'
 build:clang_x86_64_linux_gnu --host_copt='-g'
+
+build:clang_gnu --toolchain_resolution_debug='@bazel_tools//tools/cpp:toolchain_type'
+build:clang_gnu --extra_toolchains='@cc_toolchain_config_clang_x86_64_generic_linux_glibc//:toolchain-clang_x86_64_generic_linux_glibc'
+build:clang_gnu --extra_toolchains='@cc_toolchain_config_clang_aarch64_generic_linux_glibc//:toolchain-clang_aarch64_generic_linux_glibc'
+build:clang_gnu --compiler='clang'
+build:clang_gnu --define libc=glibc
+build:clang_gnu --java_runtime_version="remotejdk_21"
+build:clang_gnu --jobs=6
+build:clang_gnu --action_env=LD_LIBRARY_PATH=/root/src/software/toolchains/host-libs
+build:clang_gnu --host_action_env=LD_LIBRARY_PATH=/root/src/software/toolchains/host-libs
+build:clang_gnu --copt='-g'
+build:clang_gnu --host_copt='-g'
+
+build:clang_musl --toolchain_resolution_debug='@bazel_tools//tools/cpp:toolchain_type'
+build:clang_musl --extra_toolchains='@cc_toolchain_config_clang_x86_64_generic_linux_musl//:toolchain-clang_x86_64_generic_linux_musl'
+build:clang_musl --extra_toolchains='@cc_toolchain_config_clang_aarch64_generic_linux_musl//:toolchain-clang_aarch64_generic_linux_musl'
+build:clang_musl --compiler='clang'
+build:clang_musl --define libc=musl
+build:clang_musl --java_runtime_version="remotejdk_21"
+build:clang_musl --jobs=6
+build:clang_musl --action_env=LD_LIBRARY_PATH=/root/src/software/toolchains/host-libs
+build:clang_musl --host_action_env=LD_LIBRARY_PATH=/root/src/software/toolchains/host-libs
+build:clang_musl --action_env=STAGING_DIR=/root/src/software/toolchains
+build:clang_musl --copt='-g'
+build:clang_musl --host_copt='-g'

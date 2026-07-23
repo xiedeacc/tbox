@@ -420,7 +420,9 @@ template_rule(
         "//conditions:default": {},
     }) | select({
         "@tbox//bazel:libc_musl": {
+            "#define FOLLY_HAVE_BACKTRACE 1": "/* #undef FOLLY_HAVE_BACKTRACE */",
             "#define FOLLY_HAVE_IFUNC 1": "/* #undef FOLLY_HAVE_IFUNC */",
+            "#define FOLLY_HAVE_SWAPCONTEXT 1": "/* #undef FOLLY_HAVE_SWAPCONTEXT */",
         },
         "//conditions:default": {},
     }) | select({
