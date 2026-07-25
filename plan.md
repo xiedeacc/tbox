@@ -59,8 +59,9 @@ All archives are published under `/opt/www/files` on `nas` and consumed from
 - [x] Build `clang_aarch64_linux_musl` and deploy `tbox_client` to OpenWrt.
 - [x] Deploy `tbox_server` to AWS.
 - [x] Verify services and binaries on all three hosts.
-- [ ] Commit and push tbox. `cc_toolchains` is already pushed at
-  `053ccff396d7f2a3be29b8e426d8c6df081d8221`.
+- [x] Commit and push tbox. `tbox` is pushed at
+  `199dc9939e0dfc42d13b035ce3b24d65b179690a`; `cc_toolchains` is already
+  pushed at `053ccff396d7f2a3be29b8e426d8c6df081d8221`.
 
 ## Build acceptance targets
 
