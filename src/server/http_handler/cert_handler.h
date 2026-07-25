@@ -18,8 +18,7 @@ namespace http_handler {
 
 class CertHandler : public proxygen::RequestHandler {
  public:
-  void onRequest(
-      std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override {}
+  void onRequest(std::unique_ptr<proxygen::HTTPMessage>) noexcept override {}
 
   void onBody(std::unique_ptr<folly::IOBuf> body) noexcept override {
     body_.append(reinterpret_cast<const char*>(body->data()), body->length());
@@ -81,9 +80,9 @@ class CertHandler : public proxygen::RequestHandler {
     Util::Success(res_body, downstream_);
   }
 
-  void onUpgrade(proxygen::UpgradeProtocol protocol) noexcept override {}
+  void onUpgrade(proxygen::UpgradeProtocol) noexcept override {}
   void requestComplete() noexcept override {}
-  void onError(proxygen::ProxygenError err) noexcept override {}
+  void onError(proxygen::ProxygenError) noexcept override {}
 
  private:
   std::string body_;

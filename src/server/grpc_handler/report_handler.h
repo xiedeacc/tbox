@@ -271,7 +271,7 @@ class ReportOpHandler : public async_grpc::RpcHandler<ReportOpMethod> {
   }
 
   /// @brief Handle OP_GET_PUBLIC_IPV4 - Return client's public IPv4 address
-  void HandleGetPublicIPv4(const proto::ReportRequest& req,
+  void HandleGetPublicIPv4(const proto::ReportRequest&,
                            proto::ReportResponse* res) {
     // Get real client IP from nginx headers
     std::string client_ip = GetRealClientIP();
@@ -288,7 +288,7 @@ class ReportOpHandler : public async_grpc::RpcHandler<ReportOpMethod> {
   }
 
   /// @brief Handle OP_GET_PUBLIC_IPV6 - Return client's public IPv6 address
-  void HandleGetPublicIPv6(const proto::ReportRequest& req,
+  void HandleGetPublicIPv6(const proto::ReportRequest&,
                            proto::ReportResponse* res) {
     // Get real client IP from nginx headers
     std::string client_ip = GetRealClientIP();

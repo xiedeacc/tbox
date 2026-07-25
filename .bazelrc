@@ -3,6 +3,7 @@ common --downloader_config=.bazel_downloader.cfg
 common --enable_platform_specific_config
 common --repo_env=CC=/usr/bin/gcc-16
 common --repo_env=CXX=/usr/bin/g++-16
+common --incompatible_default_to_explicit_init_py
 
 ######################### attention #########################
 # 1. pprof.out generated in bazel test sandbox
@@ -94,6 +95,7 @@ build --features=-module_maps
 build --host_features=-module_maps
 build --jobs=8
 build --conlyopt='-std=gnu17'
+build --per_file_copt=.*src/proto/.*\\.grpc\\.pb\\.cc@-Wno-deprecated-declarations
 build --incompatible_disallow_empty_glob=false
 #build --features=-layering_check
 #build --host_features=-layering_check

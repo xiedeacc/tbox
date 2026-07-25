@@ -6,9 +6,9 @@
 #ifndef TBOX_SERVER_HTTP_HANDLER_HTTP_HANDLER_FACTORY_H_
 #define TBOX_SERVER_HTTP_HANDLER_HTTP_HANDLER_FACTORY_H_
 
-#include "src/common/logging.h"
 #include "proxygen/httpserver/RequestHandler.h"
 #include "proxygen/httpserver/RequestHandlerFactory.h"
+#include "src/common/logging.h"
 #include "src/server/http_handler/default_handler.h"
 #include "src/server/http_handler/server_handler.h"
 #include "src/server/http_handler/user_handler.h"

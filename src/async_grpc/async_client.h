@@ -21,10 +21,17 @@
 
 #include "completion_queue_pool.h"
 #include "src/common/logging.h"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #include "grpc++/grpc++.h"
 #include "grpc++/impl/codegen/async_stream.h"
 #include "grpc++/impl/codegen/async_unary_call.h"
 #include "grpc++/impl/codegen/proto_utils.h"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #include "src/async_grpc/rpc_service_method_traits.h"
 
 namespace async_grpc {

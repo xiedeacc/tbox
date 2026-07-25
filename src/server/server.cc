@@ -9,6 +9,7 @@
 
 #include "folly/init/Init.h"
 #include "gflags/gflags.h"
+#include "glog/logging.h"
 #include "src/common/logging.h"
 #include "src/impl/cert_manager.h"
 #include "src/impl/config_manager.h"

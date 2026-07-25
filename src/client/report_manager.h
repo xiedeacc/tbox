@@ -13,7 +13,14 @@
 #include <mutex>
 #include <thread>
 
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #include "grpcpp/grpcpp.h"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #include "src/proto/service.grpc.pb.h"
 
 namespace tbox {

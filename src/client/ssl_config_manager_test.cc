@@ -65,7 +65,7 @@ TEST_F(SSLConfigManagerTest, LoadCACert_Success) {
 
   EXPECT_FALSE(loaded.empty());
   EXPECT_EQ(loaded, test_cert_content_);
-  EXPECT_GT(loaded.size(), 0);
+  EXPECT_FALSE(loaded.empty());
 }
 
 TEST_F(SSLConfigManagerTest, LoadCACert_NonExistentFile) {

@@ -14,8 +14,15 @@
 #include "boost/asio/ip/tcp.hpp"
 #include "boost/beast/core/buffers_to_string.hpp"
 #include "boost/beast/websocket/stream.hpp"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#endif
 #include "folly/MPMCQueue.h"
 #include "folly/executors/CPUThreadPoolExecutor.h"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #include "src/common/logging.h"
 #include "src/proto/service.pb.h"
 

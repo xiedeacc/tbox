@@ -22,11 +22,18 @@
 #include <unordered_set>
 
 #include "google/protobuf/message.h"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #include "grpc++/grpc++.h"
 #include "grpc++/impl/codegen/async_stream.h"
 #include "grpc++/impl/codegen/async_unary_call.h"
 #include "grpc++/impl/codegen/proto_utils.h"
 #include "grpc++/impl/codegen/service_type.h"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #include "src/async_grpc/common/blocking_queue.h"
 #include "src/async_grpc/common/mutex.h"
 #include "src/async_grpc/execution_context.h"

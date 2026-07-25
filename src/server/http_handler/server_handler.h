@@ -85,9 +85,9 @@ class ServerHandler : public proxygen::RequestHandler {
       HandleServerInfo();
     }
   }
-  void onUpgrade(proxygen::UpgradeProtocol protocol) noexcept override {}
+  void onUpgrade(proxygen::UpgradeProtocol) noexcept override {}
   void requestComplete() noexcept override {}
-  void onError(proxygen::ProxygenError err) noexcept override {}
+  void onError(proxygen::ProxygenError) noexcept override {}
 
  private:
   /// @brief Parse operation from request body

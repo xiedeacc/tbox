@@ -9,8 +9,15 @@
 #include <memory>
 #include <string>
 
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #include "proxygen/httpserver/HTTPServer.h"
 #include "proxygen/httpserver/HTTPServerOptions.h"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #include "src/impl/config_manager.h"
 #include "src/server/http_handler/http_handler_factory.h"
 #include "src/server/server_context.h"

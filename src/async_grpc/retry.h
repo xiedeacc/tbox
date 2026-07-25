@@ -19,7 +19,14 @@
 
 #include <set>
 
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #include "grpc++/grpc++.h"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #include "src/async_grpc/common/time.h"
 
 namespace async_grpc {

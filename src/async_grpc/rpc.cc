@@ -142,6 +142,9 @@ void Rpc::RequestNextMethodInvocation() {
           streaming_interface(), server_completion_queue_,
           server_completion_queue_, GetRpcEvent(Event::NEW_CONNECTION));
       break;
+    case ::grpc::internal::RpcMethod::SESSION_RPC:
+      LOG(FATAL) << "SESSION_RPC is not supported.";
+      break;
   }
 }
 
@@ -160,6 +163,9 @@ void Rpc::RequestStreamingReadIfNeeded() {
       // into the 'Message' we provided to 'RequestAsyncUnary' above.
       OnRequest();
       OnReadsDone();
+      break;
+    case ::grpc::internal::RpcMethod::SESSION_RPC:
+      LOG(FATAL) << "SESSION_RPC is not supported.";
       break;
   }
 }
@@ -208,6 +214,9 @@ void Rpc::HandleSendQueue() {
       return server_async_response_writer_.get();
     case ::grpc::internal::RpcMethod::SERVER_STREAMING:
       return server_async_writer_.get();
+    case ::grpc::internal::RpcMethod::SESSION_RPC:
+      LOG(FATAL) << "SESSION_RPC is not supported.";
+      break;
   }
   LOG(FATAL) << "Never reached.";
 }
@@ -224,6 +233,9 @@ Rpc::async_reader_interface() {
     case ::grpc::internal::RpcMethod::SERVER_STREAMING:
       LOG(FATAL)
           << "For SERVER_STREAMING no streaming reader interface exists.";
+    case ::grpc::internal::RpcMethod::SESSION_RPC:
+      LOG(FATAL) << "SESSION_RPC is not supported.";
+      break;
   }
   LOG(FATAL) << "Never reached.";
 }
@@ -240,6 +252,9 @@ Rpc::async_writer_interface() {
       break;
     case ::grpc::internal::RpcMethod::SERVER_STREAMING:
       return server_async_writer_.get();
+    case ::grpc::internal::RpcMethod::SESSION_RPC:
+      LOG(FATAL) << "SESSION_RPC is not supported.";
+      break;
   }
   LOG(FATAL) << "Never reached.";
 }
@@ -293,6 +308,9 @@ void Rpc::PerformFinish(std::unique_ptr<::google::protobuf::Message> message,
     case ::grpc::internal::RpcMethod::SERVER_STREAMING:
       CHECK(!message);
       server_async_writer_->Finish(status, GetRpcEvent(Event::FINISH));
+      break;
+    case ::grpc::internal::RpcMethod::SESSION_RPC:
+      LOG(FATAL) << "SESSION_RPC is not supported.";
       break;
   }
 }
@@ -354,6 +372,9 @@ void Rpc::InitializeReadersAndWriters(
       server_async_writer_ = std::make_unique<
           ::grpc::ServerAsyncWriter<google::protobuf::Message>>(
           &server_context_);
+      break;
+    case ::grpc::internal::RpcMethod::SESSION_RPC:
+      LOG(FATAL) << "SESSION_RPC is not supported.";
       break;
   }
 }

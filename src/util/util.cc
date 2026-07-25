@@ -5,11 +5,14 @@
 
 #include "src/util/util.h"
 
+#include <chrono>
+#include <condition_variable>
 #include <cstddef>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <ios>
+#include <mutex>
 #include <random>
 #include <set>
 #include <string>
@@ -49,7 +52,6 @@
 #include <linux/limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <poll.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -1064,10 +1066,18 @@ std::vector<std::string> Util::GetPublicIPv6Addresses() {
 std::vector<std::string> Util::ResolveDomainToIPv6(const std::string& domain) {
   std::vector<std::string> addresses;
 
-  // Initialize c-ares with options (modern API)
+  struct QueryResult {
+    std::mutex mutex;
+    std::condition_variable completed;
+    std::vector<std::string> addresses;
+    bool done = false;
+    int status = ARES_SUCCESS;
+  } result;
+
   ares_channel channel;
   struct ares_options options = {};
-  int optmask = 0;
+  options.evsys = ARES_EVSYS_DEFAULT;
+  int optmask = ARES_OPT_EVENT_THREAD;
 
   int status = ares_init_options(&channel, &options, optmask);
   if (status != ARES_SUCCESS) {
@@ -1088,17 +1098,11 @@ std::vector<std::string> Util::ResolveDomainToIPv6(const std::string& domain) {
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = 0;
 
-  // Structure to hold results
-  struct QueryResult {
-    std::vector<std::string> addresses;
-    bool done = false;
-    int status = ARES_SUCCESS;
-  } result;
-
   // Callback for ares_getaddrinfo
   auto callback = [](void* arg, int status, int /*timeouts*/,
                      struct ares_addrinfo* res) {
     auto* query_result = static_cast<QueryResult*>(arg);
+    std::lock_guard<std::mutex> lock(query_result->mutex);
     query_result->status = status;
 
     if (status == ARES_SUCCESS && res != nullptr) {
@@ -1117,65 +1121,18 @@ std::vector<std::string> Util::ResolveDomainToIPv6(const std::string& domain) {
     }
 
     query_result->done = true;
+    query_result->completed.notify_one();
   };
 
   // Start the query
   ares_getaddrinfo(channel, domain.c_str(), nullptr, &hints, callback, &result);
 
-  // Process responses using poll() (no FD_SETSIZE limitation)
-  while (!result.done) {
-    // Use ares_timeout to get the timeout for poll
-    struct timeval tv_timeout;
-    struct timeval* tv = ares_timeout(channel, nullptr, &tv_timeout);
-
-    int timeout_ms = -1;
-    if (tv != nullptr) {
-      timeout_ms = tv->tv_sec * 1000 + tv->tv_usec / 1000;
-    }
-
-    // Get sockets to wait on
-    ares_socket_t socks[ARES_GETSOCK_MAXNUM];
-    int bitmask = ares_getsock(channel, socks, ARES_GETSOCK_MAXNUM);
-
-    if (bitmask == 0) {
-      break;  // No active queries
-    }
-
-    // Setup pollfd array
-    struct pollfd pfds[ARES_GETSOCK_MAXNUM];
-    int nfds = 0;
-
-    for (int i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
-      pfds[i].fd = socks[i];
-      pfds[i].events = 0;
-      pfds[i].revents = 0;
-
-      if (ARES_GETSOCK_READABLE(bitmask, i)) {
-        pfds[i].events |= POLLIN;
-        nfds = i + 1;
-      }
-      if (ARES_GETSOCK_WRITABLE(bitmask, i)) {
-        pfds[i].events |= POLLOUT;
-        nfds = i + 1;
-      }
-    }
-
-    if (nfds == 0) {
-      break;
-    }
-
-    int count = poll(pfds, nfds, timeout_ms);
-    if (count < 0) {
-      LOG(ERROR) << "poll() failed during DNS resolution: "
-                 << std::strerror(errno);
-      break;
-    }
-
-    // Process the sockets based on poll results
-    for (int i = 0; i < nfds; i++) {
-      ares_process_fd(
-          channel, (pfds[i].revents & POLLIN) ? pfds[i].fd : ARES_SOCKET_BAD,
-          (pfds[i].revents & POLLOUT) ? pfds[i].fd : ARES_SOCKET_BAD);
+  {
+    std::unique_lock<std::mutex> lock(result.mutex);
+    if (!result.completed.wait_for(lock, std::chrono::seconds(10),
+                                   [&result] { return result.done; })) {
+      LOG(ERROR) << "DNS resolution timed out for " << domain;
+      return addresses;
     }
   }
 

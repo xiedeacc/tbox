@@ -17,7 +17,14 @@
 #include <cstdlib>
 
 #include "src/common/logging.h"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #include "grpc++/impl/codegen/proto_utils.h"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #include "src/async_grpc/server.h"
 
 namespace async_grpc {

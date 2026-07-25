@@ -140,6 +140,7 @@ cc_library(
     deps = [
         "//src/common:defs",
         "//src/util",
+        "@com_google_absl//absl/synchronization",
         "@folly",
     ],
 )

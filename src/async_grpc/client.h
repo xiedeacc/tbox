@@ -20,10 +20,17 @@
 #include <optional>
 
 #include "src/common/logging.h"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #include "grpc++/grpc++.h"
 #include "grpc++/impl/codegen/client_unary_call.h"
 #include "grpc++/impl/codegen/proto_utils.h"
 #include "grpc++/impl/codegen/sync_stream.h"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #include "src/async_grpc/retry.h"
 #include "src/async_grpc/rpc_handler_interface.h"
 #include "src/async_grpc/rpc_service_method_traits.h"

@@ -8,8 +8,15 @@
 #include <memory>
 #include <thread>
 
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #include "grpcpp/grpcpp.h"
 #include "grpcpp/server_builder.h"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #include "gtest/gtest.h"
 #include "src/proto/service.grpc.pb.h"
 #include "src/proto/service.pb.h"
@@ -36,8 +43,8 @@ class MockTBOXServiceImpl final : public tbox::proto::TBOXService::Service {
     grpc_error_msg_ = msg;
   }
 
-  grpc::Status UserOp(grpc::ServerContext* context,
-                      const tbox::proto::UserRequest* request,
+  grpc::Status UserOp(grpc::ServerContext*,
+                      const tbox::proto::UserRequest*,
                       tbox::proto::UserResponse* response) override {
     if (grpc_error_code_ != grpc::StatusCode::OK) {
       return grpc::Status(grpc_error_code_, grpc_error_msg_);
@@ -54,15 +61,15 @@ class MockTBOXServiceImpl final : public tbox::proto::TBOXService::Service {
   }
 
   // Required overrides (not used in these tests)
-  grpc::Status EC2Op(grpc::ServerContext* context,
-                     const tbox::proto::EC2Request* request,
-                     tbox::proto::EC2Response* response) override {
+  grpc::Status EC2Op(grpc::ServerContext*,
+                     const tbox::proto::EC2Request*,
+                     tbox::proto::EC2Response*) override {
     return grpc::Status::OK;
   }
 
-  grpc::Status ReportOp(grpc::ServerContext* context,
-                        const tbox::proto::ReportRequest* request,
-                        tbox::proto::ReportResponse* response) override {
+  grpc::Status ReportOp(grpc::ServerContext*,
+                        const tbox::proto::ReportRequest*,
+                        tbox::proto::ReportResponse*) override {
     return grpc::Status::OK;
   }
 

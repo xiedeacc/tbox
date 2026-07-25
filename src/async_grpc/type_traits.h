@@ -17,7 +17,14 @@
 #ifndef CPP_GRPC_TYPE_TRAITS_H_
 #define CPP_GRPC_TYPE_TRAITS_H_
 
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #include <grpc++/grpc++.h>
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 #include <cstdint>
 #include <type_traits>

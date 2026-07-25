@@ -140,6 +140,9 @@ class Server {
           CHECK(method_descriptor->client_streaming());
           CHECK(method_descriptor->server_streaming());
           break;
+        case ::grpc::internal::RpcMethod::SESSION_RPC:
+          LOG(FATAL) << "SESSION_RPC is not supported.";
+          break;
       }
     }
 

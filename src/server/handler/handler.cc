@@ -42,7 +42,7 @@ void Handler::HandleGetCertificate(const proto::CertRequest& req,
             << req.domain();
 }
 
-void Handler::HandleGetFullchainCertHash(const proto::ReportRequest& req,
+void Handler::HandleGetFullchainCertHash(const proto::ReportRequest&,
                                          proto::ReportResponse* res) {
   std::string cert_path =
       "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/fullchain.cer";
@@ -64,7 +64,7 @@ void Handler::HandleGetFullchainCertHash(const proto::ReportRequest& req,
   }
 }
 
-void Handler::HandleGetFullchainCertHash(const proto::CertRequest& req,
+void Handler::HandleGetFullchainCertHash(const proto::CertRequest&,
                                          proto::CertResponse* res) {
   std::string cert_path =
       "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/fullchain.cer";
@@ -82,7 +82,7 @@ void Handler::HandleGetFullchainCertHash(const proto::CertRequest& req,
   }
 }
 
-void Handler::HandleGetCACertHash(const proto::ReportRequest& req,
+void Handler::HandleGetCACertHash(const proto::ReportRequest&,
                                   proto::ReportResponse* res) {
   std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/ca.cer";
   std::string hash_result;
@@ -102,7 +102,7 @@ void Handler::HandleGetCACertHash(const proto::ReportRequest& req,
   }
 }
 
-void Handler::HandleGetCACertHash(const proto::CertRequest& req,
+void Handler::HandleGetCACertHash(const proto::CertRequest&,
                                   proto::CertResponse* res) {
   std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/ca.cer";
   std::string hash_result;
@@ -120,7 +120,7 @@ void Handler::HandleGetCACertHash(const proto::CertRequest& req,
   }
 }
 
-void Handler::HandleGetFullchainCert(const proto::ReportRequest& req,
+void Handler::HandleGetFullchainCert(const proto::ReportRequest&,
                                      proto::ReportResponse* res) {
   std::string cert_path =
       "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/fullchain.cer";
@@ -138,7 +138,7 @@ void Handler::HandleGetFullchainCert(const proto::ReportRequest& req,
   }
 }
 
-void Handler::HandleGetFullchainCert(const proto::CertRequest& req,
+void Handler::HandleGetFullchainCert(const proto::CertRequest&,
                                      proto::CertResponse* res) {
   std::string cert_path =
       "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/fullchain.cer";
@@ -158,7 +158,7 @@ void Handler::HandleGetFullchainCert(const proto::CertRequest& req,
   }
 }
 
-void Handler::HandleGetCACert(const proto::ReportRequest& req,
+void Handler::HandleGetCACert(const proto::ReportRequest&,
                               proto::ReportResponse* res) {
   std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/ca.cer";
   std::string cert_content = ReadFileContent(cert_path);
@@ -175,7 +175,7 @@ void Handler::HandleGetCACert(const proto::ReportRequest& req,
   }
 }
 
-void Handler::HandleGetCACert(const proto::CertRequest& req,
+void Handler::HandleGetCACert(const proto::CertRequest&,
                               proto::CertResponse* res) {
   std::string cert_path = "/home/ubuntu/.acme.sh/xiedeacc.com_ecc/ca.cer";
   std::string cert_content = ReadFileContent(cert_path);
@@ -194,7 +194,7 @@ void Handler::HandleGetCACert(const proto::CertRequest& req,
   }
 }
 
-void Handler::HandleGetPrivateKeyHash(const proto::ReportRequest& req,
+void Handler::HandleGetPrivateKeyHash(const proto::ReportRequest&,
                                       proto::ReportResponse* res) {
   // Get SHA256 hash of the private key file
   std::string key_path =
@@ -215,7 +215,7 @@ void Handler::HandleGetPrivateKeyHash(const proto::ReportRequest& req,
   }
 }
 
-void Handler::HandleGetPrivateKeyHash(const proto::CertRequest& req,
+void Handler::HandleGetPrivateKeyHash(const proto::CertRequest&,
                                       proto::CertResponse* res) {
   // Get SHA256 hash of the private key file
   std::string key_path =
@@ -235,7 +235,7 @@ void Handler::HandleGetPrivateKeyHash(const proto::CertRequest& req,
   }
 }
 
-void Handler::HandleGetPrivateKey(const proto::ReportRequest& req,
+void Handler::HandleGetPrivateKey(const proto::ReportRequest&,
                                   proto::ReportResponse* res) {
   // Read private key file content
   std::string key_path =
@@ -254,7 +254,7 @@ void Handler::HandleGetPrivateKey(const proto::ReportRequest& req,
   }
 }
 
-void Handler::HandleGetPrivateKey(const proto::CertRequest& req,
+void Handler::HandleGetPrivateKey(const proto::CertRequest&,
                                   proto::CertResponse* res) {
   // Read private key file content
   std::string key_path =

@@ -11,7 +11,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "absl/base/internal/spinlock.h"
+#include "absl/synchronization/mutex.h"
 #include "src/common/logging.h"
 #include "src/common/defs.h"
 #include "src/util/util.h"
@@ -69,7 +69,7 @@ class SessionManager final {
     session.last_update_time = util::Util::CurrentTimeMillis();
     session.user = user;
     session.token = token;
-    absl::base_internal::SpinLockHolder locker(&lock_);
+    absl::MutexLock locker(lock_);
     token_sessions_.emplace(token, session);
     user_sessions_.emplace(user, session);
     return token;
@@ -85,7 +85,7 @@ class SessionManager final {
     if (token.empty()) {
       return false;
     }
-    absl::base_internal::SpinLockHolder locker(&lock_);
+    absl::MutexLock locker(lock_);
     auto token_it = token_sessions_.find(token);
     if (token_it == token_sessions_.end()) {
       return false;
@@ -110,7 +110,7 @@ class SessionManager final {
    * @param user Username whose session should be removed.
    */
   void KickoutByUser(const std::string& user) {
-    absl::base_internal::SpinLockHolder locker(&lock_);
+    absl::MutexLock locker(lock_);
     auto user_it = user_sessions_.find(user);
     if (user_it == user_sessions_.end()) {
       return;
@@ -130,7 +130,7 @@ class SessionManager final {
    * @param token Authentication token whose session should be removed.
    */
   void KickoutByToken(const std::string& token) {
-    absl::base_internal::SpinLockHolder locker(&lock_);
+    absl::MutexLock locker(lock_);
     auto token_it = token_sessions_.find(token);
     if (token_it == token_sessions_.end()) {
       return;
@@ -152,7 +152,7 @@ class SessionManager final {
   void Stop() { stop_.store(true); }
 
  private:
-  mutable absl::base_internal::SpinLock lock_;
+  mutable absl::Mutex lock_;
   std::atomic<bool> stop_ = false;
   std::unordered_map<std::string, Session> token_sessions_;
   std::unordered_map<std::string, Session> user_sessions_;

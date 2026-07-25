@@ -17,7 +17,14 @@
 #ifndef CPP_GRPC_COMMON_COMPLETION_QUEUE_THREAD_H_
 #define CPP_GRPC_COMMON_COMPLETION_QUEUE_THREAD_H_
 
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #include <grpc++/grpc++.h>
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 #include <memory>
 #include <thread>

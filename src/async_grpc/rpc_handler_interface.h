@@ -18,7 +18,14 @@
 #define CPP_GRPC_RPC_HANDLER_INTERFACE_H_
 
 #include "google/protobuf/message.h"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #include "grpc++/grpc++.h"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #include "src/async_grpc/execution_context.h"
 #include "src/async_grpc/span.h"
 

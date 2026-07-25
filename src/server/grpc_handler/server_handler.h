@@ -193,7 +193,7 @@ class ServerOpHandler : public async_grpc::RpcHandler<ServerOpMethod> {
     return result;
   }
 
-  void HandleServerInfo(const proto::ServerRequest& req,
+  void HandleServerInfo(const proto::ServerRequest&,
                         proto::ServerResponse* res) {
     // Get all registered clients from the report handler
     auto all_clients = ReportOpHandler::GetAllClients();

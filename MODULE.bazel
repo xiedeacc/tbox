@@ -275,12 +275,12 @@ http_archive(
     #build_file = "@com_github_nelhage_rules_boost//:boost.BUILD",
     patch_cmds = [
         "cp /root/src/cpp/tbox/bazel/boost.BUILD BUILD.bazel",
-        "echo '# tbox boost BUILD overlay rev: 20260722-5' >> BUILD.bazel",
+        "echo '# tbox boost BUILD overlay rev: 20260725-1' >> BUILD.bazel",
         "rm -f doc/pdf/BUILD",
     ],
     patch_cmds_win = [
         "Copy-Item -Force C:/src/cpp/tbox/bazel/boost.BUILD BUILD.bazel",
-        "Add-Content BUILD.bazel '# tbox boost BUILD overlay rev: 20260722-5'",
+        "Add-Content BUILD.bazel '# tbox boost BUILD overlay rev: 20260725-1'",
         "Remove-Item -Force doc/pdf/BUILD",
     ],
     sha256 = "8a82bd11a720c70923806c36ee5c26dbd2d630c1eaa1d8fad9a7bd5529908a26",

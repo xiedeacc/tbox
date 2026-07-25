@@ -29,8 +29,6 @@ namespace handler {
 
 class Handler {
  public:
-  static absl::base_internal::SpinLock kLock;
-
   static void UserOpHandle(const proto::UserRequest& req,
                            proto::UserResponse* res) {
     // Log request_id (client_id) for login operations
