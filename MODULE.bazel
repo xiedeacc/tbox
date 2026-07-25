@@ -34,9 +34,17 @@ bazel_dep(name = "cc_toolchains", version = "0.0.0")
 bazel_dep(name = "rules_apple", version = "4.5.3", repo_name = "build_bazel_rules_apple")
 bazel_dep(name = "apple_support", version = "2.7.0", repo_name = "build_bazel_apple_support")
 
-local_path_override(
+single_version_override(
+    module_name = "protobuf",
+    patch_strip = 1,
+    patches = ["//bazel:protobuf-musl-path-max.patch"],
+    version = "35.1",
+)
+
+git_override(
+    commit = "053ccff396d7f2a3be29b8e426d8c6df081d8221",
     module_name = "cc_toolchains",
-    path = "/root/src/cpp/cc_toolchains",
+    remote = "https://github.com/xiedeacc/cc_toolchains.git",
 )
 
 single_version_override(
@@ -49,6 +57,8 @@ single_version_override(
 git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 new_git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
+
+shallow_git_repository = use_repo_rule("//bazel:shallow_git_repository.bzl", "shallow_git_repository")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -544,10 +554,10 @@ new_git_repository(
     tag = "1.8.5",
 )
 
-new_git_repository(
+shallow_git_repository(
     name = "aws-sdk-cpp",
     build_file = "//bazel:aws-sdk-cpp.BUILD",
-    patch_args = ["-p1"],
+    patch_strip = 1,
     patches = ["//bazel:aws-sdk-cpp-openssl4-const.patch"],
     recursive_init_submodules = True,
     remote = "https://github.com/aws/aws-sdk-cpp.git",
@@ -564,15 +574,23 @@ new_git_repository(
 http_archive(
     name = "linux-x86_64-gnu_sysroot",
     build_file = "//bazel:toolchains.BUILD",
-    sha256 = "30546f20d6a16bf5de3a15eb63418a488f5317402b4907484b1521a7a4e2bc7c",
+    sha256 = "93b7a2fff9c43d0b04280d8f5a7cb6f4f7ff6df3fce491258f6a8b7e3c5c619b",
     strip_prefix = "linux-x86_64-gnu_sysroot",
     urls = ["https://rgit.xiedeacc.com/files/linux-x86_64-gnu_sysroot.tar.gz"],
 )
 
 http_archive(
+    name = "linux-x86_64-musl_sysroot",
+    build_file = "//bazel:toolchains.BUILD",
+    sha256 = "415fa6bf0fbff8955842cb9c09a373f065fa7340fb376b58ba491d9c2f43f494",
+    strip_prefix = "linux-x86_64-musl_sysroot",
+    urls = ["https://rgit.xiedeacc.com/files/linux-x86_64-musl_sysroot.tar.gz"],
+)
+
+http_archive(
     name = "linux-aarch64-gnu_sysroot",
     build_file = "//bazel:toolchains.BUILD",
-    sha256 = "16bfff2c7306118f2bebc6d8d35188768bf312e60cf3fc363e2ab8d96f53240e",
+    sha256 = "4687c3f0e37bba19e0e09a1765bbe3a76d3129e6cc3aba140172a84981c92d3a",
     strip_prefix = "linux-aarch64-gnu_sysroot",
     urls = ["https://rgit.xiedeacc.com/files/linux-aarch64-gnu_sysroot.tar.gz"],
 )
@@ -580,17 +598,73 @@ http_archive(
 http_archive(
     name = "linux-aarch64-musl_sysroot",
     build_file = "//bazel:toolchains.BUILD",
-    sha256 = "a76ef46d1815d465cb2079825104aca507a230bc973477f4ce1e9d94a325d7e8",
+    sha256 = "5e141f8035385e57e92751af241051496bde1b8a84684d1ae6865a6e7980c6d4",
     strip_prefix = "linux-aarch64-musl_sysroot",
     urls = ["https://rgit.xiedeacc.com/files/linux-aarch64-musl_sysroot.tar.gz"],
 )
 
 http_archive(
-    name = "clang18.1.8-aarch64_sysroot",
-    build_file = "//bazel:cc_toolchain.BUILD",
-    sha256 = "95e32680f2f439773edd85640e5072bab099c399506008298cd1251be2d2df39",
-    strip_prefix = "clang18.1.8-linux-aarch64_sysroot",
-    urls = ["https://rgit.xiedeacc.com/files/clang18.1.8-linux-aarch64_sysroot.tar.gz"],
+    name = "gcc16.1.0-linux-x86_64-gnu_runtime",
+    build_file = "//bazel:toolchains.BUILD",
+    sha256 = "55ddf52d9687719d51c2ac72e9b0a8b60670e451fbe448661d8a13805f198b0b",
+    strip_prefix = "gcc16.1.0-linux-x86_64-gnu_runtime",
+    urls = ["https://rgit.xiedeacc.com/files/gcc16.1.0-linux-x86_64-gnu_runtime.tar.gz"],
+)
+
+http_archive(
+    name = "gcc16.1.0-linux-x86_64-musl_runtime",
+    build_file = "//bazel:toolchains.BUILD",
+    sha256 = "481993d5f5ff22af78fd9a6dbc45014e191d94f0cba92c148a0b98409a9a7e81",
+    strip_prefix = "gcc16.1.0-linux-x86_64-musl_runtime",
+    urls = ["https://rgit.xiedeacc.com/files/gcc16.1.0-linux-x86_64-musl_runtime.tar.gz"],
+)
+
+http_archive(
+    name = "gcc16.1.0-linux-aarch64-gnu_runtime",
+    build_file = "//bazel:toolchains.BUILD",
+    sha256 = "dbb5798ef1d221b30edb9db7b8e2dbaac5763cdc9c0fa1c0170b8e9d45ca4ab7",
+    strip_prefix = "gcc16.1.0-linux-aarch64-gnu_runtime",
+    urls = ["https://rgit.xiedeacc.com/files/gcc16.1.0-linux-aarch64-gnu_runtime.tar.gz"],
+)
+
+http_archive(
+    name = "gcc16.1.0-linux-aarch64-musl_runtime",
+    build_file = "//bazel:toolchains.BUILD",
+    sha256 = "3226bbeef9d443afd1b3c8ec13b0b4370207bd48ab7e3d5c30d5d61b565376f1",
+    strip_prefix = "gcc16.1.0-linux-aarch64-musl_runtime",
+    urls = ["https://rgit.xiedeacc.com/files/gcc16.1.0-linux-aarch64-musl_runtime.tar.gz"],
+)
+
+http_archive(
+    name = "clang22.1.2-linux-x86_64-gnu_runtime",
+    build_file = "//bazel:toolchains.BUILD",
+    sha256 = "5f9f8b75ffacb344797aa0525a427723167443fd753ad332325abb87fa1927ac",
+    strip_prefix = "clang22.1.2-linux-x86_64-gnu_runtime",
+    urls = ["https://rgit.xiedeacc.com/files/clang22.1.2-linux-x86_64-gnu_runtime.tar.gz"],
+)
+
+http_archive(
+    name = "clang22.1.2-linux-x86_64-musl_runtime",
+    build_file = "//bazel:toolchains.BUILD",
+    sha256 = "dc807ad3f55eb362862172e6b2ddbf9cb9e514489f11983cf20a46305e6a32cb",
+    strip_prefix = "clang22.1.2-linux-x86_64-musl_runtime",
+    urls = ["https://rgit.xiedeacc.com/files/clang22.1.2-linux-x86_64-musl_runtime.tar.gz"],
+)
+
+http_archive(
+    name = "clang22.1.2-linux-aarch64-gnu_runtime",
+    build_file = "//bazel:toolchains.BUILD",
+    sha256 = "8370f07d5921dc0ac4975da78b52a076328e80c3bb2befd2d181e25569cda860",
+    strip_prefix = "clang22.1.2-linux-aarch64-gnu_runtime",
+    urls = ["https://rgit.xiedeacc.com/files/clang22.1.2-linux-aarch64-gnu_runtime.tar.gz"],
+)
+
+http_archive(
+    name = "clang22.1.2-linux-aarch64-musl_runtime",
+    build_file = "//bazel:toolchains.BUILD",
+    sha256 = "db23c9cccd1d4684d083d5d182fdc904fff4250467d1079d24b8f1e8b5fa881f",
+    strip_prefix = "clang22.1.2-linux-aarch64-musl_runtime",
+    urls = ["https://rgit.xiedeacc.com/files/clang22.1.2-linux-aarch64-musl_runtime.tar.gz"],
 )
 
 http_archive(

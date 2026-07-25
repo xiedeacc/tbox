@@ -25,6 +25,7 @@ VLMCSD_DEFINES = [
     "NO_EXTERNAL_DATA",
     "UNSAFE_DATA_LOAD",
     "SIMPLE_RPC",
+    "USE_THREADS",
     "IS_LIBRARY=1",
     "VERSION=\\\"vlmcsd-embedded\\\"",
     "_CRYPTO_INTERNAL",
@@ -47,6 +48,7 @@ cc_library(
     ],
     hdrs = glob(["src/*.h"]),
     copts = GLOBAL_COPTS + [
+        "-pthread",
         "-Wno-discarded-qualifiers",
         "-Wno-incompatible-pointer-types",
         "-Wno-missing-field-initializers",
@@ -56,5 +58,5 @@ cc_library(
     ],
     defines = GLOBAL_DEFINES + VLMCSD_DEFINES,
     includes = ["src"],
-    linkopts = GLOBAL_LINKOPTS,
+    linkopts = GLOBAL_LINKOPTS + ["-pthread"],
 )

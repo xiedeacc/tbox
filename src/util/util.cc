@@ -46,6 +46,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
+#include <linux/limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <poll.h>

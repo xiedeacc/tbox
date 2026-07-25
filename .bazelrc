@@ -1,6 +1,8 @@
 #startup --output_base=D:/x --windows_enable_symlinks
 common --downloader_config=.bazel_downloader.cfg
 common --enable_platform_specific_config
+common --repo_env=CC=/usr/bin/gcc-16
+common --repo_env=CXX=/usr/bin/g++-16
 
 ######################### attention #########################
 # 1. pprof.out generated in bazel test sandbox

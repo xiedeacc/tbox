@@ -1,7 +1,16 @@
+load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@tbox//bazel:common.bzl", "template_rule")
 
 package(default_visibility = ["//visibility:public"])
+
+selects.config_setting_group(
+    name = "gcc_musl",
+    match_all = [
+        "@tbox//bazel:gcc",
+        "@tbox//bazel:libc_musl",
+    ],
+)
 
 COPTS = [
     "-g",
@@ -75,7 +84,6 @@ cc_library(
             "src/dwarf/L*.c",
             "src/mi/L*.c",
             "src/ptrace/*.c",
-            "src/unwind/*.c",
         ],
         exclude = [
             "src/mi/G*.c",
@@ -89,6 +97,9 @@ cc_library(
             "src/mi/Ldyn-remote.c",
         ],
     ) + select({
+        ":gcc_musl": [],
+        "//conditions:default": glob(["src/unwind/*.c"]),
+    }) + select({
         "@platforms//cpu:x86_64": glob(
             [
                 "src/x86_64/L*.c",
@@ -215,6 +226,10 @@ genrule(
         "cat <<'EOF' >$@",
         "/* include/config.h.  Generated from config.h.in by configure.  */",
         "/* include/config.h.in.  Generated from configure.ac by autoheader.  */",
+        "",
+        "#ifdef __linux__",
+        "#include <linux/limits.h>",
+        "#endif",
         "",
         "/* Block signals before mutex operations */",
         "#define CONFIG_BLOCK_SIGNALS /**/",

@@ -236,14 +236,6 @@ cc_library(
         "@platforms//os:windows": [],
         "//conditions:default": [
             "folly/Subprocess.cpp",
-            "folly/debugging/exception_tracer/ExceptionCounterLib.cpp",
-            "folly/debugging/exception_tracer/ExceptionStackTraceLib.cpp",
-            "folly/debugging/exception_tracer/ExceptionTracer.cpp",
-            "folly/debugging/exception_tracer/ExceptionTracerLib.cpp",
-            "folly/debugging/exception_tracer/SmartExceptionStackTraceHooks.cpp",
-            "folly/debugging/exception_tracer/SmartExceptionTracer.cpp",
-            "folly/debugging/exception_tracer/SmartExceptionTracerSingleton.cpp",
-            "folly/debugging/exception_tracer/StackTrace.cpp",
             "folly/executors/ManualExecutor.cpp",
         ],
     }) + select({

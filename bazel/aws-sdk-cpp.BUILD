@@ -42,6 +42,14 @@ COPTS = COPTS_BASE + select({
     "//conditions:default": [],
 })
 
+AWS_CRT_COPTS = COPTS + select({
+    "@platforms//os:linux": [
+        "-include",
+        "linux/limits.h",
+    ],
+    "//conditions:default": [],
+})
+
 LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "AWS_SDK_VERSION_MAJOR=1",
     "AWS_SDK_VERSION_MINOR=11",
@@ -543,7 +551,7 @@ cc_library(
         ]),
         "//conditions:default": [],
     }),
-    copts = COPTS,
+    copts = AWS_CRT_COPTS,
     includes = [
         ".",
         "crt/aws-c-common/generated/include",

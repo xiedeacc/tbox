@@ -1,3 +1,18 @@
+diff --git a/src/core/lib/iomgr/port.h b/src/core/lib/iomgr/port.h
+--- a/src/core/lib/iomgr/port.h
++++ b/src/core/lib/iomgr/port.h
+@@ -71,7 +71,11 @@
+ #endif
+ #define GRPC_LINUX_MULTIPOLL_WITH_EPOLL 1
+ #define GRPC_POSIX_FORK 1
++#if defined(__GLIBC__)
+ #define GRPC_POSIX_HOST_NAME_MAX 1
++#else
++#define GRPC_POSIX_SYSCONF 1
++#endif
+ #define GRPC_POSIX_SOCKET 1
+ #define GRPC_POSIX_WAKEUP_FD 1
+ #ifdef __GLIBC_PREREQ
 diff --git a/src/core/tsi/ssl_transport_security_utils.cc b/src/core/tsi/ssl_transport_security_utils.cc
 --- a/src/core/tsi/ssl_transport_security_utils.cc
 +++ b/src/core/tsi/ssl_transport_security_utils.cc

@@ -38,14 +38,15 @@ spdlog::level::level_enum ToSpdlogLevel(Severity severity) {
 }
 
 std::shared_ptr<spdlog::logger> Logger() {
-  {
-    std::lock_guard<std::mutex> lock(g_logging_mutex);
-    if (g_logger) {
-      return g_logger;
-    }
-  }
-  Initialize("tbox", "./logs");
   std::lock_guard<std::mutex> lock(g_logging_mutex);
+  if (!g_logger) {
+    auto sink = std::make_shared<spdlog::sinks::stderr_color_sink_mt>();
+    sink->set_level(spdlog::level::info);
+    g_logger = std::make_shared<spdlog::logger>("tbox", std::move(sink));
+    g_logger->set_level(spdlog::level::info);
+    g_logger->set_pattern("%Y%m%d %H:%M:%S.%e %L %t %s:%#] %v");
+    spdlog::set_default_logger(g_logger);
+  }
   return g_logger;
 }
 
