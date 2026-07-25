@@ -31,6 +31,7 @@ bazel_dep(name = "googleapis-grpc-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-python", version = "1.0.0")
 bazel_dep(name = "protobuf", version = "35.1", repo_name = "com_google_protobuf")
 bazel_dep(name = "cc_toolchains", version = "0.0.0")
+bazel_dep(name = "bazel_clang_tidy", version = "0.0.0")
 bazel_dep(name = "rules_apple", version = "4.5.3", repo_name = "build_bazel_rules_apple")
 bazel_dep(name = "apple_support", version = "2.7.0", repo_name = "build_bazel_apple_support")
 
@@ -45,6 +46,12 @@ git_override(
     commit = "053ccff396d7f2a3be29b8e426d8c6df081d8221",
     module_name = "cc_toolchains",
     remote = "https://github.com/xiedeacc/cc_toolchains.git",
+)
+
+git_override(
+    commit = "c4d35e0d0b838309358e57a2efed831780f85cd0",
+    module_name = "bazel_clang_tidy",
+    remote = "https://github.com/erenon/bazel_clang_tidy.git",
 )
 
 single_version_override(
