@@ -47,16 +47,26 @@ cc_library(
         "src/vlmcs.c",
     ],
     hdrs = glob(["src/*.h"]),
-    copts = GLOBAL_COPTS + [
-        "-pthread",
-        "-Wno-discarded-qualifiers",
-        "-Wno-incompatible-pointer-types",
-        "-Wno-missing-field-initializers",
-        "-Wno-sign-compare",
-        "-Wno-unused-function",
-        "-Wno-unused-parameter",
-    ],
-    defines = GLOBAL_DEFINES + VLMCSD_DEFINES,
-    includes = ["src"],
-    linkopts = GLOBAL_LINKOPTS + ["-pthread"],
+    copts = GLOBAL_COPTS + select({
+        "@platforms//os:windows": [
+            "/FIwinsock2.h",
+        ],
+        "//conditions:default": [
+            "-pthread",
+            "-Wno-discarded-qualifiers",
+            "-Wno-incompatible-pointer-types",
+            "-Wno-missing-field-initializers",
+            "-Wno-sign-compare",
+            "-Wno-unused-function",
+            "-Wno-unused-parameter",
+        ],
+    }),
+    defines = GLOBAL_DEFINES + VLMCSD_DEFINES + select({
+        "@platforms//os:windows": ["EXTERNAL=dllexport"],
+        "//conditions:default": [],
+    }),
+    linkopts = GLOBAL_LINKOPTS + select({
+        "@platforms//os:windows": [],
+        "//conditions:default": ["-pthread"],
+    }),
 )

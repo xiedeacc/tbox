@@ -156,7 +156,6 @@ GLOBAL_LOCAL_DEFINES = select({
         "_WIN32",
         "_WINDOWS",
         "NDEBUG",
-        "_MSC_VER=1941",
         "WIN64",
         "_WIN64",
         "WIN32_LEAN_AND_MEAN",
@@ -255,16 +254,20 @@ def _local_config_git_genrule(**kwargs):
     )
 
 def version_info(name, out, exec_tool):
-    _local_config_git_genrule(
+    native.genrule(
         name = name,
-        out = out,
-        exec_tool = exec_tool,
         srcs = [
             "@local_config_git//:gen/spec.json",
             "@local_config_git//:gen/head",
             "@local_config_git//:gen/branch_ref",
         ],
-        arguments = "--generate \"$@\"",
+        outs = [out],
+        tools = [
+            exec_tool,
+            "//bazel:gen_version_info.ps1",
+        ],
+        cmd = "$(location %s) --generate $(location @local_config_git//:gen/spec.json) $(location @local_config_git//:gen/head) $(location @local_config_git//:gen/branch_ref) \"$@\"" % exec_tool,
+        cmd_bat = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File $(location //bazel:gen_version_info.ps1) \"$@\"",
     )
 
 def os(repository_ctx):

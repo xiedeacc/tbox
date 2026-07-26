@@ -6,8 +6,6 @@
 #ifndef TBOX_SERVER_HTTP_HANDLER_WEBSOCKET_HANDLER_H_
 #define TBOX_SERVER_HTTP_HANDLER_WEBSOCKET_HANDLER_H_
 
-#include <arpa/inet.h>  // for htonl
-
 #include <functional>
 #include <memory>
 #include <string>
@@ -15,6 +13,7 @@
 
 #include "folly/io/IOBuf.h"
 #include "folly/io/IOBufQueue.h"
+#include "src/common/socket_compat.h"
 
 namespace tbox {
 namespace server {

@@ -84,6 +84,7 @@ cc_library(
     local_defines = LOCAL_DEFINES,
     deps = [
         "//src/common:logging",
+        "//src/common:socket_compat",
         "//src/proto:cc_service",
         "@boost//:asio",
         "@boost//:beast",
@@ -122,6 +123,7 @@ cc_library(
         ":ssl_config_manager",
         "//src/async_grpc",
         "//src/common:logging",
+        "//src/common:socket_compat",
         "//src/impl:config_manager",
         "//src/proto:cc_grpc_service",
         "//src/server/grpc_handler:meta",
@@ -256,6 +258,7 @@ cc_binary(
         ":websocket_client",
         "//src/impl:config_manager",
         "//src/proto:cc_grpc_service",
+        "//src/server/tcp_handler",
         "@boost//:url",
         "@folly",
         "@libsodium//:sodium",

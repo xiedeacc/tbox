@@ -158,6 +158,7 @@ configure_make(
     configure_options = CONFIGURE_OPTIONS + [
         "VC-WIN64A",
         "no-shared",
+        "no-makedepend",
         "ASFLAGS=\" \"",
         "CC=cl.exe",
         "LD=link.exe",

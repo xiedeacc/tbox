@@ -8,11 +8,16 @@
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 
 #include "src/common/logging.h"
 #include "src/client/grpc_client.h"
 // #include "src/client/websocket_client.h"  // WebSocket disabled for now
 #include "src/impl/config_manager.h"
+#include "src/server/tcp_handler/vlmcsd_handler.h"
 
 namespace {
 
@@ -20,6 +25,7 @@ namespace {
 // tbox::client::WebSocketClient* websocket_client_ptr = nullptr;  // WebSocket
 // disabled
 tbox::client::GrpcClient* grpc_client_ptr = nullptr;
+tbox::server::tcp_handler::VlmcsdHandler* vlmcsd_handler_ptr = nullptr;
 
 std::atomic<bool>& ShutdownRequired() {
   static std::atomic<bool> shutdown_required(false);
@@ -52,6 +58,15 @@ void SignalHandler(int sig) {
   ShutdownCondition().notify_all();
 }
 
+const char* SignalName(int sig) {
+#if defined(_WIN32)
+  (void)sig;
+  return "signal";
+#else
+  return strsignal(sig);
+#endif
+}
+
 /// @brief Thread function that waits for shutdown signal.
 void ShutdownCheckingThread(void) {
   std::unique_lock<std::mutex> lock(ShutdownMutex());
@@ -60,13 +75,17 @@ void ShutdownCheckingThread(void) {
   // Log the signal information (safe here, not in signal handler)
   int sig = ReceivedSignal().load();
   if (sig > 0) {
-    LOG(INFO) << "Got signal: " << strsignal(sig) << " (" << sig << ")";
+    LOG(INFO) << "Got signal: " << SignalName(sig) << " (" << sig << ")";
   }
 
   // Stop gRPC client gracefully (this will stop report manager)
   if (grpc_client_ptr) {
     grpc_client_ptr->Stop();
     LOG(INFO) << "gRPC client stopped";
+  }
+  if (vlmcsd_handler_ptr) {
+    vlmcsd_handler_ptr->Shutdown();
+    LOG(INFO) << "vlmcsd TCP handler stopped";
   }
   // WebSocket disabled for now
   // if (websocket_client_ptr) {
@@ -78,9 +97,11 @@ void ShutdownCheckingThread(void) {
 void RegisterSignalHandler() {
   signal(SIGTERM, &SignalHandler);
   signal(SIGINT, &SignalHandler);
+#if !defined(_WIN32)
   signal(SIGQUIT, &SignalHandler);
   signal(SIGHUP, SIG_IGN);
   signal(SIGPIPE, SIG_IGN);
+#endif
 }
 
 }  // namespace
@@ -114,6 +135,14 @@ int main(int argc, char** argv) {
   grpc_client_ptr = &grpc_client;
 
   grpc_client.Start();
+
+  tbox::server::tcp_handler::VlmcsdHandler vlmcsd_handler(1688);
+  vlmcsd_handler_ptr = &vlmcsd_handler;
+  if (vlmcsd_handler.Start()) {
+    LOG(INFO) << "vlmcsd TCP handler started successfully";
+  } else {
+    LOG(ERROR) << "Failed to start vlmcsd TCP handler";
+  }
 
   LOG(INFO) << "Client running. Waiting for shutdown signal...";
 

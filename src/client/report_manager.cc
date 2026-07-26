@@ -5,16 +5,13 @@
 
 #include "src/client/report_manager.h"
 
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <sys/socket.h>
-
 #include <algorithm>
 #include <chrono>
 #include <exception>
 #include <vector>
 
 #include "src/common/logging.h"
+#include "src/common/socket_compat.h"
 #include "src/async_grpc/client.h"
 #include "src/async_grpc/common/time.h"
 #include "src/client/authentication_manager.h"

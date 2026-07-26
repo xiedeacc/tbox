@@ -6,7 +6,11 @@
 #include "src/impl/cert_manager.h"
 
 #include <sys/stat.h>
+#if defined(_WIN32)
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 #include <chrono>
 #include <filesystem>
@@ -16,6 +20,10 @@
 
 #include "src/common/logging.h"
 #include "src/util/util.h"
+
+#ifdef CopyFile
+#undef CopyFile
+#endif
 
 namespace tbox {
 namespace impl {
@@ -194,7 +202,11 @@ std::string CertManager::CalculateFileHash(const std::string& file_path) {
 }
 
 bool CertManager::FileExists(const std::string& file_path) {
+#if defined(_WIN32)
+  return _access(file_path.c_str(), 4) == 0;
+#else
   return access(file_path.c_str(), R_OK) == 0;
+#endif
 }
 
 bool CertManager::CopyFile(const std::string& src_path,
@@ -204,7 +216,11 @@ bool CertManager::CopyFile(const std::string& src_path,
         src_path, dest_path, std::filesystem::copy_options::overwrite_existing);
 
     // Set proper permissions for SSL files (readable by owner and group)
+#if defined(_WIN32)
+    _chmod(dest_path.c_str(), 0644);
+#else
     chmod(dest_path.c_str(), 0644);
+#endif
 
     LOG(INFO) << "Copied certificate file: " << src_path << " -> " << dest_path;
     return true;

@@ -27,6 +27,26 @@ namespace tbox {
 namespace server {
 namespace grpc_handler {
 
+namespace {
+
+FILE* OpenCommandPipe(const std::string& command) {
+#if defined(_WIN32)
+  return _popen(command.c_str(), "r");
+#else
+  return popen(command.c_str(), "r");
+#endif
+}
+
+int CloseCommandPipe(FILE* pipe) {
+#if defined(_WIN32)
+  return _pclose(pipe);
+#else
+  return pclose(pipe);
+#endif
+}
+
+}  // namespace
+
 /// @brief Structure to store client IP information
 struct ClientIPInfo {
   std::vector<std::string> ipv4_addresses;
@@ -343,7 +363,7 @@ class ReportOpHandler : public async_grpc::RpcHandler<ReportOpMethod> {
 
   /// @brief Execute shell command and return output
   std::string ExecuteCommand(const std::string& command) {
-    FILE* pipe = popen(command.c_str(), "r");
+    FILE* pipe = OpenCommandPipe(command);
     if (!pipe) {
       return "";
     }
@@ -353,7 +373,7 @@ class ReportOpHandler : public async_grpc::RpcHandler<ReportOpMethod> {
     while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
       result += buffer;
     }
-    pclose(pipe);
+    CloseCommandPipe(pipe);
     return result;
   }
 

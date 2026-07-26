@@ -5,10 +5,10 @@
 
 #include "src/client/websocket_client.h"
 
-#include <arpa/inet.h>
-
 #include <chrono>
 #include <thread>
+
+#include "src/common/socket_compat.h"
 
 namespace tbox {
 namespace client {

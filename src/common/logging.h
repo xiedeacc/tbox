@@ -16,10 +16,10 @@ namespace tbox {
 namespace logging {
 
 enum class Severity {
-  INFO,
-  WARNING,
-  ERROR,
-  FATAL,
+  kInfo,
+  kWarning,
+  kError,
+  kFatal,
 };
 
 void Initialize(const std::string& program_name,
@@ -112,15 +112,15 @@ class CheckMessage {
 
 #define TBOX_LOG_INFO(file, line) \
   ::tbox::logging::LogMessage(file, line, \
-                              ::tbox::logging::Severity::INFO) \
+                              ::tbox::logging::Severity::kInfo) \
       .stream()
 #define TBOX_LOG_WARNING(file, line) \
   ::tbox::logging::LogMessage(file, line, \
-                              ::tbox::logging::Severity::WARNING) \
+                              ::tbox::logging::Severity::kWarning) \
       .stream()
 #define TBOX_LOG_ERROR(file, line) \
   ::tbox::logging::LogMessage(file, line, \
-                              ::tbox::logging::Severity::ERROR) \
+                              ::tbox::logging::Severity::kError) \
       .stream()
 #define TBOX_LOG_FATAL(file, line) \
   ::tbox::logging::FatalLogMessage(file, line).stream()

@@ -21,7 +21,7 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + select({
     "@platforms//os:osx": [],
     "@platforms//os:windows": [],
     "//conditions:default": [],
-}) + ["SPDLOG_FMT_EXTERNAL"]
+})
 
 LINKOPTS = GLOBAL_LINKOPTS + select({
     "@platforms//os:windows": [],
@@ -33,7 +33,7 @@ LINKOPTS = GLOBAL_LINKOPTS + select({
     "//conditions:default": [],
 })
 
-DEFINES = GLOBAL_DEFINES
+DEFINES = GLOBAL_DEFINES + ["SPDLOG_FMT_EXTERNAL"]
 
 cc_library(
     name = "spdlog",

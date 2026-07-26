@@ -6,8 +6,6 @@
 #ifndef TBOX_CLIENT_SSL_CONFIG_MANAGER_H_
 #define TBOX_CLIENT_SSL_CONFIG_MANAGER_H_
 
-#include <sys/stat.h>
-
 #include <atomic>
 #include <chrono>
 #include <fstream>
@@ -31,6 +29,12 @@
 
 namespace tbox {
 namespace client {
+
+#if defined(_WIN32)
+using FileMode = int;
+#else
+using FileMode = mode_t;
+#endif
 
 class SSLConfigManager {
  public:
@@ -85,7 +89,7 @@ class SSLConfigManager {
   std::string ExecuteCommand(const std::string& command);
 
   // Set file permissions
-  bool SetFilePermissions(const std::string& file_path, mode_t permissions);
+  bool SetFilePermissions(const std::string& file_path, FileMode permissions);
 
   // Get complete certificate chain from remote server using openssl s_client
   std::string GetRemoteCertificateChain();

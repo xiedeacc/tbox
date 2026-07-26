@@ -82,7 +82,6 @@ cc_library(
             "epoll.c",
             "event_iocp.c",
             "evthread_win32.c",
-            "wepoll.c",
             "win32select.c",
         ],
         "@platforms//os:osx": [
@@ -119,7 +118,6 @@ cc_library(
         "@platforms//os:windows": [
             "WIN32-Code/getopt.h",
             "WIN32-Code/tree.h",
-            "compat/sys/queue.h",
         ],
         "//conditions:default": [],
     }),
@@ -159,7 +157,6 @@ cc_library(
         "@platforms//os:windows": [
             "WIN32-Code/getopt.h",
             "WIN32-Code/tree.h",
-            "compat/sys/queue.h",
         ],
         "//conditions:default": [],
     }),
@@ -207,7 +204,6 @@ cc_library(
         "@platforms//os:windows": [
             "WIN32-Code/getopt.h",
             "WIN32-Code/tree.h",
-            "compat/sys/queue.h",
         ],
         "//conditions:default": [],
     }),

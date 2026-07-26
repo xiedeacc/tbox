@@ -64,6 +64,7 @@ cc_library(
     local_defines = LOCAL_DEFINES,
     deps = [
         "//src/common:defs",
+        "//src/common:socket_compat",
         "//src/impl:config_manager",
         "//src/server/grpc_handler",
         "//src/server/handler",

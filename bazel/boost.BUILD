@@ -339,11 +339,15 @@ cc_library(
 boost_library(
     name = "atomic",
     srcs = select({
-        ":windows_x86_64": ["libs/atomic/src/wait_on_address.cpp"],
+        ":windows_x86_64": [],
         "//conditions:default": [],
     }),
     copts = ["-Iexternal/%s/libs/atomic/src" % _repo_dir],
-    exclude_src = ["libs/atomic/src/wait_on_address.cpp"] + BOOST_ATOMIC_SSE_SRCS,
+    defines = select({
+        ":windows_x86_64": ["_WIN32_WINNT=0x0A00"],
+        "//conditions:default": [],
+    }),
+    exclude_src = BOOST_ATOMIC_SSE_SRCS,
     deps = BOOST_ATOMIC_DEPS + select({
         "@platforms//cpu:x86_64": [":atomic_sse"],
         "//conditions:default": [],

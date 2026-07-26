@@ -44,6 +44,9 @@
 #include "src/proto/service.pb.h"
 
 #if defined(_WIN32)
+#include <iphlpapi.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #elif defined(__linux__)
 #include <arpa/inet.h>
 #include <dirent.h>
@@ -791,6 +794,8 @@ int64_t Util::MemUsage() {
 
   long pageSize = sysconf(_SC_PAGESIZE);  // in bytes
   return resident * pageSize / 1024 / 1024;
+#else
+  return -1;
 #endif
 }
 
@@ -801,6 +806,15 @@ bool IsMountPoint(const string& path) {
   }
   return false;
 }
+
+#if defined(_WIN32)
+struct WindowsIPAddressInfo {
+  std::string address;
+  ULONG prefix_length;
+};
+
+std::vector<WindowsIPAddressInfo> GetWindowsIPAddresses(ADDRESS_FAMILY family);
+#endif
 
 void Util::ListAllIPAddresses(std::vector<folly::IPAddress>* ip_addrs) {
 #if defined(__linux__) || defined(__APPLE__)
@@ -829,10 +843,74 @@ void Util::ListAllIPAddresses(std::vector<folly::IPAddress>* ip_addrs) {
     freeifaddrs(ifAddrStruct);
   }
 #elif defined(_WIN32)
-
+  for (const auto& info : GetWindowsIPAddresses(AF_INET)) {
+    ip_addrs->emplace_back(folly::IPAddress(info.address));
+  }
+  for (const auto& info : GetWindowsIPAddresses(AF_INET6)) {
+    ip_addrs->emplace_back(folly::IPAddress(info.address));
+  }
 #endif
 }
 
+#if defined(_WIN32)
+std::vector<WindowsIPAddressInfo> GetWindowsIPAddresses(ADDRESS_FAMILY family) {
+  std::vector<WindowsIPAddressInfo> addresses;
+  ULONG flags = GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_MULTICAST |
+                GAA_FLAG_SKIP_DNS_SERVER;
+  ULONG buffer_size = 15000;
+  std::vector<unsigned char> buffer(buffer_size);
+
+  ULONG result = GetAdaptersAddresses(
+      family, flags, nullptr,
+      reinterpret_cast<IP_ADAPTER_ADDRESSES*>(buffer.data()), &buffer_size);
+  if (result == ERROR_BUFFER_OVERFLOW) {
+    buffer.resize(buffer_size);
+    result = GetAdaptersAddresses(
+        family, flags, nullptr,
+        reinterpret_cast<IP_ADAPTER_ADDRESSES*>(buffer.data()), &buffer_size);
+  }
+
+  if (result != ERROR_SUCCESS) {
+    LOG(ERROR) << "Failed to get network interfaces: " << result;
+    return addresses;
+  }
+
+  for (auto* adapter = reinterpret_cast<IP_ADAPTER_ADDRESSES*>(buffer.data());
+       adapter != nullptr; adapter = adapter->Next) {
+    if (adapter->OperStatus != IfOperStatusUp ||
+        adapter->IfType == IF_TYPE_SOFTWARE_LOOPBACK) {
+      continue;
+    }
+
+    for (auto* unicast = adapter->FirstUnicastAddress; unicast != nullptr;
+         unicast = unicast->Next) {
+      auto* sockaddr = unicast->Address.lpSockaddr;
+      if (sockaddr == nullptr || sockaddr->sa_family != family) {
+        continue;
+      }
+
+      char addr_buf[INET6_ADDRSTRLEN] = {};
+      if (family == AF_INET) {
+        auto* ipv4 = reinterpret_cast<sockaddr_in*>(sockaddr);
+        if (inet_ntop(AF_INET, &ipv4->sin_addr, addr_buf, sizeof(addr_buf)) ==
+            nullptr) {
+          continue;
+        }
+      } else if (family == AF_INET6) {
+        auto* ipv6 = reinterpret_cast<sockaddr_in6*>(sockaddr);
+        if (inet_ntop(AF_INET6, &ipv6->sin6_addr, addr_buf,
+                      sizeof(addr_buf)) == nullptr) {
+          continue;
+        }
+      }
+
+      addresses.push_back({addr_buf, unicast->OnLinkPrefixLength});
+    }
+  }
+
+  return addresses;
+}
+#else
 // RAII wrapper for ifaddrs to ensure proper cleanup
 class IfAddrsGuard {
  public:
@@ -852,8 +930,33 @@ class IfAddrsGuard {
  private:
   struct ifaddrs* ptr_;
 };
+#endif
 
 std::vector<std::string> Util::GetLocalIPv4Addresses() {
+#if defined(_WIN32)
+  std::set<std::string> unique_addresses;
+
+  for (const auto& info : GetWindowsIPAddresses(AF_INET)) {
+    try {
+      folly::IPAddress ip_addr(info.address);
+      if (!ip_addr.isLoopback()) {
+        unique_addresses.insert(info.address);
+      }
+    } catch (const std::exception& e) {
+      LOG(WARNING) << "Failed to parse IPv4 address: " << info.address << " - "
+                   << e.what();
+    }
+  }
+
+  std::vector<std::string> ip_addresses(unique_addresses.begin(),
+                                        unique_addresses.end());
+  if (ip_addresses.empty()) {
+    LOG(WARNING) << "No non-loopback IPv4 addresses found";
+    ip_addresses.push_back("unknown");
+  }
+
+  return ip_addresses;
+#else
   struct ifaddrs* ifaddrs_ptr = nullptr;
   std::vector<std::string> ip_addresses;
 
@@ -902,9 +1005,33 @@ std::vector<std::string> Util::GetLocalIPv4Addresses() {
   }
 
   return ip_addresses;
+#endif
 }
 
 std::vector<std::string> Util::GetLocalIPv6Addresses() {
+#if defined(_WIN32)
+  std::set<std::string> unique_addresses;
+
+  for (const auto& info : GetWindowsIPAddresses(AF_INET6)) {
+    try {
+      folly::IPAddressV6 ipv6_addr(info.address);
+      if (!ipv6_addr.isLoopback() && !ipv6_addr.isLinkLocal()) {
+        unique_addresses.insert(ipv6_addr.str());
+      }
+    } catch (const std::exception& e) {
+      LOG(WARNING) << "Failed to parse IPv6 address: " << info.address << " - "
+                   << e.what();
+    }
+  }
+
+  std::vector<std::string> ip_addresses(unique_addresses.begin(),
+                                        unique_addresses.end());
+  if (ip_addresses.empty()) {
+    LOG(WARNING) << "No non-loopback/non-link-local IPv6 addresses found";
+  }
+
+  return ip_addresses;
+#else
   struct ifaddrs* ifaddrs_ptr = nullptr;
   std::vector<std::string> ip_addresses;
 
@@ -952,6 +1079,7 @@ std::vector<std::string> Util::GetLocalIPv6Addresses() {
   }
 
   return ip_addresses;
+#endif
 }
 
 std::vector<std::string> Util::GetAllLocalIPAddresses() {
@@ -969,6 +1097,51 @@ std::vector<std::string> Util::GetAllLocalIPAddresses() {
 }
 
 std::vector<std::string> Util::GetPublicIPv6Addresses() {
+#if defined(_WIN32)
+  std::map<std::string, int> address_prefix_map;
+
+  for (const auto& info : GetWindowsIPAddresses(AF_INET6)) {
+    try {
+      folly::IPAddressV6 ipv6_addr(info.address);
+      if (ipv6_addr.isLoopback() || ipv6_addr.isLinkLocal() ||
+          ipv6_addr.isPrivate() || ipv6_addr.isMulticast()) {
+        continue;
+      }
+
+      std::string ip_str = ipv6_addr.str();
+      int prefix_len = static_cast<int>(info.prefix_length);
+      auto it = address_prefix_map.find(ip_str);
+      if (it == address_prefix_map.end() || prefix_len > it->second) {
+        address_prefix_map[ip_str] = prefix_len;
+      }
+    } catch (const std::exception& e) {
+      LOG(WARNING) << "Failed to parse IPv6 address: " << info.address << " - "
+                   << e.what();
+    }
+  }
+
+  std::vector<std::pair<std::string, int>> addr_prefix_vec(
+      address_prefix_map.begin(), address_prefix_map.end());
+  std::sort(addr_prefix_vec.begin(), addr_prefix_vec.end(),
+            [](const std::pair<std::string, int>& a,
+               const std::pair<std::string, int>& b) {
+              if (a.second != b.second) {
+                return a.second > b.second;
+              }
+              return a.first < b.first;
+            });
+
+  std::vector<std::string> addresses;
+  for (const auto& pair : addr_prefix_vec) {
+    addresses.push_back(pair.first);
+  }
+
+  if (addresses.empty()) {
+    LOG(WARNING) << "No public IPv6 addresses found";
+  }
+
+  return addresses;
+#else
   struct ifaddrs* ifaddrs_ptr = nullptr;
   std::vector<std::string> addresses;
 
@@ -1061,6 +1234,7 @@ std::vector<std::string> Util::GetPublicIPv6Addresses() {
   }
 
   return addresses;
+#endif
 }
 
 std::vector<std::string> Util::ResolveDomainToIPv6(const std::string& domain) {
@@ -1160,8 +1334,25 @@ string Util::ExecutablePath() {
   ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
   return std::string(result, (count > 0) ? count : 0);
 #elif defined(_WIN32)
+  std::vector<char> path(MAX_PATH);
+  DWORD count = GetModuleFileNameA(nullptr, path.data(),
+                                   static_cast<DWORD>(path.size()));
+  if (count == 0) {
+    return "";
+  }
+  while (count == path.size() && GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+    path.resize(path.size() * 2);
+    count = GetModuleFileNameA(nullptr, path.data(),
+                               static_cast<DWORD>(path.size()));
+    if (count == 0) {
+      return "";
+    }
+  }
+  return std::string(path.data(), count);
 #elif defined(__APPLE__)
-
+  return "";
+#else
+  return "";
 #endif
 }
 

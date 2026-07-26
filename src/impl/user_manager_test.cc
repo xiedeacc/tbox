@@ -5,7 +5,11 @@
 
 #include "src/impl/user_manager.h"
 
+#if defined(_WIN32)
+#include <direct.h>
+#else
 #include <unistd.h>
+#endif
 
 #include <filesystem>
 
@@ -17,6 +21,18 @@
 namespace tbox {
 namespace impl {
 
+namespace {
+
+int ChangeDirectory(const char* path) {
+#if defined(_WIN32)
+  return _chdir(path);
+#else
+  return chdir(path);
+#endif
+}
+
+}  // namespace
+
 TEST(UserManager, UserExists) {
   // Use a writable temp home dir for the test and ensure data dir exists
   const auto tmp_root = std::filesystem::temp_directory_path() / "tbox_um_test";
@@ -24,7 +40,7 @@ TEST(UserManager, UserExists) {
   std::filesystem::remove_all(tmp_root, ec);
   ASSERT_TRUE(std::filesystem::create_directories(tmp_root / "data"));
   // Change CWD so Util::HomeDir() points to tmp_root
-  ASSERT_EQ(::chdir(tmp_root.string().c_str()), 0);
+  ASSERT_EQ(ChangeDirectory(tmp_root.string().c_str()), 0);
 
   EXPECT_EQ(UserManager::Instance()->Init(), true);
   std::string user = "admin";

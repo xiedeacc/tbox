@@ -100,3 +100,59 @@ diff --git a/thrift/lib/thrift/bundled_lib_thrift.h b/thrift/lib/thrift/bundled_
 +}
 
  } // namespace apache::thrift::detail
+diff --git a/thrift/lib/cpp2/protocol/detail/CursorBasedSerialization.h b/thrift/lib/cpp2/protocol/detail/CursorBasedSerialization.h
+--- a/thrift/lib/cpp2/protocol/detail/CursorBasedSerialization.h
++++ b/thrift/lib/cpp2/protocol/detail/CursorBasedSerialization.h
+@@ -245,6 +245,6 @@ class BaseCursorWriter {
+   BaseCursorWriter(const BaseCursorWriter&) = delete;
+   BaseCursorWriter& operator=(const BaseCursorWriter&) = delete;
+ 
+-  template <typename T>
++  template <typename Tag, typename ProtocolWriter>
+   friend class StructuredCursorWriter;
+ };
+diff --git a/thrift/lib/thrift/TypeToMaskAdapter.h b/thrift/lib/thrift/TypeToMaskAdapter.h
+--- a/thrift/lib/thrift/TypeToMaskAdapter.h
++++ b/thrift/lib/thrift/TypeToMaskAdapter.h
+@@ -16,7 +16,8 @@
+ #pragma once
+ 
+ #include <folly/Exception.h>
+ #include <folly/container/F14Map.h>
++#include <map>
+ #include <thrift/lib/thrift/gen-cpp2/type_types.h>
+ 
+ namespace apache::thrift::protocol::detail {
+@@ -26,7 +27,7 @@ std::string debugFormatType(const type::Type& type);
+ template <typename Mask>
+ class ValidatingTypeMap {
+  public:
+-#if FOLLY_F14_VECTOR_INTRINSICS_AVAILABLE
++#if FOLLY_F14_VECTOR_INTRINSICS_AVAILABLE && !defined(_MSC_VER)
+   using map_type = folly::F14VectorMap<type::Type, Mask>;
+   void reserve(std::size_t n) { map_.reserve(n); }
+   template <typename V>
+diff --git a/thrift/lib/cpp2/util/DebugTree.cpp b/thrift/lib/cpp2/util/DebugTree.cpp
+--- a/thrift/lib/cpp2/util/DebugTree.cpp
++++ b/thrift/lib/cpp2/util/DebugTree.cpp
+@@ -398,5 +398,11 @@ struct BasePatchVisitor {
+   // the field id so that the result is always sorted by field id.
+   struct PatchOperation {
++    PatchOperation() = default;
++    PatchOperation(std::string name_in) : name(std::move(name_in)) {}
++    PatchOperation(PatchOperation&&) = default;
++    PatchOperation& operator=(PatchOperation&&) = default;
++    PatchOperation(const PatchOperation&) = delete;
++    PatchOperation& operator=(const PatchOperation&) = delete;
+     std::string name;
+     std::multimap<protocol::Value, scope> data = {};
+   };
+@@ -408,7 +414,7 @@ struct BasePatchVisitor {
+ 
+   void clear() { addOp("clear"); }
+ 
+-  void addOp(std::string name) { ops.push_back({std::move(name)}); }
++  void addOp(std::string name) { ops.emplace_back(std::move(name)); }
+ 
+   void addOp(std::string name, scope data) {
+     addOp(std::move(name));

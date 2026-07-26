@@ -6,6 +6,7 @@
 #ifndef TBOX_SERVER_GRPC_HANDLER_SERVER_HANDLER_H_
 #define TBOX_SERVER_GRPC_HANDLER_SERVER_HANDLER_H_
 
+#include <cstdio>
 #include <memory>
 #include <string>
 
@@ -23,6 +24,26 @@
 namespace tbox {
 namespace server {
 namespace grpc_handler {
+
+namespace {
+
+FILE* OpenServerCommandPipe(const std::string& command) {
+#if defined(_WIN32)
+  return _popen(command.c_str(), "r");
+#else
+  return popen(command.c_str(), "r");
+#endif
+}
+
+int CloseServerCommandPipe(FILE* pipe) {
+#if defined(_WIN32)
+  return _pclose(pipe);
+#else
+  return pclose(pipe);
+#endif
+}
+
+}  // namespace
 
 class ServerOpHandler : public async_grpc::RpcHandler<ServerOpMethod> {
  public:
@@ -179,7 +200,7 @@ class ServerOpHandler : public async_grpc::RpcHandler<ServerOpMethod> {
 
   /// @brief Execute shell command and return output
   std::string ExecuteCommand(const std::string& command) {
-    FILE* pipe = popen(command.c_str(), "r");
+    FILE* pipe = OpenServerCommandPipe(command);
     if (!pipe) {
       return "";
     }
@@ -189,7 +210,7 @@ class ServerOpHandler : public async_grpc::RpcHandler<ServerOpMethod> {
     while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
       result += buffer;
     }
-    pclose(pipe);
+    CloseServerCommandPipe(pipe);
     return result;
   }
 

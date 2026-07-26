@@ -6,6 +6,7 @@
 #ifndef TBOX_SERVER_HTTP_HANDLER_SERVER_HANDLER_H
 #define TBOX_SERVER_HTTP_HANDLER_SERVER_HANDLER_H
 
+#include <cstdio>
 #include <mutex>
 #include <sstream>
 #include <vector>
@@ -28,6 +29,26 @@
 namespace tbox {
 namespace server {
 namespace http_handler {
+
+namespace {
+
+FILE* OpenHttpServerCommandPipe(const std::string& command) {
+#if defined(_WIN32)
+  return _popen(command.c_str(), "r");
+#else
+  return popen(command.c_str(), "r");
+#endif
+}
+
+int CloseHttpServerCommandPipe(FILE* pipe) {
+#if defined(_WIN32)
+  return _pclose(pipe);
+#else
+  return pclose(pipe);
+#endif
+}
+
+}  // namespace
 
 /**
  * @brief HTTP handler for server-related information and EC2 management
@@ -194,7 +215,7 @@ class ServerHandler : public proxygen::RequestHandler {
 
   /// @brief Execute shell command and return output
   std::string ExecuteCommand(const std::string& command) {
-    FILE* pipe = popen(command.c_str(), "r");
+    FILE* pipe = OpenHttpServerCommandPipe(command);
     if (!pipe) {
       return "";
     }
@@ -204,7 +225,7 @@ class ServerHandler : public proxygen::RequestHandler {
     while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
       result += buffer;
     }
-    pclose(pipe);
+    CloseHttpServerCommandPipe(pipe);
     return result;
   }
 

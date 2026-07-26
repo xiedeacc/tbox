@@ -1,4 +1,6 @@
 #startup --output_base=D:/x --windows_enable_symlinks
+startup --output_user_root=D:/bzl
+
 common --downloader_config=.bazel_downloader.cfg
 common --enable_platform_specific_config
 common --repo_env=CC=/usr/bin/gcc-16
@@ -95,7 +97,6 @@ build --features=-module_maps
 build --host_features=-module_maps
 build --jobs=8
 build --conlyopt='-std=gnu17'
-build --per_file_copt=.*src/proto/.*\\.grpc\\.pb\\.cc@-Wno-deprecated-declarations
 build --incompatible_disallow_empty_glob=false
 #build --features=-layering_check
 #build --host_features=-layering_check
@@ -113,6 +114,10 @@ build:windows --cpu='x64_windows'
 build:windows --extra_toolchains='@openssl//:preinstalled_nmake_toolchain'
 build:windows --extra_toolchains='@openssl//:preinstalled_pkgconfig_toolchain'
 build:windows --workspace_status_command=bazel/workspace_status.bat
+build:windows --java_runtime_version="remotejdk_21"
+build:windows --features=-parse_showincludes
+build:windows --per_file_copt=.*src/proto/.*\\.grpc\\.pb\\.cc@/wd4996
+build:windows --action_env=PATH=D:/tools/gperf/bin;C:/Progra~1/Git/bin;C:/Progra~1/Git/usr/bin;C:/Windows;C:/Windows/System32;C:/Windows/System32/WindowsPowerShell/v1.0
 
 build:macos --copt='-mmacosx-version-min=10.15'
 build:macos --copt='-g'
@@ -126,6 +131,7 @@ build:macos --host_copt='-Wall'
 build:macos --host_cxxopt='-std=c++20'
 build:macos --dynamic_mode=off
 build:macos --workspace_status_command=bazel/workspace_status.sh
+build:macos --per_file_copt=.*src/proto/.*\\.grpc\\.pb\\.cc@-Wno-deprecated-declarations
 
 build:linux --copt='-g'
 build:linux --copt='-O2'
@@ -136,6 +142,7 @@ build:linux --host_copt='-O2'
 build:linux --host_copt='-Wall'
 build:linux --host_cxxopt='-std=c++20'
 #build:linux --workspace_status_command=bazel/workspace_status.sh
+build:linux --per_file_copt=.*src/proto/.*\\.grpc\\.pb\\.cc@-Wno-deprecated-declarations
 
 build:android --noenable_platform_specific_config
 build:ios --noenable_platform_specific_config

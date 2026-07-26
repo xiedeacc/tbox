@@ -19,7 +19,7 @@ bazel_dep(name = "rules_foreign_cc", version = "0.15.1")
 bazel_dep(name = "rules_python", version = "2.2.0")
 bazel_dep(name = "rules_go", version = "0.61.1", repo_name = "io_bazel_rules_go")
 bazel_dep(name = "rules_java", version = "9.7.0")
-bazel_dep(name = "rules_jvm_external", version = "7.0")
+bazel_dep(name = "rules_jvm_external", version = "7.1")
 bazel_dep(name = "rules_proto", version = "7.1.0")
 bazel_dep(name = "rules_shell", version = "0.8.0")
 bazel_dep(name = "envoy_api", version = "0.0.0-20260130-84e8436")
@@ -272,16 +272,14 @@ git_repository(
 
 http_archive(
     name = "boost",
-    #build_file = "@com_github_nelhage_rules_boost//:boost.BUILD",
+    build_file = "//bazel:boost.BUILD",
     patch_cmds = [
-        "cp /root/src/cpp/tbox/bazel/boost.BUILD BUILD.bazel",
         "echo '# tbox boost BUILD overlay rev: 20260725-1' >> BUILD.bazel",
         "rm -f doc/pdf/BUILD",
     ],
     patch_cmds_win = [
-        "Copy-Item -Force C:/src/cpp/tbox/bazel/boost.BUILD BUILD.bazel",
         "Add-Content BUILD.bazel '# tbox boost BUILD overlay rev: 20260725-1'",
-        "Remove-Item -Force doc/pdf/BUILD",
+        "Remove-Item -Force doc/pdf/BUILD -ErrorAction SilentlyContinue",
     ],
     sha256 = "8a82bd11a720c70923806c36ee5c26dbd2d630c1eaa1d8fad9a7bd5529908a26",
     strip_prefix = "boost-1.91.0-1",
@@ -543,6 +541,14 @@ new_git_repository(
     name = "vlmcsd",
     build_file = "//bazel:vlmcsd.BUILD",
     commit = "70e03572b254688b8c3557f898e7ebd765d29ae1",
+    patch_cmds = [
+        "mv src/rpc.h src/vlmcsd_rpc.h",
+        "sed -i 's/\"rpc\\.h\"/\"vlmcsd_rpc.h\"/g' src/*.c src/*.h",
+    ],
+    patch_cmds_win = [
+        "Move-Item -Force src/rpc.h src/vlmcsd_rpc.h",
+        "$files = Get-ChildItem -Path src -Include *.c,*.h -Recurse; foreach ($file in $files) { (Get-Content -Raw $file.FullName) -replace 'rpc\\.h','vlmcsd_rpc.h' | Set-Content -NoNewline -Encoding ascii $file.FullName }",
+    ],
     remote = "https://github.com/Wind4/vlmcsd.git",
 )
 
@@ -565,7 +571,10 @@ shallow_git_repository(
     name = "aws-sdk-cpp",
     build_file = "//bazel:aws-sdk-cpp.BUILD",
     patch_strip = 1,
-    patches = ["//bazel:aws-sdk-cpp-openssl4-const.patch"],
+    patches = [
+        "//bazel:aws-sdk-cpp-openssl4-const.patch",
+        "//bazel:aws-sdk-cpp-remove-version-file.patch",
+    ],
     recursive_init_submodules = True,
     remote = "https://github.com/aws/aws-sdk-cpp.git",
     tag = "1.11.853",

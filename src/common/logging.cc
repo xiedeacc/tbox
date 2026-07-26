@@ -25,13 +25,13 @@ std::shared_ptr<spdlog::logger> g_logger;
 
 spdlog::level::level_enum ToSpdlogLevel(Severity severity) {
   switch (severity) {
-    case Severity::INFO:
+    case Severity::kInfo:
       return spdlog::level::info;
-    case Severity::WARNING:
+    case Severity::kWarning:
       return spdlog::level::warn;
-    case Severity::ERROR:
+    case Severity::kError:
       return spdlog::level::err;
-    case Severity::FATAL:
+    case Severity::kFatal:
       return spdlog::level::critical;
   }
   return spdlog::level::info;
@@ -55,7 +55,7 @@ void Log(Severity severity, const char* file, int line,
   auto logger = Logger();
   logger->log(spdlog::source_loc{file, line, nullptr}, ToSpdlogLevel(severity),
               message);
-  if (severity == Severity::FATAL) {
+  if (severity == Severity::kFatal) {
     logger->flush();
   }
 }
@@ -133,7 +133,7 @@ LogMessage::LogMessage(const char* file, int line, Severity severity)
 
 LogMessage::~LogMessage() {
   Log(severity_, file_, line_, stream_.str());
-  if (severity_ == Severity::FATAL) {
+  if (severity_ == Severity::kFatal) {
     std::abort();
   }
 }
@@ -142,7 +142,7 @@ FatalLogMessage::FatalLogMessage(const char* file, int line)
     : file_(file), line_(line) {}
 
 FatalLogMessage::~FatalLogMessage() {
-  Log(Severity::FATAL, file_, line_, stream_.str());
+  Log(Severity::kFatal, file_, line_, stream_.str());
   std::abort();
 }
 
@@ -158,7 +158,7 @@ CheckMessage::~CheckMessage() {
   if (!failed_) {
     return;
   }
-  Log(Severity::FATAL, file_, line_, stream_.str());
+  Log(Severity::kFatal, file_, line_, stream_.str());
   std::abort();
 }
 

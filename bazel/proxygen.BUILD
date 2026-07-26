@@ -99,6 +99,10 @@ proxygen_cpp_gen(
     ],
     tool = ":gen_HTTPCommonHeaders_sh",
     txt_file = "proxygen/lib/http/HTTPCommonHeaders.txt",
+    gperf_path = select({
+        "@platforms//os:windows": "D:/tools/gperf/bin/gperf.exe",
+        "//conditions:default": "",
+    }),
 )
 
 sh_binary(
@@ -118,6 +122,11 @@ proxygen_cpp_gen(
     tool = ":gen_StatsWrapper_sh",
 )
 
+TRACE_PYTHON = select({
+    "@platforms//os:windows": "py -3",
+    "//conditions:default": "python3",
+})
+
 genrule(
     name = "trace",
     srcs = [
@@ -131,8 +140,7 @@ genrule(
         "proxygen/lib/utils/TraceFieldType.cpp",
         "proxygen/lib/utils/TraceEventType.cpp",
     ],
-    cmd = """
-python3 $(location :proxygen/lib/utils/gen_trace_event_constants.py) \
+    cmd = TRACE_PYTHON + """ $(location :proxygen/lib/utils/gen_trace_event_constants.py) \
 --output_type=cpp \
 --input_files=$(location :proxygen/lib/utils/samples/TraceEventType.txt),$(location :proxygen/lib/utils/samples/TraceFieldType.txt) \
 --output_scope=proxygen \

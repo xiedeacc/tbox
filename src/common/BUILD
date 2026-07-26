@@ -33,6 +33,11 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "socket_compat",
+    hdrs = ["socket_compat.h"],
+)
+
 cc_proto_plugin(
     name = "error_code",
     src = "//src/proto:error.proto",

@@ -215,6 +215,7 @@ cc_library(
             "folly/hash/detail/ChecksumDetail.cpp",
             "folly/hash/detail/Crc32CombineDetail.cpp",
             "folly/hash/detail/Crc32cDetail.cpp",
+            "folly/io/async/IoUringZeroCopyBufferPool.cpp",
             "folly/io/tool/HugePageUtil.cpp",
             "folly/json/tool/JSONSchemaTester.cpp",
             "folly/memset_select_aarch64.cpp",
@@ -234,6 +235,9 @@ cc_library(
         ],
     ) + select({
         "@platforms//os:windows": [],
+        "@platforms//os:linux": [
+            "folly/io/async/IoUringZeroCopyBufferPool.cpp",
+        ],
         "//conditions:default": [
             "folly/Subprocess.cpp",
             "folly/executors/ManualExecutor.cpp",

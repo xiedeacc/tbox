@@ -5,10 +5,16 @@
 
 #include "src/client/ssl_config_manager.h"
 
-#include <errno.h>
+#include <cerrno>
+#include <sys/stat.h>
+
+#if defined(_WIN32)
+#include <io.h>
+#else
 #include <grp.h>
 #include <pwd.h>
-#include <sys/stat.h>
+#include <unistd.h>
+#endif
 
 #include <cstring>
 #include <filesystem>
@@ -244,7 +250,11 @@ bool SSLConfigManager::WriteFileContent(const std::string& file_path,
 }
 
 std::string SSLConfigManager::ExecuteCommand(const std::string& command) {
+#if defined(_WIN32)
+  FILE* pipe = _popen(command.c_str(), "r");
+#else
   FILE* pipe = popen(command.c_str(), "r");
+#endif
   if (!pipe) {
     return "";
   }
@@ -255,7 +265,11 @@ std::string SSLConfigManager::ExecuteCommand(const std::string& command) {
     result += buffer;
   }
 
+#if defined(_WIN32)
+  _pclose(pipe);
+#else
   pclose(pipe);
+#endif
 
   // Remove trailing newline
   if (!result.empty() && result.back() == '\n') {
@@ -266,8 +280,12 @@ std::string SSLConfigManager::ExecuteCommand(const std::string& command) {
 }
 
 bool SSLConfigManager::SetFilePermissions(const std::string& file_path,
-                                          mode_t permissions) {
+                                          FileMode permissions) {
+#if defined(_WIN32)
+  if (_chmod(file_path.c_str(), permissions) != 0) {
+#else
   if (chmod(file_path.c_str(), permissions) != 0) {
+#endif
     LOG(ERROR) << "Failed to set permissions for file: " << file_path
                << ", error: " << strerror(errno);
     return false;
@@ -416,6 +434,11 @@ bool SSLConfigManager::AreCertificatesEqual(const std::string& cert1,
 }
 
 bool SSLConfigManager::SetWwwDataOwnership(const std::string& directory_path) {
+#if defined(_WIN32)
+  LOG(INFO) << "Skipping www-data ownership on Windows for: "
+            << directory_path;
+  return true;
+#else
   // Get www-data user and group IDs
   struct passwd* pwd = getpwnam("www-data");
   struct group* grp = getgrnam("www-data");
@@ -451,6 +474,7 @@ bool SSLConfigManager::SetWwwDataOwnership(const std::string& directory_path) {
   }
 
   return true;
+#endif
 }
 
 bool SSLConfigManager::UpdateTboxCertificate() {

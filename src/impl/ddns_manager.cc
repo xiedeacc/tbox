@@ -5,12 +5,11 @@
 
 #include "src/impl/ddns_manager.h"
 
-#include <arpa/inet.h>
-#include <ifaddrs.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
+#if defined(_WIN32)
+#include <cstdio>
+#else
 #include <unistd.h>
+#endif
 
 #include <algorithm>
 #include <chrono>
@@ -206,7 +205,11 @@ bool DDNSManager::IsPrivateIP(const std::string& ip) {
 // Get public IPv4 address from external service
 std::string DDNSManager::GetPublicIPv4() {
   try {
+#if defined(_WIN32)
+    FILE* pipe = _popen("curl -4 -s --max-time 5 https://api.ipify.org", "r");
+#else
     FILE* pipe = popen("curl -4 -s --max-time 5 https://api.ipify.org", "r");
+#endif
     if (!pipe) {
       LOG(WARNING) << "Failed to execute curl for public IPv4";
       return "";
@@ -217,7 +220,11 @@ std::string DDNSManager::GetPublicIPv4() {
     while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
       result += buffer;
     }
+#if defined(_WIN32)
+    _pclose(pipe);
+#else
     pclose(pipe);
+#endif
 
     // Trim whitespace and newlines
     result.erase(0, result.find_first_not_of(" \t\n\r"));
