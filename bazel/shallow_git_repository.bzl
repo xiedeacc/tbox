@@ -53,6 +53,8 @@ def _shallow_git_repository_impl(ctx):
         )
 
     for patch in ctx.attr.patches:
+        if str(patch).endswith("aws-sdk-cpp-remove-version-file.patch") and not ctx.path("version").exists:
+            continue
         ctx.patch(patch, strip = ctx.attr.patch_strip)
 
     if ctx.attr.build_file:

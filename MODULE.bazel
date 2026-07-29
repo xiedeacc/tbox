@@ -77,27 +77,27 @@ gen_local_config_git = use_repo_rule("//bazel:common.bzl", "gen_local_config_git
 
 git_repository(
     name = "io_bazel_rules_docker",
-    remote = "git@github.com:bazelbuild/rules_docker.git",
+    remote = "https://github.com/bazelbuild/rules_docker.git",
     tag = "v0.26.0",
 )
 
 git_repository(
     name = "apple_rules_lint",
-    remote = "git@github.com:apple/apple_rules_lint.git",
+    remote = "https://github.com/apple/apple_rules_lint.git",
     tag = "0.4.0",
 )
 
 new_git_repository(
     name = "cpplint",
     build_file = "//bazel:cpplint.BUILD",
-    remote = "git@github.com:cpplint/cpplint.git",
+    remote = "https://github.com/cpplint/cpplint.git",
     tag = "2.0.2",
 )
 
 new_git_repository(
     name = "liburing",
     build_file = "//bazel:liburing.BUILD",
-    remote = "git@github.com:axboe/liburing.git",
+    remote = "https://github.com/axboe/liburing.git",
     tag = "liburing-2.15",
 )
 
@@ -111,21 +111,21 @@ new_git_repository(
 new_git_repository(
     name = "xz",
     build_file = "//bazel:xz.BUILD",
-    remote = "git@github.com:tukaani-project/xz.git",
+    remote = "https://github.com/tukaani-project/xz.git",
     tag = "v5.8.3",
 )
 
 new_git_repository(
     name = "org_lzma_lzma",
     build_file = "//bazel:xz.BUILD",
-    remote = "git@github.com:tukaani-project/xz.git",
+    remote = "https://github.com/tukaani-project/xz.git",
     tag = "v5.8.3",
 )
 
 new_git_repository(
     name = "zlib",
     build_file = "//bazel:zlib.BUILD",
-    remote = "git@github.com:madler/zlib.git",
+    remote = "https://github.com/madler/zlib.git",
     tag = "v1.3.2",
 )
 
@@ -146,35 +146,35 @@ new_git_repository(
 new_git_repository(
     name = "lz4",
     build_file = "//bazel:lz4.BUILD",
-    remote = "git@github.com:lz4/lz4.git",
+    remote = "https://github.com/lz4/lz4.git",
     tag = "v1.10.0",
 )
 
 new_git_repository(
     name = "zstd",
     build_file = "//bazel:zstd.BUILD",
-    remote = "git@github.com:facebook/zstd.git",
+    remote = "https://github.com/facebook/zstd.git",
     tag = "v1.5.7",
 )
 
 new_git_repository(
     name = "com_github_facebook_zstd",
     build_file = "//bazel:zstd.BUILD",
-    remote = "git@github.com:facebook/zstd.git",
+    remote = "https://github.com/facebook/zstd.git",
     tag = "v1.5.7",
 )
 
 git_repository(
     name = "brotli",
     build_file = "//bazel:brotli.BUILD",
-    remote = "git@github.com:google/brotli.git",
+    remote = "https://github.com/google/brotli.git",
     tag = "v1.2.0",
 )
 
 new_git_repository(
     name = "libsodium",
     build_file = "//bazel:libsodium.BUILD",
-    remote = "git@github.com:jedisct1/libsodium.git",
+    remote = "https://github.com/jedisct1/libsodium.git",
     tag = "1.0.22-RELEASE",
 )
 
@@ -222,27 +222,27 @@ http_archive(
 new_git_repository(
     name = "c-ares",
     build_file = "//bazel:c-ares.BUILD",
-    remote = "git@github.com:c-ares/c-ares.git",
+    remote = "https://github.com/c-ares/c-ares.git",
     tag = "v1.34.8",
 )
 
 new_git_repository(
     name = "com_github_cares_cares",
     build_file = "//bazel:c-ares.BUILD",
-    remote = "git@github.com:c-ares/c-ares.git",
+    remote = "https://github.com/c-ares/c-ares.git",
     tag = "v1.34.8",
 )
 
 new_git_repository(
     name = "curl",
     build_file = "//bazel:curl.BUILD",
-    remote = "git@github.com:curl/curl.git",
+    remote = "https://github.com/curl/curl.git",
     tag = "curl-8_21_0",
 )
 
 git_repository(
     name = "com_github_google_benchmark",
-    remote = "git@github.com:google/benchmark.git",
+    remote = "https://github.com/google/benchmark.git",
     tag = "v1.9.5",
 )
 
@@ -250,7 +250,7 @@ git_repository(
     name = "com_google_googletest",
     patch_args = ["-p1"],
     patches = ["//bazel:googletest.patch"],
-    remote = "git@github.com:google/googletest.git",
+    remote = "https://github.com/google/googletest.git",
     tag = "v1.17.0",
 )
 
@@ -258,7 +258,7 @@ git_repository(
     name = "double-conversion",
     patch_args = ["-p1"],
     patches = ["//bazel:double-conversion.patch"],
-    remote = "git@github.com:google/double-conversion.git",
+    remote = "https://github.com/google/double-conversion.git",
     tag = "v3.4.0",
 )
 
@@ -267,7 +267,7 @@ git_repository(
     commit = "45ed6bf51f659c7db830fd15ddd4495dadc5afd1",
     patch_args = ["-p1"],
     patches = ["//bazel:rules_boost.patch"],
-    remote = "git@github.com:nelhage/rules_boost.git",
+    remote = "https://github.com/nelhage/rules_boost.git",
 )
 
 http_archive(
@@ -289,28 +289,28 @@ http_archive(
 new_git_repository(
     name = "fmt",
     build_file = "//bazel:fmt.BUILD",
-    remote = "git@github.com:fmtlib/fmt.git",
+    remote = "https://github.com/fmtlib/fmt.git",
     tag = "12.2.0",
 )
 
 new_git_repository(
     name = "libdwarf",
     build_file = "//bazel:libdwarf.BUILD",
-    remote = "git@github.com:davea42/libdwarf-code.git",
+    remote = "https://github.com/davea42/libdwarf-code.git",
     tag = "v2.3.2",
 )
 
 new_git_repository(
     name = "mbedtls",
     build_file = "//bazel:mbedtls.BUILD",
-    remote = "git@github.com:Mbed-TLS/mbedtls.git",
+    remote = "https://github.com/Mbed-TLS/mbedtls.git",
     tag = "v4.2.0",
 )
 
 new_git_repository(
     name = "libevent",
     build_file = "//bazel:libevent.BUILD",
-    remote = "git@github.com:libevent/libevent.git",
+    remote = "https://github.com/libevent/libevent.git",
     tag = "release-2.1.13-stable",
 )
 
@@ -325,7 +325,7 @@ http_archive(
 new_git_repository(
     name = "libuv",
     build_file = "//bazel:libuv.BUILD",
-    remote = "git@github.com:libuv/libuv.git",
+    remote = "https://github.com/libuv/libuv.git",
     tag = "v1.52.1",
 )
 
@@ -341,35 +341,35 @@ new_git_repository(
     name = "libunwind",
     build_file = "//bazel:libunwind.BUILD",
     patches = ["//bazel:libunwind-musl-pthread-dtor.patch"],
-    remote = "git@github.com:libunwind/libunwind.git",
+    remote = "https://github.com/libunwind/libunwind.git",
     tag = "v1.8.3",
 )
 
 new_git_repository(
     name = "cjson",
     build_file = "//bazel:cjson.BUILD",
-    remote = "git@github.com:DaveGamble/cJSON.git",
+    remote = "https://github.com/DaveGamble/cJSON.git",
     tag = "v1.7.19",
 )
 
 new_git_repository(
     name = "tinyxml2",
     build_file = "//bazel:tinyxml2.BUILD",
-    remote = "git@github.com:leethomason/tinyxml2.git",
+    remote = "https://github.com/leethomason/tinyxml2.git",
     tag = "11.0.0",
 )
 
 new_git_repository(
     name = "libcbor",
     build_file = "//bazel:libcbor.BUILD",
-    remote = "git@github.com:PJK/libcbor.git",
+    remote = "https://github.com/PJK/libcbor.git",
     tag = "v0.14.0",
 )
 
 new_git_repository(
     name = "mimalloc",
     build_file = "//bazel:mimalloc.BUILD",
-    remote = "git@github.com:microsoft/mimalloc.git",
+    remote = "https://github.com/microsoft/mimalloc.git",
     tag = "v3.4.3",
 )
 
@@ -385,21 +385,21 @@ new_git_repository(
     build_file = "//bazel:folly.BUILD",
     patch_args = ["-p1"],
     patches = ["//bazel:folly.patch"],
-    remote = "git@github.com:facebook/folly.git",
+    remote = "https://github.com/facebook/folly.git",
     tag = "v2026.07.20.00",
 )
 
 new_git_repository(
     name = "fizz",
     build_file = "//bazel:fizz.BUILD",
-    remote = "git@github.com:facebookincubator/fizz.git",
+    remote = "https://github.com/facebookincubator/fizz.git",
     tag = "v2026.07.20.00",
 )
 
 new_git_repository(
     name = "mvfst",
     build_file = "//bazel:mvfst.BUILD",
-    remote = "git@github.com:facebook/mvfst.git",
+    remote = "https://github.com/facebook/mvfst.git",
     tag = "v2026.07.20.00",
 )
 
@@ -408,14 +408,14 @@ new_git_repository(
     build_file = "//bazel:wangle.BUILD",
     patch_args = ["-p1"],
     patches = ["//bazel:wangle-openssl4-const.patch"],
-    remote = "git@github.com:facebook/wangle.git",
+    remote = "https://github.com/facebook/wangle.git",
     tag = "v2026.07.20.00",
 )
 
 new_git_repository(
     name = "fatal",
     build_file = "//bazel:fatal.BUILD",
-    remote = "git@github.com:facebook/fatal.git",
+    remote = "https://github.com/facebook/fatal.git",
     tag = "v2026.07.20.00",
 )
 
@@ -423,7 +423,7 @@ git_repository(
     name = "yaml-cpp",
     patch_args = ["-p1"],
     patches = ["//bazel:yaml-cpp.patch"],
-    remote = "git@github.com:jbeder/yaml-cpp.git",
+    remote = "https://github.com/jbeder/yaml-cpp.git",
     tag = "yaml-cpp-0.9.0",
 )
 
@@ -439,14 +439,14 @@ new_git_repository(
     build_file = "//bazel:fbthrift.BUILD",
     patch_args = ["-p1"],
     patches = ["//bazel:fbthrift.patch"],
-    remote = "git@github.com:facebook/fbthrift.git",
+    remote = "https://github.com/facebook/fbthrift.git",
     tag = "v2026.07.20.00",
 )
 
 new_git_repository(
     name = "fb303",
     build_file = "//bazel:fb303.BUILD",
-    remote = "git@github.com:facebook/fb303.git",
+    remote = "https://github.com/facebook/fb303.git",
     tag = "v2026.07.20.00",
 )
 
@@ -455,7 +455,7 @@ new_git_repository(
     build_file = "//bazel:proxygen.BUILD",
     patch_args = ["-p1"],
     patches = ["//bazel:proxygen.patch"],
-    remote = "git@github.com:facebook/proxygen.git",
+    remote = "https://github.com/facebook/proxygen.git",
     tag = "v2026.07.20.00",
 )
 
@@ -463,7 +463,7 @@ new_git_repository(
     name = "smhasher",
     build_file = "//bazel:smhasher.BUILD",
     commit = "07bb4de10a63e8cc2e1724865454eba635742383",
-    remote = "git@github.com:aappleby/smhasher.git",
+    remote = "https://github.com/aappleby/smhasher.git",
 )
 
 http_archive(
@@ -480,7 +480,7 @@ git_repository(
         "//bazel:grpc-foreign-cc-layering.patch",
         "//bazel:grpc-openssl4-const.patch",
     ],
-    remote = "git@github.com:grpc/grpc.git",
+    remote = "https://github.com/grpc/grpc.git",
     tag = "v1.83.0",
 )
 
@@ -495,14 +495,14 @@ http_archive(
 new_git_repository(
     name = "pcre2",
     build_file = "//bazel:pcre2.BUILD",
-    remote = "git@github.com:PCRE2Project/pcre2.git",
+    remote = "https://github.com/PCRE2Project/pcre2.git",
     tag = "pcre2-10.47",
 )
 
 new_git_repository(
     name = "crc32c",
     build_file = "//bazel:crc32c.BUILD",
-    remote = "git@github.com:google/crc32c.git",
+    remote = "https://github.com/google/crc32c.git",
     tag = "1.1.2",
 )
 
@@ -510,7 +510,7 @@ new_git_repository(
     name = "rapidjson",
     build_file = "//bazel:rapidjson.BUILD",
     commit = "815e6e7e7e14be44a6c15d9aefed232ff064cad0",
-    remote = "git@github.com:Tencent/rapidjson.git",
+    remote = "https://github.com/Tencent/rapidjson.git",
 )
 
 git_repository(
@@ -523,20 +523,20 @@ new_git_repository(
     name = "multipart-parser",
     build_file = "//bazel:multipart-parser.BUILD",
     commit = "61e234f2100f39d405b6e9c2689e2482b31f3976",
-    remote = "git@github.com:FooBarWidget/multipart-parser.git",
+    remote = "https://github.com/FooBarWidget/multipart-parser.git",
 )
 
 new_git_repository(
     name = "simdjson",
     build_file = "//bazel:simdjson.BUILD",
-    remote = "git@github.com:simdjson/simdjson.git",
+    remote = "https://github.com/simdjson/simdjson.git",
     tag = "v4.6.4",
 )
 
 new_git_repository(
     name = "spdlog",
     build_file = "//bazel:spdlog.BUILD",
-    remote = "git@github.com:gabime/spdlog.git",
+    remote = "https://github.com/gabime/spdlog.git",
     tag = "v1.17.0",
 )
 
@@ -566,7 +566,7 @@ http_archive(
 new_git_repository(
     name = "blake3",
     build_file = "//bazel:blake3.BUILD",
-    remote = "git@github.com:BLAKE3-team/BLAKE3.git",
+    remote = "https://github.com/BLAKE3-team/BLAKE3.git",
     tag = "1.8.5",
 )
 
