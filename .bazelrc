@@ -2,6 +2,9 @@ common --downloader_config=.bazel_downloader.cfg
 common --enable_platform_specific_config
 common --incompatible_default_to_explicit_init_py
 
+# Keep Windows Bazel action paths short to avoid the Win32 MAX_PATH limit.
+startup:windows --output_user_root=D:/bzl
+
 ######################### attention #########################
 # 1. pprof.out generated in bazel test sandbox
 # 2. go install github.com/google/pprof@latest
