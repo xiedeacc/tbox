@@ -108,7 +108,7 @@ diff --git a/thrift/lib/cpp2/protocol/detail/CursorBasedSerialization.h b/thrift
    BaseCursorWriter& operator=(const BaseCursorWriter&) = delete;
  
 -  template <typename T>
-+  template <typename Tag, typename ProtocolWriter>
++  template <typename Tag, typename Writer>
    friend class StructuredCursorWriter;
  };
 diff --git a/thrift/lib/thrift/TypeToMaskAdapter.h b/thrift/lib/thrift/TypeToMaskAdapter.h

@@ -3,7 +3,10 @@ load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL
 load("//bazel:cpplint.bzl", "cpplint")
 load("//bazel:pb_code_gen_plugin.bzl", "cc_proto_plugin")
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = ["//visibility:public"],
+    features = ["layering_check"],
+)
 
 cpplint()
 

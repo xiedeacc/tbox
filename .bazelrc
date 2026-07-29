@@ -1,10 +1,5 @@
-#startup --output_base=D:/x --windows_enable_symlinks
-startup --output_user_root=D:/bzl
-
 common --downloader_config=.bazel_downloader.cfg
 common --enable_platform_specific_config
-common --repo_env=CC=/usr/bin/gcc-16
-common --repo_env=CXX=/usr/bin/g++-16
 common --incompatible_default_to_explicit_init_py
 
 ######################### attention #########################
@@ -93,13 +88,9 @@ build --strip='never'
 build --output_filter="^//"
 build -c opt
 build --define cross_compiling=false
-build --features=-module_maps
-build --host_features=-module_maps
 build --jobs=8
 build --conlyopt='-std=gnu17'
 build --incompatible_disallow_empty_glob=false
-#build --features=-layering_check
-#build --host_features=-layering_check
 #build --remote_cache=http://192.168.1.101/bazel_cache
 #build --keep_going
 
@@ -137,6 +128,8 @@ build:linux --copt='-g'
 build:linux --copt='-O2'
 build:linux --copt='-Wall'
 build:linux --cxxopt='-std=c++20'
+build:linux --repo_env=CC=/usr/bin/gcc-16
+build:linux --repo_env=CXX=/usr/bin/g++-16
 build:linux --host_copt='-g'
 build:linux --host_copt='-O2'
 build:linux --host_copt='-Wall'

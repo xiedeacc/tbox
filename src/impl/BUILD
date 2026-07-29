@@ -3,7 +3,10 @@ load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LOCAL_DEFINES")
 load("//bazel:build.bzl", "cc_test")
 load("//bazel:cpplint.bzl", "cpplint")
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = ["//visibility:public"],
+    features = ["layering_check"],
+)
 
 COPTS = GLOBAL_COPTS + select({
     "//conditions:default": [
@@ -51,9 +54,11 @@ cc_library(
     copts = COPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
+        "//src/common:logging",
         "//src/proto:cc_config",
         "//src/util",
         "@folly",
+        "@folly//:common",
     ],
 )
 
@@ -70,6 +75,7 @@ cc_library(
         "@aws-sdk-cpp//:aws-cpp-sdk-core",
         "@aws-sdk-cpp//:aws-cpp-sdk-route53",
         "@folly",
+        "@folly//:common",
     ],
 )
 
@@ -83,6 +89,7 @@ cc_library(
         "//src/common:logging",
         "//src/util",
         "@folly",
+        "@folly//:common",
     ],
 )
 
@@ -92,7 +99,7 @@ cc_test(
         "config_manager_test.cc",
     ],
     copts = COPTS,
-    data = ["//conf:server_config.json"],
+    data = ["//conf:server_example_config.json"],
     local_defines = LOCAL_DEFINES,
     deps = [":config_manager"],
 )
@@ -110,6 +117,7 @@ cc_library(
         "//src/proto:cc_error",
         "//src/util",
         "@folly",
+        "@folly//:common",
         "@sqlite",
     ],
 )
@@ -124,9 +132,12 @@ cc_library(
         ":session_manager",
         ":sqlite_manager",
         "//src/common:defs",
+        "//src/common:error_code",
+        "//src/common:logging",
         "//src/proto:cc_grpc_service",
         "//src/util",
         "@folly",
+        "@folly//:common",
         "@sqlite",
     ],
 )
@@ -139,9 +150,11 @@ cc_library(
     local_defines = LOCAL_DEFINES,
     deps = [
         "//src/common:defs",
+        "//src/common:logging",
         "//src/util",
         "@com_google_absl//absl/synchronization",
         "@folly",
+        "@folly//:common",
     ],
 )
 
@@ -151,7 +164,12 @@ cc_test(
     copts = COPTS,
     data = ["//test_data/config_test:client_config.json"],
     local_defines = LOCAL_DEFINES,
-    deps = [":user_manager"],
+    deps = [
+        ":user_manager",
+        "//src/common:error_code",
+        "//src/util",
+        "@folly//:common",
+    ],
 )
 
 cc_test(

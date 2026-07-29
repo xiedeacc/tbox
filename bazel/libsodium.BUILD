@@ -590,6 +590,22 @@ cc_library(
 )
 
 cc_library(
+    name = "neon",
+    srcs = [
+        "src/libsodium/crypto_pwhash/argon2/argon2-fill-block-neon.c",
+    ],
+    hdrs = glob([
+        "src/libsodium/**/*.h",
+    ]),
+    copts = COPTS,
+    defines = DEFINES,
+    includes = INCLUDES,
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [":common"],
+)
+
+cc_library(
     name = "sodium",
     srcs = [
         "src/libsodium/sodium/codecs.c",
@@ -621,5 +637,8 @@ cc_library(
         ":sse2",
         ":sse41",
         ":ssse3",
-    ],
+    ] + select({
+        "@platforms//cpu:aarch64": [":neon"],
+        "//conditions:default": [],
+    }),
 )

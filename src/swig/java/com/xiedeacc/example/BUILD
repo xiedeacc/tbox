@@ -2,6 +2,8 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_java//java:defs.bzl", "java_library")
 
+package(features = ["layering_check"])
+
 selects.config_setting_group(
     name = "linux_x86_64_glibc",
     match_all = [

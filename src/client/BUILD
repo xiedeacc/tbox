@@ -3,7 +3,10 @@ load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL
 load("//bazel:build.bzl", "cc_test")
 load("//bazel:cpplint.bzl", "cpplint")
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = ["//visibility:public"],
+    features = ["layering_check"],
+)
 
 cpplint()
 
@@ -90,6 +93,7 @@ cc_library(
         "@boost//:beast",
         "@boost//:json",
         "@folly",
+        "@folly//:common",
         "@simdjson",
     ],
 )
@@ -108,6 +112,7 @@ cc_library(
         "//src/util",
         "@com_github_grpc_grpc//:grpc++",
         "@folly",
+        "@folly//:common",
     ],
 )
 
@@ -130,6 +135,7 @@ cc_library(
         "//src/util",
         "@com_github_grpc_grpc//:grpc++",
         "@folly",
+        "@folly//:common",
     ],
 )
 
@@ -147,9 +153,12 @@ cc_library(
         "//src/impl:config_manager",
         "//src/proto:cc_config",
         "//src/proto:cc_grpc_service",
+        "//src/proto:cc_service",
         "//src/server/grpc_handler:meta",
         "//src/util",
+        "@com_github_grpc_grpc//:grpc++",
         "@folly",
+        "@folly//:common",
     ],
 )
 
@@ -170,6 +179,7 @@ cc_library(
         "//src/util",
         "@com_github_grpc_grpc//:grpc++",
         "@folly",
+        "@folly//:common",
     ],
 )
 
@@ -242,6 +252,7 @@ cc_test(
     deps = [
         ":grpc_client",
         "//src/common:logging",
+        "//src/impl:config_manager",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -256,11 +267,13 @@ cc_binary(
     deps = [
         ":grpc_client",
         ":websocket_client",
+        "//src/common:logging",
         "//src/impl:config_manager",
         "//src/proto:cc_grpc_service",
         "//src/server/tcp_handler",
         "@boost//:url",
         "@folly",
+        "@folly//:common",
         "@libsodium//:sodium",
         "@openssl//:crypto",
         "@openssl//:ssl",

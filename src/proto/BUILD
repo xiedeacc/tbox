@@ -2,7 +2,10 @@ load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = ["//visibility:public"],
+    features = ["layering_check"],
+)
 
 cc_grpc_library(
     name = "cc_grpc_service",
@@ -14,6 +17,7 @@ cc_grpc_library(
         ":cc_enums",
         ":cc_error",
         ":cc_service",
+        "@com_github_grpc_grpc//:grpc++",
     ],
 )
 

@@ -164,6 +164,8 @@ cc_library(
             "proxygen/lib/dns/*.cpp",  # c-ares version mismatch and some enum missed
             #"proxygen/lib/http/codec/compress/experimental/interop/QPACKInterop.cpp",
             "proxygen/lib/http/codec/compress/experimental/simulator/**/*.cpp",
+            "proxygen/**/benchmark/**/*.cpp",
+            "proxygen/**/benchmarks/**/*.cpp",
             "proxygen/**/fuzzers/**/*.cpp",
             "proxygen/**/test/**/*.cpp",
             "proxygen/**/tests/**/*.cpp",

@@ -12,7 +12,8 @@ namespace tbox {
 namespace util {
 
 TEST(ConfigManager, Init) {
-  EXPECT_TRUE(ConfigManager::Instance()->Init("./conf/server_config.json"));
+  EXPECT_TRUE(
+      ConfigManager::Instance()->Init("./conf/server_example_config.json"));
   LOG(INFO) << ConfigManager::Instance()->ToString();
 }
 

@@ -61,7 +61,12 @@
 #include <unistd.h>
 #include <utime.h>
 #elif defined(__APPLE__)
+#include <arpa/inet.h>
 #include <fcntl.h>
+#include <ifaddrs.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 #include <unistd.h>
 #endif
 

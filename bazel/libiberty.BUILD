@@ -128,6 +128,7 @@ cc_library(
         ],
     }),
     defines = DEFINES,
+    features = ["-layering_check"],
     includes = [
         "include",
         "libiberty",

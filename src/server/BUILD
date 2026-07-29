@@ -3,7 +3,10 @@ load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL
 load("//bazel:build.bzl", "cc_test")
 load("//bazel:cpplint.bzl", "cpplint")
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = ["//visibility:public"],
+    features = ["layering_check"],
+)
 
 cpplint()
 
@@ -148,14 +151,20 @@ cc_binary(
         ":grpc_server_impl",
         ":http_server_impl",
         ":server_context",
+        ":version_info",
+        "//src/common:logging",
         "//src/impl:cert_manager",
+        "//src/impl:config_manager",
         "//src/impl:ddns_manager",
         "//src/impl:user_manager",
         "//src/proto:cc_grpc_service",
         "//src/server/http_handler",
         "//src/server/tcp_handler",
         "@boost//:url",
+        "@com_github_glog_glog//:glog",
         "@folly",
+        "@folly//:common",
+        "@gflags",
         "@libsodium//:sodium",
         "@openssl//:crypto",
         "@openssl//:ssl",

@@ -3,7 +3,10 @@ load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL
 load("//bazel:build.bzl", "cc_test")
 load("//bazel:cpplint.bzl", "cpplint")
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = ["//visibility:public"],
+    features = ["layering_check"],
+)
 
 cpplint()
 
@@ -61,6 +64,7 @@ cc_library(
     srcs = ["util.cc"],
     hdrs = ["util.h"],
     copts = COPTS,
+    features = ["-layering_check"],
     local_defines = LOCAL_DEFINES,
     deps = [
         "//src/common:defs",
@@ -77,9 +81,11 @@ cc_library(
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",
         "@com_google_protobuf//:protobuf",
+        "@com_google_protobuf//src/google/protobuf/json",
         "@crc32c",
         "@fmt",
         "@folly",
+        "@folly//:common",
         "@openssl",
         "@rapidjson",
         "@smhasher",
@@ -97,5 +103,6 @@ cc_test(
         ":util",
         "@com_google_googletest//:gtest_main",
         "@folly",
+        "@folly//:common",
     ],
 )

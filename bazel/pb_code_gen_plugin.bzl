@@ -171,7 +171,7 @@ def cc_proto_plugin(
     proto_generate(proto_name, src, outs, data, plugin, proto_deps, proto_paths, template_dir, protoc)
     _cc_library(
         name = name,
-        srcs = [proto_name],
+        hdrs = [proto_name],
         deps = depset(deps + ["@com_google_protobuf//:protobuf"]).to_list(),
         visibility = ["//visibility:public"],
         **kwargs

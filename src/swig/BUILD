@@ -4,7 +4,10 @@ load("//bazel:build.bzl", "cc_test")
 load("//bazel:cpplint.bzl", "cpplint")
 load("//bazel:swig_java.bzl", "java_wrap_cc")
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = ["//visibility:public"],
+    features = ["layering_check"],
+)
 
 cpplint()
 

@@ -589,6 +589,7 @@ cc_library(
         exclude = [
             "thrift/lib/cpp2/protocol/Patch.cpp",  # conflict with fmt
             "thrift/lib/cpp2/async/*.cpp",  # depend proxygen
+            "thrift/lib/cpp2/fast_thrift/**/*.cpp",  # experimental subsystem
             "thrift/lib/cpp2/transport/http2/client/H2ClientConnection.cpp",  # depend proxygen
             "thrift/lib/cpp2/transport/http2/client/ThriftTransactionHandler.cpp",  # depend proxygen
             "thrift/lib/cpp2/transport/http2/common/H2Channel.cpp",  # depend proxygen

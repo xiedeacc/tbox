@@ -476,7 +476,10 @@ http_archive(
 git_repository(
     name = "com_github_grpc_grpc",
     patch_args = ["-p1"],
-    patches = ["//bazel:grpc-openssl4-const.patch"],
+    patches = [
+        "//bazel:grpc-foreign-cc-layering.patch",
+        "//bazel:grpc-openssl4-const.patch",
+    ],
     remote = "git@github.com:grpc/grpc.git",
     tag = "v1.83.0",
 )
@@ -543,7 +546,7 @@ new_git_repository(
     commit = "70e03572b254688b8c3557f898e7ebd765d29ae1",
     patch_cmds = [
         "mv src/rpc.h src/vlmcsd_rpc.h",
-        "sed -i 's/\"rpc\\.h\"/\"vlmcsd_rpc.h\"/g' src/*.c src/*.h",
+        "perl -pi -e 's/\"rpc\\.h\"/\"vlmcsd_rpc.h\"/g' src/*.c src/*.h",
     ],
     patch_cmds_win = [
         "Move-Item -Force src/rpc.h src/vlmcsd_rpc.h",
@@ -572,6 +575,7 @@ shallow_git_repository(
     build_file = "//bazel:aws-sdk-cpp.BUILD",
     patch_strip = 1,
     patches = [
+        "//bazel:aws-sdk-cpp-darwin-posix.patch",
         "//bazel:aws-sdk-cpp-openssl4-const.patch",
         "//bazel:aws-sdk-cpp-remove-version-file.patch",
     ],

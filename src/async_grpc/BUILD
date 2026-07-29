@@ -22,7 +22,10 @@ load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LOCAL_DEFINES")
 
 licenses(["notice"])  # Apache 2.0
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = ["//visibility:public"],
+    features = ["layering_check"],
+)
 
 COPTS = GLOBAL_COPTS + select({
     "@platforms//os:windows": [],
@@ -84,6 +87,8 @@ cc_library(
         ":cc_protos",
         "//src/common:logging",
         "@com_github_grpc_grpc//:grpc++",
+        "@com_github_grpc_grpc//:grpc++_codegen_proto",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 

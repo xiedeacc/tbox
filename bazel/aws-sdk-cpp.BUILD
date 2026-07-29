@@ -129,10 +129,17 @@ LOCAL_DEFINES = GLOBAL_LOCAL_DEFINES + [
     "@platforms//os:osx": [
         "AWS_HAVE_POSIX_LARGE_FILE_SUPPORT",
         "AWS_HAVE_EXECINFO",
+        "AWS_ENABLE_KQUEUE",
     ],
     "//conditions:default": [],
 }) + select({
     "@tbox//bazel:libc_musl": [
+        "AWS_AFFINITY_METHOD=AWS_AFFINITY_METHOD_NONE",
+    ],
+    "@platforms//os:osx": [
+        "AWS_AFFINITY_METHOD=AWS_AFFINITY_METHOD_NONE",
+    ],
+    "@platforms//os:windows": [
         "AWS_AFFINITY_METHOD=AWS_AFFINITY_METHOD_NONE",
     ],
     "//conditions:default": [
@@ -457,6 +464,7 @@ cc_library(
             "crt/aws-crt-cpp/crt/s2n/tls/**/*.c",
             "crt/aws-crt-cpp/crt/s2n/utils/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-io/source/s2n/**/*.c",
+            "crt/aws-crt-cpp/crt/aws-c-io/source/bsd/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-io/source/darwin/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-common/source/darwin/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-io/source/posix/**/*.c",
@@ -465,6 +473,8 @@ cc_library(
             "crt/aws-crt-cpp/crt/aws-c-cal/source/posix/**/*.c",
             "crt/aws-crt-cpp/crt/aws-c-cal/source/unix/**/*.c",
         ]) + [
+            "crt/aws-crt-cpp/crt/aws-c-common/source/platform_fallback_stubs/file_direct_io.c",
+            "crt/aws-crt-cpp/crt/aws-c-common/source/platform_fallback_stubs/system_info.c",
             #"crt/aws-crt-cpp/crt/aws-lc/crypto/thread_pthread.c",
         ],
         "//conditions:default": [],
@@ -587,8 +597,11 @@ cc_library(
     ) + select({
         "@platforms//os:windows": optional_glob([
             "crt/aws-crt-cpp/crt/aws-c-io/include/windows/**/*.h",
+            "crt/aws-crt-cpp/crt/aws-c-io/source/windows/**/*.h",
             "crt/aws-crt-cpp/crt/aws-c-common/include/windows/**/*.h",
+            "crt/aws-crt-cpp/crt/aws-c-common/source/windows/**/*.h",
             "crt/aws-crt-cpp/crt/aws-c-cal/include/windows/**/*.h",
+            "crt/aws-crt-cpp/crt/aws-c-cal/source/windows/**/*.h",
         ]),
         "@platforms//os:linux": optional_glob([
             "crt/aws-crt-cpp/crt/aws-c-io/include/linux/**/*.h",
@@ -597,6 +610,12 @@ cc_library(
             "crt/aws-crt-cpp/crt/aws-c-common/include/posix/**/*.h",
             "crt/aws-crt-cpp/crt/aws-c-cal/include/linux/**/*.h",
             "crt/aws-crt-cpp/crt/aws-c-cal/include/posix/**/*.h",
+            "crt/aws-crt-cpp/crt/aws-c-io/source/linux/**/*.h",
+            "crt/aws-crt-cpp/crt/aws-c-io/source/posix/**/*.h",
+            "crt/aws-crt-cpp/crt/aws-c-common/source/linux/**/*.h",
+            "crt/aws-crt-cpp/crt/aws-c-common/source/posix/**/*.h",
+            "crt/aws-crt-cpp/crt/aws-c-cal/source/linux/**/*.h",
+            "crt/aws-crt-cpp/crt/aws-c-cal/source/posix/**/*.h",
         ]),
         "@platforms//os:osx": optional_glob([
             "crt/aws-crt-cpp/crt/aws-c-io/include/darwin/**/*.h",
@@ -605,6 +624,13 @@ cc_library(
             "crt/aws-crt-cpp/crt/aws-c-common/include/posix/**/*.h",
             "crt/aws-crt-cpp/crt/aws-c-cal/include/darwin/**/*.h",
             "crt/aws-crt-cpp/crt/aws-c-cal/include/posix/**/*.h",
+            "crt/aws-crt-cpp/crt/aws-c-io/source/darwin/**/*.h",
+            "crt/aws-crt-cpp/crt/aws-c-io/source/bsd/**/*.h",
+            "crt/aws-crt-cpp/crt/aws-c-io/source/posix/**/*.h",
+            "crt/aws-crt-cpp/crt/aws-c-common/source/darwin/**/*.h",
+            "crt/aws-crt-cpp/crt/aws-c-common/source/posix/**/*.h",
+            "crt/aws-crt-cpp/crt/aws-c-cal/source/darwin/**/*.h",
+            "crt/aws-crt-cpp/crt/aws-c-cal/source/posix/**/*.h",
         ]),
         "//conditions:default": [],
     }),
@@ -708,8 +734,8 @@ cc_library(
             "src/aws-cpp-sdk-core/source/platform/linux-shared/**/*.cpp",
         ]),
         "@platforms//os:osx": optional_glob([
-            "src/aws-cpp-sdk-core/source/platform/darwin/**/*.cpp",
-            "src/aws-cpp-sdk-core/source/platform/posix/**/*.cpp",
+            "src/aws-cpp-sdk-core/source/net/linux-shared/**/*.cpp",
+            "src/aws-cpp-sdk-core/source/platform/linux-shared/**/*.cpp",
         ]),
         "//conditions:default": [],
     }),

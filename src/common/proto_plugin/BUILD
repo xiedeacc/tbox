@@ -2,7 +2,10 @@ load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 load("//bazel:cpplint.bzl", "cpplint")
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = ["//visibility:public"],
+    features = ["layering_check"],
+)
 
 cpplint()
 
@@ -60,6 +63,11 @@ cc_binary(
         "//src/common:logging",
         "@boost//:algorithm",
         "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
         "@com_google_protobuf//:protoc_lib",
+        "@com_google_protobuf//src/google/protobuf/compiler:code_generator",
+        "@com_google_protobuf//src/google/protobuf/compiler:plugin",
+        "@com_google_protobuf//src/google/protobuf/io:io",
+        "@com_google_protobuf//src/google/protobuf/io:printer",
     ],
 )
