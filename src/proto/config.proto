@@ -38,4 +38,15 @@ message BaseConfig {
   // Certificate paths
   string local_cert_path = 20;
   string nginx_ssl_path = 21;
+
+  // DNS backend selection for DDNS updates.
+  // Supported values: "route53", "cloudflare".
+  // Defaults to "route53" when empty, preserving legacy behaviour.
+  string dns_provider = 22;
+
+  // Cloudflare credentials and zone for DNS access.
+  // cloudflare_zone_id is optional; when empty the zone is resolved by
+  // querying the Cloudflare API for the domain's registrable name.
+  string cloudflare_api_token = 23;
+  string cloudflare_zone_id = 24;
 }

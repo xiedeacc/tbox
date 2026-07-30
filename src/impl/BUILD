@@ -71,9 +71,8 @@ cc_library(
     deps = [
         ":config_manager",
         "//src/common:logging",
+        "//src/impl/dns",
         "//src/util",
-        "@aws-sdk-cpp//:aws-cpp-sdk-core",
-        "@aws-sdk-cpp//:aws-cpp-sdk-route53",
         "@folly",
         "@folly//:common",
     ],
@@ -180,6 +179,7 @@ cc_test(
     deps = [
         ":ddns_manager",
         "//src/common:logging",
+        "//src/impl/dns:route53_provider",
         "@com_google_googletest//:gtest_main",
     ],
 )

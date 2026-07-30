@@ -15,19 +15,16 @@
 #include <thread>
 #include <vector>
 
-namespace Aws {
-namespace Route53 {
-class Route53Client;
-}  // namespace Route53
-}  // namespace Aws
+#include "src/impl/dns/dns_provider.h"
 
 namespace tbox {
 namespace impl {
 
-/// @brief Manages Dynamic DNS updates for IPv6 via AWS Route53.
-/// @details Thread-safe singleton that periodically checks IPv6
-///          addresses and updates Route53 AAAA records when changes
-///          are detected. Implements exponential backoff on failures.
+/// @brief Manages Dynamic DNS updates for IPv4 and IPv6.
+/// @details Thread-safe singleton that periodically checks the host addresses
+///          and updates A and AAAA records whenever they change. The DNS
+///          hosting backend is pluggable; see src/impl/dns for the supported
+///          implementations. Failures are retried with exponential backoff.
 class DDNSManager final {
  public:
   /// @brief Get singleton instance.
@@ -37,8 +34,8 @@ class DDNSManager final {
   ~DDNSManager();
 
   /// @brief Initialize DDNS manager.
-  /// @details Reads monitor domains from ConfigManager and uses hardcoded
-  ///          settings for intervals and AWS configuration.
+  /// @details Reads monitor domains and the DNS backend selection from
+  ///          ConfigManager, then resolves the zone of every monitored domain.
   /// @return True on success, false on failure.
   bool Init();
 
@@ -60,7 +57,6 @@ class DDNSManager final {
   static constexpr int kDnsTtl = 60;               ///< DNS TTL for records
   static constexpr int kMaxBackoffSeconds = 3600;  ///< Max backoff (1 hour)
   static constexpr int kMinBackoffSeconds = 60;    ///< Min backoff (1 minute)
-  static constexpr const char* kAwsRegion = "us-east-1";  ///< AWS region
 
  private:
   DDNSManager();
@@ -81,52 +77,17 @@ class DDNSManager final {
   /// @return True if private/loopback, false if public.
   static bool IsPrivateIP(const std::string& ip);
 
-  /// @brief Get Route53 Hosted Zone ID for the domain.
-  /// @param domain Domain name to look up.
-  /// @return Hosted zone ID, or empty string on failure.
-  std::string GetHostedZoneId(const std::string& domain);
-
-  /// @brief Get current A records from Route53.
-  /// @param hosted_zone_id Route53 hosted zone ID.
-  /// @param domain Domain name to query.
-  /// @return Vector of IPv4 addresses, or empty on failure.
-  std::vector<std::string> GetCurrentRoute53ARecords(
-      const std::string& hosted_zone_id, const std::string& domain);
-
-  /// @brief Get current AAAA records from Route53.
-  /// @param hosted_zone_id Route53 hosted zone ID.
-  /// @param domain Domain name to query.
-  /// @return Vector of IPv6 addresses, or empty on failure.
-  std::vector<std::string> GetCurrentRoute53AAAARecords(
-      const std::string& hosted_zone_id, const std::string& domain);
-
-  /// @brief Update Route53 A record with new IPv4.
-  /// @param hosted_zone_id Route53 hosted zone ID.
-  /// @param domain Domain name to update.
-  /// @param ipv4 New IPv4 address.
-  /// @return True on success, false on failure.
-  bool UpdateRoute53ARecord(const std::string& hosted_zone_id,
-                            const std::string& domain, const std::string& ipv4);
-
-  /// @brief Update Route53 AAAA record with new IPv6.
-  /// @param hosted_zone_id Route53 hosted zone ID.
-  /// @param domain Domain name to update.
-  /// @param ipv6 New IPv6 address.
-  /// @return True on success, false on failure.
-  bool UpdateRoute53AAAARecord(const std::string& hosted_zone_id,
-                               const std::string& domain,
-                               const std::string& ipv6);
-
-  /// @brief Delete Route53 record.
-  /// @param hosted_zone_id Route53 hosted zone ID.
-  /// @param domain Domain name.
-  /// @param record_type Record type ("A" or "AAAA").
-  /// @param ip IP address to delete.
-  /// @return True on success, false on failure.
-  bool DeleteRoute53Record(const std::string& hosted_zone_id,
-                           const std::string& domain,
-                           const std::string& record_type,
-                           const std::string& ip);
+  /// @brief Reconcile one record type of one domain against a desired value.
+  /// @param zone_id Backend zone identifier.
+  /// @param domain Domain name to reconcile.
+  /// @param type Record type to reconcile.
+  /// @param desired Desired address, empty to only prune private entries.
+  /// @param log_buffer Buffer collecting human readable progress lines.
+  /// @param updated Set to true when a change was applied.
+  /// @return True on success, false when any operation failed.
+  bool ReconcileRecord(const std::string& zone_id, const std::string& domain,
+                       dns::RecordType type, const std::string& desired,
+                       std::vector<std::string>* log_buffer, bool* updated);
 
   /// @brief The main loop that runs in the background thread.
   void UpdateLoop();
@@ -136,10 +97,10 @@ class DDNSManager final {
   bool initialized_ = false;
   mutable std::mutex init_mutex_;
 
-  // Route53 client
-  std::unique_ptr<Aws::Route53::Route53Client> route53_client_;
+  // Pluggable DNS backend
+  std::unique_ptr<dns::DnsProvider> provider_;
 
-  // Domain to hosted zone ID mapping
+  // Domain to backend zone ID mapping
   std::map<std::string, std::string> domain_to_zone_id_;
 
   // Thread management

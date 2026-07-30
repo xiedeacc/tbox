@@ -148,6 +148,31 @@ class ConfigManager {
   std::string AwsRegion() const { return base_config_.aws_region(); }
 
   /**
+   * @brief Get the configured DNS backend name.
+   * @return Backend name, or "route53" when unset.
+   */
+  std::string DnsProvider() const {
+    const std::string& provider = base_config_.dns_provider();
+    return provider.empty() ? "route53" : provider;
+  }
+
+  /**
+   * @brief Get Cloudflare API token.
+   * @return Cloudflare API token string.
+   */
+  std::string CloudflareApiToken() const {
+    return base_config_.cloudflare_api_token();
+  }
+
+  /**
+   * @brief Get Cloudflare zone ID.
+   * @return Cloudflare zone ID string, empty when it must be resolved.
+   */
+  std::string CloudflareZoneId() const {
+    return base_config_.cloudflare_zone_id();
+  }
+
+  /**
    * @brief Get monitor domains list.
    * @return Vector of monitor domain strings.
    */

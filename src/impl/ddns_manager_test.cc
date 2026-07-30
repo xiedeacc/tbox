@@ -9,6 +9,7 @@
 #include <thread>
 
 #include "gtest/gtest.h"
+#include "src/impl/dns/route53_provider.h"
 
 namespace tbox {
 namespace impl {
@@ -82,7 +83,7 @@ TEST_F(DDNSManagerTest, ConfigurationValues) {
   EXPECT_EQ(DDNSManager::kDnsTtl, 60);
   EXPECT_EQ(DDNSManager::kMaxBackoffSeconds, 3600);
   EXPECT_EQ(DDNSManager::kMinBackoffSeconds, 60);
-  EXPECT_STREQ(DDNSManager::kAwsRegion, "us-east-1");
+  EXPECT_STREQ(dns::Route53Provider::kDefaultRegion, "us-east-1");
 }
 
 TEST_F(DDNSManagerTest, BackoffConfiguration) {

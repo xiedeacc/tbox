@@ -15,6 +15,117 @@
 * 支持内存泄漏、内存破坏检测。
 * 支持自动代码风格检查。
 
+## DDNS 后端与 API Token
+
+DDNS 支持多个 DNS 托管后端，实现位于 `src/impl/dns/`，每个后端一个文件：
+
+| 后端 | 配置值 | 实现文件 |
+| --- | --- | --- |
+| Cloudflare | `cloudflare` | `src/impl/dns/cloudflare_provider.cc` |
+| AWS Route 53 | `route53` | `src/impl/dns/route53_provider.cc` |
+
+在 `conf/*.json` 中通过 `dns_provider` 选择后端，留空时默认为 `route53`。
+
+### Cloudflare API Token
+
+创建路径：
+
+```
+https://dash.cloudflare.com/profile/api-tokens
+```
+
+即 Cloudflare 控制台右上角头像 → **My Profile** → **API Tokens** → **Create Token**。
+
+创建步骤：
+
+1. 选择 **Create Custom Token**，填写便于识别的名称，例如 `tbox-ddns`。
+2. **Permissions** 选择 `Zone` → `DNS` → `Edit`。
+3. **Zone Resources** 选择 `Include` → `Specific zone`，逐个添加需要更新记录的域名。
+   仅授予实际需要的 zone，避免使用账号级全局权限。
+4. 可选：在 **Client IP Address Filtering** 中限制来源 IP；在 **TTL** 中设置有效期。
+5. 创建后 token 只显示一次，请立即保存。
+
+对应配置项：
+
+```json
+{
+    "dns_provider": "cloudflare",
+    "cloudflare_api_token": "<token>",
+    "cloudflare_zone_id": ""
+}
+```
+
+`cloudflare_zone_id` 留空时，程序会按域名逐级向上查询所属 zone，例如
+`home.example.com` 会自动定位到 `example.com`，查询结果会缓存。
+
+验证 token 是否可用：
+
+```sh
+curl -s -H "Authorization: Bearer <token>" \
+  https://api.cloudflare.com/client/v4/user/tokens/verify
+```
+
+### AWS Route 53 API Token
+
+Route 53 使用 IAM access key，创建路径：
+
+```
+https://console.aws.amazon.com/iam/home#/users
+```
+
+即 AWS 控制台 → **IAM** → **Users** → 选择用户 → **Security credentials** →
+**Create access key**。
+
+创建步骤：
+
+1. 新建或选择一个专用 IAM 用户，例如 `tbox-ddns`。
+2. 附加最小权限策略，仅允许操作目标 hosted zone：
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "route53:ListResourceRecordSets",
+                "route53:ChangeResourceRecordSets"
+            ],
+            "Resource": "arn:aws:route53:::hostedzone/<HOSTED_ZONE_ID>"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "route53:ListHostedZones",
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+3. 在 **Security credentials** 中创建 access key，secret 只显示一次。
+
+对应配置项：
+
+```json
+{
+    "dns_provider": "route53",
+    "route53_hosted_zone_id": "<HOSTED_ZONE_ID>",
+    "aws_access_key_id": "<access key id>",
+    "aws_secret_access_key": "<secret access key>",
+    "aws_region": "ap-southeast-1"
+}
+```
+
+`route53_hosted_zone_id` 留空时，程序会调用 `ListHostedZones` 按域名查找。
+`aws_access_key_id` 与 `aws_secret_access_key` 同时留空时，改用 AWS 默认凭证链
+（环境变量、`~/.aws/credentials`、实例角色等）。
+
+### 凭证注意事项
+
+* 配置文件中的凭证为明文，请确保文件权限为 `600` 且不要提交到版本库。
+* 迁移或停用某个后端后，及时到对应控制台吊销不再使用的 token 或 access key。
+* 泄露后立即吊销并重新创建，两个平台都不支持查看已创建凭证的原文。
+
 ## 后续事项
 
 1. compiler 使用 `@bazel_tools//tools/cpp:compiler`。
