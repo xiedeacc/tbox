@@ -1,0 +1,16 @@
+[Unit]
+Description=TBox AWS egress monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/sbin/tbox-egress-monitor.py --interval 10 --duration 604800 --out-dir /var/log/tbox-egress-monitor --top-n 2000 --max-identities 4000 --min-free-mb 64
+Restart=on-failure
+RestartSec=30
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+
+[Install]
+WantedBy=multi-user.target

@@ -32,6 +32,10 @@
   ],
   "ai": {
     "strictAdherence": true,
+    "projectRules": [
+      "When deploying to AWS, OpenWrt, and NAS, build/deploy AWS and OpenWrt first because both are aarch64 targets and can share cross-build cache. After those complete, build/deploy NAS.",
+      "Project rules must support both Codex and Claude Code. Keep AGENTS.md and CLAUDE.md in sync whenever project operating rules change."
+    ],
     "documentation": {
       "autoGenerate": false,
       "autoUpdate": false,

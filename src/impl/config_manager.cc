@@ -17,11 +17,10 @@ bool ConfigManager::Init(const std::string& base_config_path) {
   std::string content;
   Util::LoadSmallFile(base_config_path, &content);
   if (!Util::JsonToMessage(content, &base_config_)) {
-    LOG(ERROR) << "Parse base config error, path: " << base_config_path
-               << ", content: " << content;
+    LOG(ERROR) << "Parse base config error, path: " << base_config_path;
     return false;
   }
-  LOG(INFO) << "Base config: " << ToString();
+  LOG(INFO) << "Base config: " << ToRedactedString();
   return Validate();
 }
 

@@ -185,6 +185,39 @@ class ConfigManager {
   }
 
   /**
+   * @brief Get configured DDNS record types.
+   * @return Record type names; empty means both A and AAAA.
+   */
+  std::vector<std::string> DdnsRecordTypes() const {
+    std::vector<std::string> types;
+    for (const auto& type : base_config_.ddns_record_types()) {
+      types.push_back(type);
+    }
+    return types;
+  }
+
+  /**
+   * @brief Get embedded vlmcsd enable flag.
+   * @return true if vlmcsd should be started.
+   */
+  bool VlmcsdEnabled() const { return base_config_.vlmcsd_enabled(); }
+
+  /**
+   * @brief Get embedded vlmcsd listen addresses.
+   * @return Configured addresses, or 127.0.0.1 when enabled and unset.
+   */
+  std::vector<std::string> VlmcsdListenAddresses() const {
+    std::vector<std::string> addresses;
+    for (const auto& address : base_config_.vlmcsd_listen_addresses()) {
+      addresses.push_back(address);
+    }
+    if (addresses.empty() && base_config_.vlmcsd_enabled()) {
+      addresses.push_back("127.0.0.1");
+    }
+    return addresses;
+  }
+
+  /**
    * @brief Get certificate update flag.
    * @return true if certificate updates are enabled, false otherwise.
    */
@@ -215,6 +248,31 @@ class ConfigManager {
   std::string ToString() const {
     std::string json;
     Util::MessageToJson(base_config_, &json);
+    return json;
+  }
+
+  /**
+   * @brief Convert configuration to JSON with credentials redacted.
+   * @return JSON representation safe for application logs.
+   */
+  std::string ToRedactedString() const {
+    tbox::proto::BaseConfig redacted_config = base_config_;
+    constexpr char kRedacted[] = "[REDACTED]";
+    if (!redacted_config.password().empty()) {
+      redacted_config.set_password(kRedacted);
+    }
+    if (!redacted_config.aws_access_key_id().empty()) {
+      redacted_config.set_aws_access_key_id(kRedacted);
+    }
+    if (!redacted_config.aws_secret_access_key().empty()) {
+      redacted_config.set_aws_secret_access_key(kRedacted);
+    }
+    if (!redacted_config.cloudflare_api_token().empty()) {
+      redacted_config.set_cloudflare_api_token(kRedacted);
+    }
+
+    std::string json;
+    Util::MessageToJson(redacted_config, &json);
     return json;
   }
 

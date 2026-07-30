@@ -11,10 +11,15 @@ CONF_DIR="${INSTALL_DIR}/conf"
 DATA_DIR="${INSTALL_DIR}/data"
 LOG_DIR="${INSTALL_DIR}/logs"
 WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BAZEL_CONFIG="gcc_aarch64_linux_musl"
+BAZEL_TARGET="//src/client:tbox_client"
 LOCAL_BINARY="${WORKSPACE_ROOT}/bazel-bin/src/client/${BINARY_NAME}"
 
+cd "${WORKSPACE_ROOT}"
+bazel build --config="${BAZEL_CONFIG}" "${BAZEL_TARGET}"
+
 if [[ ! -x "${LOCAL_BINARY}" ]]; then
-    echo "Missing ${LOCAL_BINARY}; build --config=clang_aarch64_linux_musl //src/client:tbox_client before deploying." >&2
+    echo "Missing ${LOCAL_BINARY}; build --config=${BAZEL_CONFIG} ${BAZEL_TARGET} before deploying." >&2
     exit 1
 fi
 
@@ -25,7 +30,12 @@ TEMP_BINARY="$(mktemp /tmp/tbox_client.XXXXXX)"
 trap 'rm -f "${TEMP_BINARY}"' EXIT
 cp "${LOCAL_BINARY}" "${TEMP_BINARY}"
 if command -v llvm-strip >/dev/null 2>&1; then
-    llvm-strip "${TEMP_BINARY}"
+    llvm-strip --strip-unneeded "${TEMP_BINARY}"
+elif command -v aarch64-linux-gnu-strip >/dev/null 2>&1; then
+    aarch64-linux-gnu-strip --strip-unneeded "${TEMP_BINARY}"
+else
+    echo "No strip tool found for ${BINARY_NAME}; refusing to deploy an unstripped binary." >&2
+    exit 1
 fi
 
 scp "${TEMP_BINARY}" "${REMOTE}:${BIN_DIR}/${BINARY_NAME}.new"

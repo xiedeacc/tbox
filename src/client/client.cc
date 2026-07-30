@@ -10,6 +10,7 @@
 #include <cstring>
 #include <atomic>
 #include <condition_variable>
+#include <memory>
 #include <mutex>
 #include <thread>
 
@@ -17,6 +18,7 @@
 #include "src/client/grpc_client.h"
 // #include "src/client/websocket_client.h"  // WebSocket disabled for now
 #include "src/impl/config_manager.h"
+#include "src/impl/ddns_manager.h"
 #include "src/server/tcp_handler/vlmcsd_handler.h"
 
 namespace {
@@ -25,6 +27,7 @@ namespace {
 // tbox::client::WebSocketClient* websocket_client_ptr = nullptr;  // WebSocket
 // disabled
 tbox::client::GrpcClient* grpc_client_ptr = nullptr;
+tbox::impl::DDNSManager* ddns_manager_ptr = nullptr;
 tbox::server::tcp_handler::VlmcsdHandler* vlmcsd_handler_ptr = nullptr;
 
 std::atomic<bool>& ShutdownRequired() {
@@ -83,6 +86,10 @@ void ShutdownCheckingThread(void) {
     grpc_client_ptr->Stop();
     LOG(INFO) << "gRPC client stopped";
   }
+  if (ddns_manager_ptr && ddns_manager_ptr->IsRunning()) {
+    ddns_manager_ptr->Stop();
+    LOG(INFO) << "DDNS manager stopped";
+  }
   if (vlmcsd_handler_ptr) {
     vlmcsd_handler_ptr->Shutdown();
     LOG(INFO) << "vlmcsd TCP handler stopped";
@@ -136,12 +143,33 @@ int main(int argc, char** argv) {
 
   grpc_client.Start();
 
-  tbox::server::tcp_handler::VlmcsdHandler vlmcsd_handler(1688);
-  vlmcsd_handler_ptr = &vlmcsd_handler;
-  if (vlmcsd_handler.Start()) {
-    LOG(INFO) << "vlmcsd TCP handler started successfully";
+  if (!config_manager->MonitorDomains().empty()) {
+    auto ddns_manager = tbox::impl::DDNSManager::Instance();
+    if (ddns_manager->Init()) {
+      LOG(INFO) << "DDNS manager initialized";
+      ddns_manager_ptr = ddns_manager.get();
+      if (!ddns_manager->IsRunning()) {
+        ddns_manager->Start();
+        LOG(INFO) << "DDNS manager started";
+      }
+    } else {
+      LOG(WARNING)
+          << "Failed to initialize DDNS manager, continuing without it";
+    }
+  }
+
+  std::unique_ptr<tbox::server::tcp_handler::VlmcsdHandler> vlmcsd_handler;
+  if (config_manager->VlmcsdEnabled()) {
+    vlmcsd_handler = std::make_unique<tbox::server::tcp_handler::VlmcsdHandler>(
+        config_manager->VlmcsdListenAddresses(), 1688);
+    vlmcsd_handler_ptr = vlmcsd_handler.get();
+    if (vlmcsd_handler->Start()) {
+      LOG(INFO) << "vlmcsd TCP handler started successfully";
+    } else {
+      LOG(ERROR) << "Failed to start vlmcsd TCP handler";
+    }
   } else {
-    LOG(ERROR) << "Failed to start vlmcsd TCP handler";
+    LOG(INFO) << "vlmcsd TCP handler disabled by configuration";
   }
 
   LOG(INFO) << "Client running. Waiting for shutdown signal...";

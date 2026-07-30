@@ -544,6 +544,7 @@ new_git_repository(
     name = "vlmcsd",
     build_file = "//bazel:vlmcsd.BUILD",
     commit = "70e03572b254688b8c3557f898e7ebd765d29ae1",
+    patch_args = ["-p1"],
     patch_cmds = [
         "mv src/rpc.h src/vlmcsd_rpc.h",
         "perl -pi -e 's/\"rpc\\.h\"/\"vlmcsd_rpc.h\"/g' src/*.c src/*.h",
@@ -552,6 +553,7 @@ new_git_repository(
         "Move-Item -Force src/rpc.h src/vlmcsd_rpc.h",
         "$files = Get-ChildItem -Path src -Include *.c,*.h -Recurse; foreach ($file in $files) { (Get-Content -Raw $file.FullName) -replace 'rpc\\.h','vlmcsd_rpc.h' | Set-Content -NoNewline -Encoding ascii $file.FullName }",
     ],
+    patches = ["//bazel:vlmcsd_listen_address.patch"],
     remote = "https://github.com/Wind4/vlmcsd.git",
 )
 

@@ -49,4 +49,12 @@ message BaseConfig {
   // querying the Cloudflare API for the domain's registrable name.
   string cloudflare_api_token = 23;
   string cloudflare_zone_id = 24;
+
+  // DNS record types to maintain for monitor_domains. Empty means both A and
+  // AAAA. Supported values are "A" and "AAAA".
+  repeated string ddns_record_types = 25;
+
+  // Embedded vlmcsd TCP server settings.
+  bool vlmcsd_enabled = 26;
+  repeated string vlmcsd_listen_addresses = 27;
 }

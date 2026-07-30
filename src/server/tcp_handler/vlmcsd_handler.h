@@ -8,7 +8,9 @@
 
 #include <atomic>
 #include <cstdint>
+#include <string>
 #include <thread>
+#include <vector>
 
 namespace tbox {
 namespace server {
@@ -17,6 +19,8 @@ namespace tcp_handler {
 class VlmcsdHandler {
  public:
   explicit VlmcsdHandler(uint16_t port = 1688);
+  VlmcsdHandler(std::vector<std::string> listen_addresses,
+                uint16_t port = 1688);
   VlmcsdHandler(const VlmcsdHandler&) = delete;
   VlmcsdHandler& operator=(const VlmcsdHandler&) = delete;
   ~VlmcsdHandler();
@@ -25,6 +29,7 @@ class VlmcsdHandler {
   void Shutdown();
 
  private:
+  std::vector<std::string> listen_addresses_;
   uint16_t port_;
   std::atomic_bool running_{false};
   std::thread server_thread_;

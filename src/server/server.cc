@@ -6,6 +6,7 @@
 #include <signal.h>
 
 #include <cstdlib>
+#include <memory>
 
 #include "folly/init/Init.h"
 #include "gflags/gflags.h"
@@ -166,12 +167,19 @@ int main(int argc, char** argv) {
   tbox::server::HttpServer http_server(server_context);
   ::http_server_ptr = &http_server;
 
-  tbox::server::tcp_handler::VlmcsdHandler vlmcsd_handler(1688);
-  ::vlmcsd_handler_ptr = &vlmcsd_handler;
-  if (vlmcsd_handler.Start()) {
-    LOG(INFO) << "vlmcsd TCP handler started successfully";
+  auto config_manager = tbox::util::ConfigManager::Instance();
+  std::unique_ptr<tbox::server::tcp_handler::VlmcsdHandler> vlmcsd_handler;
+  if (config_manager->VlmcsdEnabled()) {
+    vlmcsd_handler = std::make_unique<tbox::server::tcp_handler::VlmcsdHandler>(
+        config_manager->VlmcsdListenAddresses(), 1688);
+    ::vlmcsd_handler_ptr = vlmcsd_handler.get();
+    if (vlmcsd_handler->Start()) {
+      LOG(INFO) << "vlmcsd TCP handler started successfully";
+    } else {
+      LOG(ERROR) << "Failed to start vlmcsd TCP handler";
+    }
   } else {
-    LOG(ERROR) << "Failed to start vlmcsd TCP handler";
+    LOG(INFO) << "vlmcsd TCP handler disabled by configuration";
   }
 
   LOG(INFO) << "Starting HTTP server on "

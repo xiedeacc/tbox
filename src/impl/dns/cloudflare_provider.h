@@ -6,6 +6,7 @@
 #ifndef TBOX_IMPL_DNS_CLOUDFLARE_PROVIDER_H_
 #define TBOX_IMPL_DNS_CLOUDFLARE_PROVIDER_H_
 
+#include <cstdint>
 #include <map>
 #include <string>
 #include <vector>

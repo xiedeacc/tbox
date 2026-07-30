@@ -4,7 +4,6 @@ load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_DEFINES", "GLOBAL_LINKOP
 package(default_visibility = ["//visibility:public"])
 
 VLMCSD_DEFINES = [
-    "SIMPLE_SOCKETS",
     "NO_TIMEOUT",
     "NO_SIGHUP",
     "NO_CL_PIDS",

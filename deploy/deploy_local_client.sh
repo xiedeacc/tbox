@@ -56,7 +56,7 @@ if [[ $EUID -ne 0 ]]; then
     TEMP_BINARY="/tmp/tbox_client_$$"
     cp bazel-bin/src/client/tbox_client ${TEMP_BINARY}
     chmod +w ${TEMP_BINARY}
-    if strip ${TEMP_BINARY}; then
+    if strip --strip-unneeded ${TEMP_BINARY}; then
         BINARY_SIZE=$(ls -lh ${TEMP_BINARY} | awk '{print $5}')
         print_success "Binary stripped successfully (size: ${BINARY_SIZE})"
     else

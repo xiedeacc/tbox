@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cctype>
 #include <memory>
 #include <string>
 #include <thread>
@@ -45,6 +46,20 @@ bool DDNSManager::Init() {
   auto config_manager = util::ConfigManager::Instance();
   monitor_domains_ = config_manager->MonitorDomains();
   check_interval_seconds_ = config_manager->CheckIntervalSeconds();
+  record_types_.clear();
+  for (std::string type : config_manager->DdnsRecordTypes()) {
+    std::transform(type.begin(), type.end(), type.begin(),
+                   [](unsigned char ch) { return std::toupper(ch); });
+    if (type == "A" || type == "AAAA") {
+      record_types_.insert(type);
+    } else {
+      LOG(WARNING) << "Ignoring unsupported DDNS record type: " << type;
+    }
+  }
+  if (record_types_.empty()) {
+    record_types_.insert("A");
+    record_types_.insert("AAAA");
+  }
 
   if (monitor_domains_.empty()) {
     LOG(WARNING) << "No monitor domains configured";
@@ -194,9 +209,22 @@ bool DDNSManager::ReconcileRecord(const std::string& zone_id,
   }
 
   if (records.empty()) {
-    log_buffer->push_back(std::string("No ") + type_name + " records for " +
-                          domain + " - skipping");
-    return true;
+    if (desired.empty()) {
+      log_buffer->push_back(std::string("No ") + type_name + " records for " +
+                            domain + " and no target address - skipping");
+      return true;
+    }
+
+    *updated = true;
+    if (provider_->UpsertRecord(zone_id, domain, type, desired, kDnsTtl)) {
+      log_buffer->push_back(std::string(type_name) + " record for " + domain +
+                            " created successfully -> " + desired);
+      return true;
+    }
+
+    log_buffer->push_back(std::string("Failed to create ") + type_name +
+                          " record for " + domain);
+    return false;
   }
 
   bool all_success = true;
@@ -256,36 +284,41 @@ bool DDNSManager::UpdateDNS() {
 
   // Buffer all log messages for atomic output
   std::vector<std::string> log_buffer;
-  log_buffer.push_back("=== Checking IPv4 and IPv6 DNS Records ===");
+  log_buffer.push_back("=== Checking DNS Records ===");
 
   // Get current public IPv4 address from external service
-  std::string public_ipv4 = GetPublicIPv4();
-  if (!public_ipv4.empty()) {
-    log_buffer.push_back("Current public IPv4 address: " + public_ipv4);
-  } else {
-    log_buffer.push_back("Failed to get public IPv4 address");
+  std::string public_ipv4;
+  if (record_types_.contains("A")) {
+    public_ipv4 = GetPublicIPv4();
+    if (!public_ipv4.empty()) {
+      log_buffer.push_back("Current public IPv4 address: " + public_ipv4);
+    } else {
+      log_buffer.push_back("Failed to get public IPv4 address");
+    }
   }
 
   // Get current public IPv6 addresses, sorted by longest prefix.
-  auto public_ipv6s = util::Util::GetPublicIPv6Addresses();
   std::string primary_ipv6;
-  for (const auto& ipv6 : public_ipv6s) {
-    if (!IsPrivateIP(ipv6)) {
-      primary_ipv6 = ipv6;
-      break;
-    }
-  }
-  if (!public_ipv6s.empty()) {
-    std::string ipv6_list;
-    for (size_t i = 0; i < public_ipv6s.size(); ++i) {
-      if (i > 0) {
-        ipv6_list += ", ";
+  if (record_types_.contains("AAAA")) {
+    auto public_ipv6s = util::Util::GetPublicIPv6Addresses();
+    for (const auto& ipv6 : public_ipv6s) {
+      if (!IsPrivateIP(ipv6)) {
+        primary_ipv6 = ipv6;
+        break;
       }
-      ipv6_list += public_ipv6s[i];
     }
-    log_buffer.push_back("Current public IPv6 addresses: " + ipv6_list);
-  } else {
-    log_buffer.push_back("No public IPv6 addresses found");
+    if (!public_ipv6s.empty()) {
+      std::string ipv6_list;
+      for (size_t i = 0; i < public_ipv6s.size(); ++i) {
+        if (i > 0) {
+          ipv6_list += ", ";
+        }
+        ipv6_list += public_ipv6s[i];
+      }
+      log_buffer.push_back("Current public IPv6 addresses: " + ipv6_list);
+    } else {
+      log_buffer.push_back("No public IPv6 addresses found");
+    }
   }
 
   bool all_success = true;
@@ -293,11 +326,13 @@ bool DDNSManager::UpdateDNS() {
   for (const auto& [domain, zone_id] : domain_to_zone_id_) {
     log_buffer.push_back("Checking domain: " + domain);
 
-    if (!ReconcileRecord(zone_id, domain, dns::RecordType::kA, public_ipv4,
+    if (record_types_.contains("A") &&
+        !ReconcileRecord(zone_id, domain, dns::RecordType::kA, public_ipv4,
                          &log_buffer, &any_updates_needed)) {
       all_success = false;
     }
-    if (!ReconcileRecord(zone_id, domain, dns::RecordType::kAAAA, primary_ipv6,
+    if (record_types_.contains("AAAA") &&
+        !ReconcileRecord(zone_id, domain, dns::RecordType::kAAAA, primary_ipv6,
                          &log_buffer, &any_updates_needed)) {
       all_success = false;
     }

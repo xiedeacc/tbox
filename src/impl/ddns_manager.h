@@ -11,6 +11,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <string>
 #include <thread>
 #include <vector>
@@ -94,6 +95,7 @@ class DDNSManager final {
 
   // State
   std::vector<std::string> monitor_domains_;
+  std::set<std::string> record_types_;
   bool initialized_ = false;
   mutable std::mutex init_mutex_;
 

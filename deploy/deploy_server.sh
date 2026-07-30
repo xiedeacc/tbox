@@ -10,10 +10,15 @@ BIN_DIR="${INSTALL_DIR}/bin"
 CONF_DIR="${INSTALL_DIR}/conf"
 LOG_DIR="${INSTALL_DIR}/logs"
 WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BAZEL_CONFIG="gcc_aarch64_linux_musl"
+BAZEL_TARGET="//src/server:tbox_server"
 LOCAL_BINARY="${WORKSPACE_ROOT}/bazel-bin/src/server/${BINARY_NAME}"
 
+cd "${WORKSPACE_ROOT}"
+bazel build --config="${BAZEL_CONFIG}" "${BAZEL_TARGET}"
+
 if [[ ! -x "${LOCAL_BINARY}" ]]; then
-    echo "Missing ${LOCAL_BINARY}; build --config=gcc_aarch64_linux_musl //src/server:tbox_server before deploying." >&2
+    echo "Missing ${LOCAL_BINARY}; build --config=${BAZEL_CONFIG} ${BAZEL_TARGET} before deploying." >&2
     exit 1
 fi
 
@@ -25,18 +30,24 @@ TEMP_BINARY="$(mktemp /tmp/tbox_server.XXXXXX)"
 trap 'rm -f "${TEMP_BINARY}"' EXIT
 cp "${LOCAL_BINARY}" "${TEMP_BINARY}"
 if command -v llvm-strip >/dev/null 2>&1; then
-    llvm-strip "${TEMP_BINARY}"
+    llvm-strip --strip-unneeded "${TEMP_BINARY}"
+elif command -v aarch64-linux-gnu-strip >/dev/null 2>&1; then
+    aarch64-linux-gnu-strip --strip-unneeded "${TEMP_BINARY}"
+else
+    echo "No strip tool found for ${BINARY_NAME}; refusing to deploy an unstripped binary." >&2
+    exit 1
 fi
 
-ssh "${REMOTE}" "systemctl stop ${SERVICE_NAME}"
 scp "${TEMP_BINARY}" "${REMOTE}:${BIN_DIR}/${BINARY_NAME}.new"
-ssh "${REMOTE}" "chmod 755 ${BIN_DIR}/${BINARY_NAME}.new && mv -f ${BIN_DIR}/${BINARY_NAME}.new ${BIN_DIR}/${BINARY_NAME}"
 
 SERVICE_USER="$(ssh "${REMOTE}" "systemctl show -p User --value ${SERVICE_NAME}")"
 if [[ -n "${SERVICE_USER}" ]]; then
-    ssh "${REMOTE}" "chown ${SERVICE_USER}:${SERVICE_USER} ${BIN_DIR}/${BINARY_NAME} ${LOG_DIR}"
+    ssh "${REMOTE}" "chown ${SERVICE_USER}:${SERVICE_USER} ${BIN_DIR}/${BINARY_NAME}.new ${LOG_DIR}"
 fi
 
+ssh "${REMOTE}" "chmod 755 ${BIN_DIR}/${BINARY_NAME}.new"
+ssh "${REMOTE}" "systemctl stop ${SERVICE_NAME}"
+ssh "${REMOTE}" "mv -f ${BIN_DIR}/${BINARY_NAME}.new ${BIN_DIR}/${BINARY_NAME}"
 ssh "${REMOTE}" "systemctl restart ${SERVICE_NAME}"
 ssh "${REMOTE}" "systemctl is-active --quiet ${SERVICE_NAME}"
 echo "Deployed ${BINARY_NAME} to ${REMOTE}:${BIN_DIR}/${BINARY_NAME}"
