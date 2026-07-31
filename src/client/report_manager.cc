@@ -178,6 +178,19 @@ bool ReportManager::ReportClientIP() {
     client_ips.push_back(public_ipv6);
   }
 
+  // A client can connect to the server over IPv4 while still owning globally
+  // routable IPv6 addresses. Report those addresses for server-side AAAA
+  // updates, but do not use them for local vlmcsd listeners.
+  const std::vector<std::string> local_public_ipv6s =
+      util::Util::GetPublicIPv6Addresses();
+  for (const auto& address : local_public_ipv6s) {
+    if (std::find(client_ips.begin(), client_ips.end(), address) ==
+        client_ips.end()) {
+      client_ips.push_back(address);
+      log_buffer.push_back("Using actual public IPv6: " + address);
+    }
+  }
+
   // First, try to find local IPs that match public IPs (direct connection case)
   for (const auto& local_ip : all_local_ips) {
     if ((!public_ipv4.empty() && local_ip == public_ipv4) ||
@@ -196,14 +209,6 @@ bool ReportManager::ReportClientIP() {
   if (client_ips.empty()) {
     log_buffer.push_back(
         "No local IPs match server-detected public IPs (NAT scenario)");
-
-    // Get actual public IPv6 addresses from local interfaces
-    std::vector<std::string> public_ipv6_addrs =
-        util::Util::GetPublicIPv6Addresses();
-    for (const auto& addr : public_ipv6_addrs) {
-      client_ips.push_back(addr);
-      log_buffer.push_back("Using actual public IPv6: " + addr);
-    }
 
     // If still no public IPs found, fall back to best available local IPs
     if (client_ips.empty()) {
