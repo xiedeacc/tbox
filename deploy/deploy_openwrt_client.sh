@@ -55,7 +55,7 @@ ssh "${REMOTE}" "chmod 755 ${BIN_DIR}/${BINARY_NAME}.new /etc/init.d/${SERVICE_N
 
 ssh "${REMOTE}" "for ca_source in /etc/ssl/certs/ca-certificates.crt /etc/ssl/cert.pem; do if test -s \"\${ca_source}\"; then cp -f \"\${ca_source}\" ${CONF_DIR}/ca-bundle.pem && chmod 644 ${CONF_DIR}/ca-bundle.pem && exit 0; fi; done; echo 'No system CA bundle found on OpenWrt' >&2; exit 1"
 ssh "${REMOTE}" "rm -f ${CONF_DIR}/xiedeacc.com.ca.cer"
-ssh "${REMOTE}" "find ${LOG_DIR} -maxdepth 1 -type f -name 'tbox_client*.log*' -delete"
+ssh "${REMOTE}" "rm -f ${LOG_DIR}/tbox_client*.log*"
 
 ssh "${REMOTE}" "/etc/init.d/${SERVICE_NAME} enable && /etc/init.d/${SERVICE_NAME} restart"
 sleep 2

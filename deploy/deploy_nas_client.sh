@@ -56,7 +56,7 @@ if [[ -n "${SERVICE_USER}" ]]; then
 fi
 
 ssh "${REMOTE}" "systemctl stop ${SERVICE_NAME}"
-ssh "${REMOTE}" "find ${LOG_DIR} -maxdepth 1 -type f -name 'tbox_client*.log*' -delete"
+ssh "${REMOTE}" "rm -f ${LOG_DIR}/tbox_client*.log*"
 ssh "${REMOTE}" "systemctl restart ${SERVICE_NAME}"
 ssh "${REMOTE}" "systemctl is-active --quiet ${SERVICE_NAME}"
 echo "Deployed ${BINARY_NAME} to ${REMOTE}:${BIN_DIR}/${BINARY_NAME}"
