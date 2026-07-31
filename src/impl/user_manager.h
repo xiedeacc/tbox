@@ -14,7 +14,6 @@
 #include <string>
 #include <unordered_map>
 
-#include "openssl/rand.h"
 #include "sqlite3.h"
 #include "src/common/ssh_key_auth.h"
 #include "src/common/logging.h"
@@ -79,8 +78,7 @@ class UserManager final {
     }
 
     std::string nonce(32, '\0');
-    if (RAND_bytes(reinterpret_cast<unsigned char*>(nonce.data()),
-                   static_cast<int>(nonce.size())) != 1) {
+    if (!util::Util::FillSecureRandomBytes(&nonce)) {
       return Err_User_login_error;
     }
     const std::string id = util::Util::UUID();

@@ -7,7 +7,6 @@
 
 #include <chrono>
 
-#include "openssl/rand.h"
 #include "src/common/ssh_key_auth.h"
 #include "src/impl/config_manager.h"
 #include "src/util/util.h"
@@ -35,8 +34,7 @@ bool AuthenticationManager::Login() {
 
   auto config = tbox::util::ConfigManager::Instance();
   std::string client_nonce(32, '\0');
-  if (RAND_bytes(reinterpret_cast<unsigned char*>(client_nonce.data()),
-                 static_cast<int>(client_nonce.size())) != 1) {
+  if (!util::Util::FillSecureRandomBytes(&client_nonce)) {
     LOG(ERROR) << "Failed to generate login nonce";
     return false;
   }

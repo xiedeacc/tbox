@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <fstream>
 #include <ios>
+#include <limits>
 #include <mutex>
 #include <random>
 #include <set>
@@ -298,6 +299,15 @@ void Util::Split(const string& str, const string& delim,
 string Util::UUID() {
   boost::uuids::random_generator generator;
   return boost::uuids::to_string(generator());
+}
+
+bool Util::FillSecureRandomBytes(std::string* output) {
+  if (output == nullptr || output->empty() ||
+      output->size() > static_cast<size_t>(std::numeric_limits<int>::max())) {
+    return false;
+  }
+  return RAND_bytes(reinterpret_cast<unsigned char*>(output->data()),
+                    static_cast<int>(output->size())) == 1;
 }
 
 string Util::ToHexStr(const uint64_t in, const bool use_upper_case) {

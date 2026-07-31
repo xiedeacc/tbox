@@ -139,7 +139,6 @@ cc_library(
         "//src/util",
         "@folly",
         "@folly//:common",
-        "@openssl",
         "@sqlite",
     ],
 )

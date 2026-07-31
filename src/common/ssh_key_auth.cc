@@ -11,7 +11,6 @@
 #include <sstream>
 #include <string_view>
 
-#include "openssl/crypto.h"
 #include "src/util/util.h"
 
 namespace tbox {
@@ -40,6 +39,15 @@ bool ReadFile(const std::string& path, std::string* content) {
 
 constexpr size_t kSha256Bytes = 32;
 constexpr size_t kSha256BlockBytes = 64;
+
+void SecureClear(std::string* value) {
+  volatile unsigned char* bytes =
+      reinterpret_cast<volatile unsigned char*>(value->data());
+  for (size_t i = 0; i < value->size(); ++i) {
+    bytes[i] = 0;
+  }
+  value->clear();
+}
 
 bool ConstantTimeEqual(const void* left, const void* right, size_t length) {
   const auto* left_bytes = static_cast<const unsigned char*>(left);
@@ -101,7 +109,7 @@ bool CreateProof(const std::string& private_key_path,
   }
   if (!ReadFile(expanded_public_path, &public_file)) {
     if (!private_file.empty()) {
-      OPENSSL_cleanse(private_file.data(), private_file.size());
+      SecureClear(&private_file);
     }
     return false;
   }
@@ -111,7 +119,7 @@ bool CreateProof(const std::string& private_key_path,
   std::string encoded_public_key;
   public_stream >> key_type >> encoded_public_key;
   if (key_type != "ssh-ed25519" || encoded_public_key.empty()) {
-    OPENSSL_cleanse(private_file.data(), private_file.size());
+    SecureClear(&private_file);
     return false;
   }
   std::string key_material = private_file;
@@ -119,8 +127,8 @@ bool CreateProof(const std::string& private_key_path,
   AppendString(encoded_public_key, &key_material);
   std::string hmac_key;
   if (!Sha256Raw(key_material, &hmac_key)) {
-    OPENSSL_cleanse(private_file.data(), private_file.size());
-    OPENSSL_cleanse(key_material.data(), key_material.size());
+    SecureClear(&private_file);
+    SecureClear(&key_material);
     return false;
   }
   hmac_key.resize(kSha256BlockBytes, '\0');
@@ -139,13 +147,13 @@ bool CreateProof(const std::string& private_key_path,
       Sha256Raw(inner_pad + proof_input, &inner_hash) &&
       Sha256Raw(outer_pad + inner_hash, proof);
 
-  OPENSSL_cleanse(private_file.data(), private_file.size());
-  OPENSSL_cleanse(key_material.data(), key_material.size());
-  OPENSSL_cleanse(hmac_key.data(), hmac_key.size());
-  OPENSSL_cleanse(inner_pad.data(), inner_pad.size());
-  OPENSSL_cleanse(outer_pad.data(), outer_pad.size());
+  SecureClear(&private_file);
+  SecureClear(&key_material);
+  SecureClear(&hmac_key);
+  SecureClear(&inner_pad);
+  SecureClear(&outer_pad);
   if (!inner_hash.empty()) {
-    OPENSSL_cleanse(inner_hash.data(), inner_hash.size());
+    SecureClear(&inner_hash);
   }
   return result;
 }
@@ -162,7 +170,7 @@ bool VerifyProof(const std::string& private_key_path,
                         ConstantTimeEqual(proof.data(), expected.data(),
                                           expected.size());
   if (!expected.empty()) {
-    OPENSSL_cleanse(expected.data(), expected.size());
+    SecureClear(&expected);
   }
   return verified;
 }

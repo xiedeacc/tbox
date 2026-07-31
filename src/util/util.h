@@ -61,6 +61,10 @@ class Util final {
   static bool LoadSmallFile(const std::string& path, std::string* content);
 
   static std::string UUID();
+
+  /// @brief Fill an existing string buffer with cryptographically secure
+  /// random bytes.
+  static bool FillSecureRandomBytes(std::string* output);
   static std::string ToUpper(const std::string& str);
 
   static std::string ToLower(const std::string& str);
