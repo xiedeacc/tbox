@@ -100,32 +100,18 @@ def get_git_version(git_base_path):
                 str("--work-tree=%s" % git_base_path), "rev-parse", "HEAD"
             ]).strip())
 
-        # Check if workspace is dirty (has uncommitted changes)
-        try:
-            # Refresh cached stat information first. Build and package-manager
-            # commands can update mtimes without changing file contents;
-            # diff-index alone would incorrectly label that tree as dirty.
-            subprocess.run([
-                "git",
-                str("--git-dir=%s.git" % git_base_path),
-                str("--work-tree=%s" % git_base_path),
-                "update-index", "-q", "--refresh"
-            ], check=False, stdout=subprocess.DEVNULL,
-               stderr=subprocess.DEVNULL)
-            subprocess.check_output([
-                "git",
-                str("--git-dir=%s.git" % git_base_path),
-                str("--work-tree=%s" % git_base_path),
-                "diff-index", "--quiet", "HEAD", "--"
-            ])
-            # No uncommitted changes
+        # `git status` refreshes cached stat information before comparing file
+        # contents. This avoids false dirty results after a build merely
+        # updates mtimes, while still detecting staged and unstaged changes.
+        status = subprocess.check_output([
+            "git",
+            str("--git-dir=%s.git" % git_base_path),
+            str("--work-tree=%s" % git_base_path),
+            "status", "--porcelain", "--untracked-files=no"
+        ]).strip()
+        if not status:
             return val if val else unknown_label
-        except subprocess.CalledProcessError:
-            # Workspace has uncommitted changes, append "-dirty"
-            if val:
-                return val + b"-dirty"
-            else:
-                return b"unknown-dirty"
+        return val + b"-dirty" if val else b"unknown-dirty"
 
     except (subprocess.CalledProcessError, OSError) as e:
         print("git command failed: %s" % str(e))
