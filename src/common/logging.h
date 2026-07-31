@@ -23,7 +23,8 @@ enum class Severity {
 };
 
 void Initialize(const std::string& program_name,
-                const std::string& log_dir = "./logs");
+                const std::string& log_dir = "./logs",
+                bool write_logs = true);
 void Shutdown();
 std::string CommandLine(int argc, char** argv);
 

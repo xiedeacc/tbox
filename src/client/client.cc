@@ -6,6 +6,7 @@
 // #include "gperftools/profiler.h"
 
 #include <csignal>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <atomic>
@@ -114,18 +115,22 @@ int main(int argc, char** argv) {
   if (!log_dir) {
     log_dir = std::getenv("GLOG_log_dir");
   }
-  tbox::logging::Initialize(argv[0], log_dir ? log_dir : "./logs");
+  const std::string selected_log_dir = log_dir ? log_dir : "./logs";
+
+  // Start silently until configuration selects whether logging is allowed.
+  tbox::logging::Initialize(argv[0], selected_log_dir, false);
+  auto config_manager = tbox::util::ConfigManager::Instance();
+  if (!config_manager->Init("./conf/client_config.json")) {
+    std::fprintf(stderr, "Failed to initialize ./conf/client_config.json\n");
+    tbox::logging::Shutdown();
+    return 1;
+  }
+  tbox::logging::Initialize(argv[0], selected_log_dir,
+                            config_manager->WriteLogs());
 
   LOG(INFO) << "Client initializing ...";
   LOG(INFO) << "CommandLine: " << tbox::logging::CommandLine(argc, argv);
 
-  // Initialize configuration
-  auto config_manager = tbox::util::ConfigManager::Instance();
-  if (!config_manager->Init("./conf/client_config.json")) {
-    LOG(FATAL) << "Failed to initialize configuration from "
-               << "./conf/client_config.json";
-    return 1;
-  }
   LOG(INFO) << "Configuration initialized successfully";
 
   RegisterSignalHandler();

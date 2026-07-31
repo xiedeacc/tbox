@@ -69,4 +69,8 @@ message BaseConfig {
 
   // Certificate source (server) or destination (client) directory.
   string certificate_path = 32;
+
+  // Enable application logging. When false, no console or file logs are
+  // emitted. Servers enable it; clients disable it.
+  bool write_logs = 33;
 }

@@ -1,4 +1,4 @@
-load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
 load("//bazel:cpplint.bzl", "cpplint")
 load("//bazel:pb_code_gen_plugin.bzl", "cc_proto_plugin")
@@ -24,6 +24,17 @@ cc_library(
     local_defines = LOCAL_DEFINES,
     deps = [
         "@spdlog",
+    ],
+)
+
+cc_test(
+    name = "logging_test",
+    srcs = ["logging_test.cc"],
+    copts = COPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        ":logging",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 

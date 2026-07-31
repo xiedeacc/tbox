@@ -137,6 +137,7 @@ python3 "${WORKSPACE_ROOT}/deploy/prepare_config.py" client \
     --host other
 cp "${TEMP_CONFIG}" ${CONF_DIR}/client_config.json
 rm -f "${TEMP_CONFIG}"
+find "${LOG_DIR}" -maxdepth 1 -type f -name 'tbox_client*.log*' -delete
 print_success "Configuration file installed"
 
 # Set ownership and permissions

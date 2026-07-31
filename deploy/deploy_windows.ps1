@@ -31,7 +31,6 @@ $binary = Join-Path $binDir "tbox_client.exe"
 $launcher = Join-Path $binDir "run_tbox_client.cmd"
 $config = Join-Path $confDir "client_config.json"
 $caBundleFile = Join-Path $confDir "ca-bundle.pem"
-$logFile = Join-Path $logDir "console.log"
 $bazelTarget = "//src/client:tbox_client"
 
 Push-Location $workspaceRoot
@@ -70,6 +69,12 @@ Get-CimInstance Win32_Process -Filter "Name = 'tbox_client.exe'" |
             -Timeout 10 `
             -ErrorAction SilentlyContinue
     }
+
+Get-ChildItem -LiteralPath $logDir -File -ErrorAction SilentlyContinue |
+    Where-Object {
+        $_.Name -eq "console.log" -or $_.Name -like "tbox_client*.log*"
+    } |
+    Remove-Item -Force
 
 $newBinary = "$binary.new"
 Copy-Item -LiteralPath $sourceBinary -Destination $newBinary -Force
@@ -147,10 +152,11 @@ Set-ConfigValue $clientConfig "ssh_private_key_path" `
     (Join-Path $HOME ".ssh\id_ed25519")
 Set-ConfigValue $clientConfig "ssh_public_key_path" `
     (Join-Path $HOME ".ssh\id_ed25519.pub")
-Set-ConfigValue $clientConfig "client_id" `
-    ("windows-" + $env:COMPUTERNAME.ToLowerInvariant())
+$deployedClientId = "windows-" + $env:COMPUTERNAME.ToLowerInvariant()
+Set-ConfigValue $clientConfig "client_id" $deployedClientId
 Set-ConfigValue $clientConfig "server_addr" $ServerAddr
 Set-ConfigValue $clientConfig "grpc_server_port" $GrpcServerPort
+Set-ConfigValue $clientConfig "write_logs" $false
 $vlmcsdAddresses = [Collections.Generic.HashSet[string]]::new(
     [StringComparer]::OrdinalIgnoreCase
 )
@@ -197,7 +203,6 @@ $launcherLines = @(
     "@echo off",
     "setlocal",
     "cd /d `"$InstallDir`"",
-    "set `"TBOX_LOG_DIR=$logDir`"",
     "set `"ALL_PROXY=`"",
     "set `"HTTP_PROXY=`"",
     "set `"HTTPS_PROXY=`"",
@@ -208,7 +213,7 @@ $launcherLines = @(
     "set `"http_proxy=`"",
     "set `"https_proxy=`"",
     "set `"grpc_proxy=`"",
-    "`"$binary`" >> `"$logFile`" 2>&1"
+    "`"$binary`" > NUL 2>&1"
 )
 [IO.File]::WriteAllLines(
     $launcher,
@@ -270,48 +275,20 @@ if ($isAdmin) {
     )
 }
 
-$logStartBytes = 0L
-if (Test-Path -LiteralPath $logFile -PathType Leaf) {
-    $logStartBytes = (Get-Item -LiteralPath $logFile).Length
-}
-
-function Get-NewLogText {
-    if (-not (Test-Path -LiteralPath $logFile -PathType Leaf)) {
-        return ""
-    }
-
-    $stream = [IO.FileStream]::new(
-        $logFile,
-        [IO.FileMode]::Open,
-        [IO.FileAccess]::Read,
-        [IO.FileShare]::ReadWrite
-    )
-    try {
-        $offset = [Math]::Min($logStartBytes, $stream.Length)
-        [void]$stream.Seek($offset, [IO.SeekOrigin]::Begin)
-        $remaining = [int]($stream.Length - $offset)
-        if ($remaining -le 0) {
-            return ""
-        }
-        $buffer = [byte[]]::new($remaining)
-        $read = $stream.Read($buffer, 0, $remaining)
-        return [Text.Encoding]::UTF8.GetString($buffer, 0, $read)
-    } finally {
-        $stream.Dispose()
-    }
-}
-
-function Wait-ForLogText {
-    param(
-        [Parameter(Mandatory)]
-        [string]$Text,
-        [int]$TimeoutSeconds = 30
-    )
-
+function Wait-ForClientReport {
+    param([int]$TimeoutSeconds = 45)
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ((Get-Date) -lt $deadline) {
-        if ((Get-NewLogText).Contains($Text)) {
-            return $true
+        try {
+            $status = Invoke-RestMethod `
+                -Method Get `
+                -Uri "$($ServerAddr.TrimEnd('/'))/server" `
+                -TimeoutSec 5
+            if ($null -ne $status.registered_clients.PSObject.Properties[$deployedClientId]) {
+                return $true
+            }
+        } catch {
+            Write-Verbose "Waiting for server status: $($_.Exception.Message)"
         }
         Start-Sleep -Seconds 2
     }
@@ -334,30 +311,17 @@ $processes = Get-CimInstance `
     }
 
 if (-not $processes) {
-    (Get-NewLogText) -split "\r?\n" |
-        Select-Object -Last 40 |
-        Write-Host
     throw "Deployed tbox_client did not remain running."
 }
 
-Write-Host "Waiting for client login..."
-if (-not (Wait-ForLogText -Text "Login successful")) {
-    (Get-NewLogText) -split "\r?\n" |
-        Select-Object -Last 40 |
-        Write-Host
-    throw "Client did not log in within 30 seconds."
-}
-
 Write-Host "Waiting for client IP report..."
-if (-not (Wait-ForLogText -Text "Successfully reported client IP")) {
-    (Get-NewLogText) -split "\r?\n" |
-        Select-Object -Last 40 |
-        Write-Host
-    throw "Client did not report its IP within 30 seconds."
+if (-not (Wait-ForClientReport)) {
+    throw "Client did not report its IP within 45 seconds."
 }
 
 Write-Host "Deployed client: $binary"
 Write-Host "Configuration: $config"
+Write-Host "Logging: disabled by client configuration"
 Write-Host "Platform CA bundle: $caBundleFile"
 Write-Host "Data directory: $dataDir"
 Write-Host "Log directory: $logDir"

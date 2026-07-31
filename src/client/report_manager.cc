@@ -303,7 +303,8 @@ bool ReportManager::ReportClientIP() {
     grpc::Status status;
     bool success = client.Write(request, &status);
 
-    if (success && status.ok()) {
+    if (success && status.ok() &&
+        client.response().err_code() == tbox::proto::ErrCode::Success) {
       log_buffer.push_back("Successfully reported client IP");
       // Output all buffered logs atomically
       for (const auto& msg : log_buffer) {
@@ -317,8 +318,10 @@ bool ReportManager::ReportClientIP() {
       }
       return true;
     } else {
+      const auto response_code = client.response().err_code();
       // Check if failure is due to authentication (server restart scenario)
-      if (status.error_code() == grpc::StatusCode::UNAUTHENTICATED ||
+      if (response_code == tbox::proto::ErrCode::User_session_error ||
+          status.error_code() == grpc::StatusCode::UNAUTHENTICATED ||
           status.error_message().find("authentication") != std::string::npos ||
           status.error_message().find("token") != std::string::npos) {
         log_buffer.push_back(
@@ -328,9 +331,13 @@ bool ReportManager::ReportClientIP() {
         auth_manager->ClearToken();
       }
 
-      log_buffer.push_back(
-          "Report failed - status: " + std::to_string(status.error_code()) +
-          ", message: " + status.error_message());
+      log_buffer.push_back("Report failed - gRPC status: " +
+                           std::to_string(status.error_code()) +
+                           ", application status: " +
+                           std::to_string(static_cast<int>(response_code)) +
+                           ", message: " +
+                           (status.ok() ? client.response().message()
+                                        : status.error_message()));
       // Output buffered logs
       for (const auto& msg : log_buffer) {
         LOG(INFO) << msg;

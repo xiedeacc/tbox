@@ -33,7 +33,7 @@ if [[ "$(uname -s)" != "Darwin" ]]; then
     exit 1
 fi
 
-for command in bazel python3 scp sudo; do
+for command in bazel curl python3 scp sudo; do
     if ! command -v "${command}" >/dev/null 2>&1; then
         echo "Missing required command: ${command}" >&2
         exit 1
@@ -78,6 +78,7 @@ if user:
     config["user"] = user
 config["server_addr"] = server_addr
 config["grpc_server_port"] = int(grpc_port)
+config["write_logs"] = False
 config["local_cert_path"] = "./conf/ca-bundle.pem"
 config["ssh_private_key_path"] = "/var/root/.ssh/id_ed25519"
 config["ssh_public_key_path"] = "/var/root/.ssh/id_ed25519.pub"
@@ -157,8 +158,6 @@ cat >"${STAGED_PLIST}" <<EOF
     <string>${INSTALL_DIR}</string>
     <key>EnvironmentVariables</key>
     <dict>
-        <key>TBOX_LOG_DIR</key>
-        <string>${LOG_DIR}</string>
         <key>OPENSSL_armcap</key>
         <string>0</string>
     </dict>
@@ -169,9 +168,9 @@ cat >"${STAGED_PLIST}" <<EOF
     <key>ThrottleInterval</key>
     <integer>5</integer>
     <key>StandardOutPath</key>
-    <string>${LOG_DIR}/launchd.stdout.log</string>
+    <string>/dev/null</string>
     <key>StandardErrorPath</key>
-    <string>${LOG_DIR}/launchd.stderr.log</string>
+    <string>/dev/null</string>
 </dict>
 </plist>
 EOF
@@ -193,8 +192,7 @@ sudo /usr/bin/install -o root -g wheel -m 644 \
     "${STAGED_PUBLIC_KEY}" /var/root/.ssh/id_ed25519.pub
 sudo /usr/bin/install -o root -g wheel -m 644 "${STAGED_PLIST}" "${PLIST_PATH}"
 sudo chown -R root:wheel "${INSTALL_DIR}"
-sudo sh -c ": > '${LOG_DIR}/launchd.stdout.log'"
-sudo sh -c ": > '${LOG_DIR}/launchd.stderr.log'"
+sudo find "${LOG_DIR}" -maxdepth 1 -type f \( -name 'tbox_client*.log*' -o -name 'launchd.*.log' \) -delete
 
 echo "[6/7] Enabling and starting ${SERVICE_LABEL}"
 sudo launchctl bootstrap system "${PLIST_PATH}"
@@ -205,24 +203,21 @@ sleep 3
 echo "[7/7] Verifying service"
 if ! sudo launchctl print "system/${SERVICE_LABEL}" | grep -q 'state = running'; then
     echo "${SERVICE_LABEL} failed to remain running." >&2
-    sudo tail -n 50 "${LOG_DIR}/launchd.stderr.log" 2>/dev/null || true
     exit 1
 fi
 
-LOGIN_SUCCEEDED=false
+CLIENT_REPORTED=false
 for _ in {1..45}; do
-    if sudo grep -q "Successfully logged in" \
-        "${LOG_DIR}/launchd.stderr.log" 2>/dev/null; then
-        LOGIN_SUCCEEDED=true
+    if curl -fsS --max-time 5 "${TBOX_SERVER_ADDR%/}/server" |
+        python3 -c 'import json,sys; data=json.load(sys.stdin); raise SystemExit(0 if sys.argv[1] in data.get("registered_clients", {}) else 1)' "${TBOX_CLIENT_ID}"; then
+        CLIENT_REPORTED=true
         break
     fi
     sleep 1
 done
 
-if [[ "${LOGIN_SUCCEEDED}" != true ]]; then
-    echo "${SERVICE_LABEL} started but did not log in within 45 seconds." >&2
-    sudo tail -n 80 "${LOG_DIR}/launchd.stderr.log" |
-        grep -E "Successfully|Failed|ERROR|WARNING|gRPC error" >&2 || true
+if [[ "${CLIENT_REPORTED}" != true ]]; then
+    echo "${SERVICE_LABEL} started but did not report to the server within 45 seconds." >&2
     exit 1
 fi
 
@@ -230,4 +225,4 @@ sudo launchctl print "system/${SERVICE_LABEL}" | sed -n '1,35p'
 echo "Deployed ${BINARY_NAME} to ${BIN_DIR}/${BINARY_NAME}"
 echo "Configuration: ${CONF_DIR}/client_config.json (${TBOX_CLIENT_ID})"
 echo "gRPC endpoint: ${TBOX_SERVER_ADDR}:${TBOX_GRPC_PORT}"
-echo "Logs: ${LOG_DIR}"
+echo "Logging: disabled by client configuration"

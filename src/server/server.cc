@@ -5,6 +5,7 @@
 
 #include <signal.h>
 
+#include <cstdio>
 #include <cstdlib>
 #include <memory>
 
@@ -87,18 +88,23 @@ int main(int argc, char** argv) {
   if (!log_dir) {
     log_dir = std::getenv("GLOG_log_dir");
   }
-  tbox::logging::Initialize(argv[0], log_dir ? log_dir : "./logs");
+  const std::string selected_log_dir = log_dir ? log_dir : "./logs";
+
+  // Start silently until configuration selects whether logging is allowed.
+  tbox::logging::Initialize(argv[0], selected_log_dir, false);
+  auto config_manager = tbox::util::ConfigManager::Instance();
+  if (!config_manager->Init("./conf/server_config.json")) {
+    std::fprintf(stderr, "Failed to initialize ./conf/server_config.json\n");
+    tbox::logging::Shutdown();
+    return 1;
+  }
+  tbox::logging::Initialize(argv[0], selected_log_dir,
+                            config_manager->WriteLogs());
 
   LOG(INFO) << "Server initializing ...";
   LOG(INFO) << "Git commit: " << GIT_VERSION;
   LOG(INFO) << "CommandLine: " << tbox::logging::CommandLine(argc, argv);
 
-  if (!tbox::util::ConfigManager::Instance()->Init(
-          "./conf/server_config.json")) {
-    LOG(FATAL) << "Failed to initialize configuration from "
-               << "./conf/server_config.json";
-    return 1;
-  }
   LOG(INFO) << "Configuration initialized successfully";
 
   // Initialize UserManager to create preset users
@@ -152,7 +158,6 @@ int main(int argc, char** argv) {
   tbox::server::HttpServer http_server(server_context);
   ::http_server_ptr = &http_server;
 
-  auto config_manager = tbox::util::ConfigManager::Instance();
   std::unique_ptr<tbox::server::tcp_handler::VlmcsdHandler> vlmcsd_handler;
   if (config_manager->VlmcsdEnabled()) {
     vlmcsd_handler = std::make_unique<tbox::server::tcp_handler::VlmcsdHandler>(

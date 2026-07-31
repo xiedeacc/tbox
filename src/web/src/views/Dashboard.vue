@@ -1,149 +1,173 @@
 <template>
-  <div class="dashboard-container">
-    <div class="dashboard-grid">
-      <!-- IP Address Card -->
-      <div class="card info-card" v-if="ipAddrs">
-        <div class="card-body">
-          <pre class="json-display">{{ ipAddrs }}</pre>
-        </div>
-        <div class="card-footer">
-          <button @click="fetchServerData" class="btn-refresh" :disabled="loading">
-            <svg class="btn-icon" :class="{ spinning: loading }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="23 4 23 10 17 10"/>
-              <polyline points="1 20 1 14 7 14"/>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-            </svg>
-            Refresh
-          </button>
-        </div>
+  <section class="dashboard-shell">
+    <header class="hero">
+      <div>
+        <div class="eyebrow"><span class="pulse"></span> TBOX NETWORK</div>
+        <h1>Host overview</h1>
+        <p>Public addresses reported by every connected TBox node.</p>
       </div>
+      <button class="refresh-button" :disabled="loading" @click="fetchServerData">
+        <svg :class="{ spinning: loading }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5"/>
+          <path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5"/>
+        </svg>
+        {{ loading ? 'Refreshing' : 'Refresh' }}
+      </button>
+    </header>
 
-      <!-- Loading State -->
-      <div class="card loading-card" v-if="loading && !ipAddrs">
-        <div class="loading-content">
-          <div class="loading-spinner-large">
-            <svg viewBox="0 0 24 24">
-              <circle class="spinner-circle" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none"/>
-            </svg>
-          </div>
-          <p>Loading server data...</p>
-        </div>
-      </div>
-
-      <!-- Error State -->
-      <div class="card error-card" v-if="error">
-        <div class="error-content">
-          <div class="error-icon-large">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-          </div>
-          <h3>Error Loading Data</h3>
-          <p>{{ error }}</p>
-          <button @click="fetchServerData" class="btn-retry">
-            Try Again
-          </button>
-        </div>
-      </div>
-
-      <!-- Stats Cards -->
-      <div class="card stat-card">
-        <div class="stat-icon success">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-          </svg>
-        </div>
-        <div class="stat-content">
-          <p class="stat-label">Connection Status</p>
-          <p class="stat-value">{{ connectionStatus }}</p>
-        </div>
-      </div>
-
-      <div class="card stat-card">
-        <div class="stat-icon info">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-          </svg>
-        </div>
-        <div class="stat-content">
-          <p class="stat-label">Last Updated</p>
-          <p class="stat-value">{{ lastUpdated }}</p>
-        </div>
-      </div>
-
-      <div class="card stat-card">
-        <div class="stat-icon warning">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-            <line x1="12" y1="22.08" x2="12" y2="12"/>
-          </svg>
-        </div>
-        <div class="stat-content">
-          <p class="stat-label">Data Size</p>
-          <p class="stat-value">{{ dataSize }}</p>
-        </div>
-      </div>
+    <div v-if="error" class="alert">
+      <span>!</span>
+      <div><strong>Unable to load network status</strong><p>{{ error }}</p></div>
+      <button @click="fetchServerData">Retry</button>
     </div>
-  </div>
+
+    <template v-if="serverData">
+      <div class="summary-grid">
+        <article class="summary-card accent">
+          <span class="summary-label">Registered nodes</span>
+          <strong>{{ clients.length }}</strong>
+          <small>{{ onlineCount }} reporting recently</small>
+        </article>
+        <article class="summary-card">
+          <span class="summary-label">Your public address</span>
+          <strong class="address-value">{{ serverData.current_client_ip || 'Unknown' }}</strong>
+          <small>Observed by the server</small>
+        </article>
+        <article class="summary-card">
+          <span class="summary-label">Server endpoints</span>
+          <strong>{{ serverData.server_ip?.length || 0 }}</strong>
+          <small>IPv4 and IPv6 addresses</small>
+        </article>
+        <article class="summary-card">
+          <span class="summary-label">Build</span>
+          <strong class="build-value">{{ shortCommit }}</strong>
+          <small>{{ dirtyBuild ? 'Uncommitted build' : 'Deployed revision' }}</small>
+        </article>
+      </div>
+
+      <section class="panel server-panel">
+        <div class="panel-heading">
+          <div><span class="section-kicker">CONTROL PLANE</span><h2>Server addresses</h2></div>
+          <span class="status-chip"><span class="status-dot"></span> Online</span>
+        </div>
+        <div class="address-list">
+          <span v-for="address in serverData.server_ip" :key="address" class="address-pill">
+            <b>{{ address.includes(':') ? 'IPv6' : 'IPv4' }}</b>{{ address }}
+          </span>
+          <span v-if="!serverData.server_ip?.length" class="muted">No server address available</span>
+        </div>
+      </section>
+
+      <section class="nodes-section">
+        <div class="section-heading">
+          <div><span class="section-kicker">CONNECTED HOSTS</span><h2>Client nodes</h2></div>
+          <span class="updated">Updated {{ lastUpdatedLabel }}</span>
+        </div>
+
+        <div v-if="clients.length" class="node-grid">
+          <article v-for="client in clients" :key="client.id" class="node-card">
+            <div class="node-topline">
+              <div class="node-icon">{{ initials(client.id) }}</div>
+              <div class="node-title"><h3>{{ friendlyName(client.id) }}</h3><code>{{ client.id }}</code></div>
+              <span class="node-state" :class="{ stale: !client.online }">
+                <span></span>{{ client.online ? 'Active' : 'Stale' }}
+              </span>
+            </div>
+
+            <div class="ip-group">
+              <div class="ip-heading"><span>IPv4</span><b>{{ client.ipv4.length }}</b></div>
+              <code v-for="ip in client.ipv4" :key="ip" class="ip-row">{{ ip }}</code>
+              <span v-if="!client.ipv4.length" class="empty-ip">Not reported</span>
+            </div>
+            <div class="ip-group">
+              <div class="ip-heading"><span>IPv6</span><b>{{ client.ipv6.length }}</b></div>
+              <code v-for="ip in client.ipv6" :key="ip" class="ip-row">{{ ip }}</code>
+              <span v-if="!client.ipv6.length" class="empty-ip">Not reported</span>
+            </div>
+
+            <footer>
+              <span>Last report</span>
+              <time>{{ client.last_report_time || 'Unknown' }}</time>
+            </footer>
+          </article>
+        </div>
+
+        <div v-else class="empty-state">
+          <div class="empty-orbit"><span></span></div>
+          <h3>No clients have reported yet</h3>
+          <p>Clients will appear automatically after authentication and their next IP report.</p>
+          <button @click="fetchServerData">Check again</button>
+        </div>
+      </section>
+    </template>
+
+    <div v-else-if="loading" class="loading-state">
+      <div class="loader"></div><p>Contacting the TBox server…</p>
+    </div>
+  </section>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { v4 as uuidv4 } from 'uuid';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
-const user = ref(localStorage.getItem('user'));
-const token = ref(localStorage.getItem('token'));
-const ipAddrs = ref(null);
+const serverData = ref(null);
 const error = ref(null);
 const loading = ref(false);
 const lastUpdatedTime = ref(null);
+const clock = ref(Date.now());
+let refreshTimer;
+let clockTimer;
 
-const generateRequestId = () => uuidv4();
+const parseReportTime = (value) => {
+  if (!value) return 0;
+  const parsed = Date.parse(value.replace(' ', 'T'));
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
 
-const connectionStatus = computed(() => {
-  if (loading.value) return 'Connecting...';
-  if (error.value) return 'Disconnected';
-  if (ipAddrs.value) return 'Connected';
-  return 'Unknown';
+const clients = computed(() => Object.entries(serverData.value?.registered_clients || {})
+  .map(([id, info]) => ({
+    id,
+    ...info,
+    ipv4: info.ipv4 || [],
+    ipv6: info.ipv6 || [],
+    online: clock.value - parseReportTime(info.last_report_time) < 120_000,
+  }))
+  .sort((a, b) => a.id.localeCompare(b.id)));
+
+const onlineCount = computed(() => clients.value.filter((client) => client.online).length);
+const dirtyBuild = computed(() => serverData.value?.git_commit?.endsWith('-dirty'));
+const shortCommit = computed(() => {
+  const commit = serverData.value?.git_commit || 'unknown';
+  return commit.replace('-dirty', '').slice(0, 8);
+});
+const lastUpdatedLabel = computed(() => {
+  if (!lastUpdatedTime.value) return 'never';
+  const seconds = Math.max(0, Math.floor((clock.value - lastUpdatedTime.value) / 1000));
+  if (seconds < 5) return 'just now';
+  if (seconds < 60) return `${seconds}s ago`;
+  return `${Math.floor(seconds / 60)}m ago`;
 });
 
-const lastUpdated = computed(() => {
-  if (!lastUpdatedTime.value) return 'Never';
-  const now = new Date();
-  const diff = Math.floor((now - lastUpdatedTime.value) / 1000);
-  if (diff < 60) return 'Just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  return `${Math.floor(diff / 3600)}h ago`;
-});
-
-const dataSize = computed(() => {
-  if (!ipAddrs.value) return 'N/A';
-  const bytes = new Blob([ipAddrs.value]).size;
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-});
+const friendlyName = (id) => {
+  if (/macmini/i.test(id)) return 'Mac mini';
+  if (/openwrt/i.test(id)) return 'OpenWrt';
+  if (/nas/i.test(id)) return 'NAS';
+  if (/windows/i.test(id)) return 'Windows';
+  return id.replace(/[-_]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+};
+const initials = (id) => friendlyName(id).split(' ').map((part) => part[0]).join('').slice(0, 2);
 
 const fetchServerData = async () => {
+  if (loading.value) return;
   loading.value = true;
   error.value = null;
-  
   try {
-    const response = await fetch('/server', { method: 'GET' });
-
-    if (response.ok) {
-      const data = await response.json();
-      ipAddrs.value = JSON.stringify(data, null, 2);
-      lastUpdatedTime.value = new Date();
-    } else {
-      error.value = 'Failed to fetch server data. Please try again.';
-    }
+    const response = await fetch('/server', { method: 'GET', cache: 'no-store' });
+    if (!response.ok) throw new Error(`Server returned HTTP ${response.status}`);
+    serverData.value = await response.json();
+    lastUpdatedTime.value = Date.now();
   } catch (err) {
-    error.value = 'Unable to connect to server. Please check your connection.';
+    error.value = err.message || 'Please check your connection and try again.';
   } finally {
     loading.value = false;
   }
@@ -151,243 +175,15 @@ const fetchServerData = async () => {
 
 onMounted(() => {
   fetchServerData();
+  refreshTimer = window.setInterval(fetchServerData, 30_000);
+  clockTimer = window.setInterval(() => { clock.value = Date.now(); }, 1_000);
+});
+onBeforeUnmount(() => {
+  window.clearInterval(refreshTimer);
+  window.clearInterval(clockTimer);
 });
 </script>
 
 <style scoped>
-.dashboard-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100vw;
-  height: 100vh;
-  padding: 5rem 2rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  overflow-y: auto;
-  animation: fadeIn 0.5s ease-out;
-}
-
-.dashboard-container::before {
-  content: '';
-  position: fixed;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-  background-size: 50px 50px;
-  animation: moveBackground 20s linear infinite;
-  pointer-events: none;
-  z-index: 0;
-}
-
-@keyframes moveBackground {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(50px, 50px); }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 0.75rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  position: relative;
-  z-index: 1;
-}
-
-.info-card {
-  grid-column: 1 / -1;
-}
-
-.card-body {
-  margin-bottom: 1rem;
-}
-
-.json-display {
-  background: rgba(255, 255, 255, 0.95);
-  padding: 1.5rem;
-  border-radius: var(--border-radius-sm);
-  font-family: 'Courier New', monospace;
-  font-size: 0.9rem;
-  color: var(--text-primary);
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  line-height: 1.6;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.card-footer {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
-}
-
-.btn-refresh {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-}
-
-.btn-icon {
-  width: 18px;
-  height: 18px;
-}
-
-.btn-icon.spinning {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.loading-card,
-.error-card {
-  grid-column: 1 / -1;
-  min-height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.loading-content,
-.error-content {
-  text-align: center;
-}
-
-.loading-spinner-large {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 1.5rem;
-}
-
-.loading-spinner-large svg {
-  width: 100%;
-  height: 100%;
-  color: var(--primary-color);
-  animation: spin 1s linear infinite;
-}
-
-.spinner-circle {
-  stroke-dasharray: 50;
-  stroke-dashoffset: 25;
-}
-
-.error-icon-large {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 1.5rem;
-  color: var(--danger-color);
-}
-
-.error-content h3 {
-  color: var(--danger-color);
-  margin-bottom: 0.5rem;
-}
-
-.error-content p {
-  margin-bottom: 1.5rem;
-}
-
-.btn-retry {
-  background: var(--danger-color);
-}
-
-.btn-retry:hover {
-  background: #dc2626;
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-}
-
-.stat-icon {
-  width: 32px;
-  height: 32px;
-  padding: 0.5rem;
-  border-radius: var(--border-radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.stat-icon.success {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--success-color);
-}
-
-.stat-icon.info {
-  background: rgba(99, 102, 241, 0.1);
-  color: var(--primary-color);
-}
-
-.stat-icon.warning {
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--warning-color);
-}
-
-.stat-content {
-  flex: 1;
-  line-height: 1.3;
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  margin-bottom: 0.125rem;
-  line-height: 1.2;
-}
-
-.stat-value {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.2;
-}
-
-@media (prefers-color-scheme: dark) {
-  .json-display {
-    background: var(--dark-bg-tertiary);
-    color: var(--dark-text-primary);
-    border-color: var(--dark-border-color);
-  }
-  
-  .card-footer {
-    border-top-color: var(--dark-border-color);
-  }
-  
-  .stat-label {
-    color: var(--dark-text-tertiary);
-  }
-  
-  .stat-value {
-    color: var(--dark-text-primary);
-  }
-}
-
-@media (max-width: 768px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .card {
-    padding: 1.5rem;
-  }
-}
+.dashboard-shell{max-width:1240px;margin:0 auto;padding:52px 28px 80px}.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:36px}.eyebrow,.section-kicker{font-size:11px;font-weight:800;letter-spacing:.18em;color:var(--accent);text-transform:uppercase}.eyebrow{display:flex;align-items:center;gap:9px;margin-bottom:14px}.pulse{width:8px;height:8px;border-radius:50%;background:var(--success);box-shadow:0 0 0 7px rgba(73,213,166,.12)}h1{font-size:clamp(34px,5vw,58px);letter-spacing:-.055em;margin:0 0 10px}.hero p{font-size:16px}.refresh-button{display:flex;align-items:center;gap:9px;padding:11px 16px;background:var(--panel);color:var(--text);border:1px solid var(--border);box-shadow:none}.refresh-button svg{width:17px}.spinning{animation:spin .8s linear infinite}.summary-grid{display:grid;grid-template-columns:1.05fr 1.5fr 1fr 1fr;gap:14px;margin-bottom:14px}.summary-card,.panel,.node-card{background:var(--panel);border:1px solid var(--border);box-shadow:var(--shadow);border-radius:18px}.summary-card{padding:20px 22px;min-height:132px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}.summary-card.accent{background:linear-gradient(145deg,#163b47,#102c36);border-color:#285766}.summary-label{font-size:12px;color:var(--muted);font-weight:700}.summary-card strong{font-size:34px;line-height:1;letter-spacing:-.04em}.summary-card small{color:var(--muted);font-size:12px}.address-value{font-family:var(--mono);font-size:17px!important;overflow-wrap:anywhere}.build-value{font-family:var(--mono);font-size:24px!important;color:var(--accent)}.panel{padding:24px 26px;margin-bottom:34px}.panel-heading,.section-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}.panel-heading h2,.section-heading h2{font-size:22px;margin:4px 0 0;letter-spacing:-.025em}.status-chip,.node-state{display:inline-flex;align-items:center;gap:7px;color:var(--success);font-size:12px;font-weight:700;background:rgba(73,213,166,.09);padding:7px 10px;border-radius:999px}.status-dot,.node-state span{width:7px;height:7px;border-radius:50%;background:currentColor}.address-list{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.address-pill{display:flex;align-items:center;gap:10px;font:13px var(--mono);padding:10px 12px;border:1px solid var(--border);background:var(--panel-soft);border-radius:10px}.address-pill b{font:700 10px var(--sans);color:var(--accent);letter-spacing:.08em}.nodes-section{margin-top:4px}.section-heading{margin-bottom:18px}.updated{font-size:12px;color:var(--muted)}.node-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.node-card{padding:22px}.node-topline{display:flex;align-items:center;gap:12px;margin-bottom:22px}.node-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;color:#07242a;font-size:13px;font-weight:900;background:linear-gradient(135deg,var(--accent),#7ee0c2)}.node-title{min-width:0;flex:1}.node-title h3{margin:0 0 3px;font-size:17px}.node-title code{display:block;color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis}.node-state.stale{color:var(--warning);background:rgba(244,181,72,.1)}.ip-group{border-top:1px solid var(--border);padding:14px 0 4px}.ip-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.08em}.ip-heading b{font-size:10px;color:var(--accent)}.ip-row{display:block;padding:7px 9px;margin:5px 0;background:var(--panel-soft);border-radius:7px;color:var(--text);font-size:12px;overflow-wrap:anywhere}.empty-ip{display:block;color:var(--muted);font-size:12px;padding:7px 0}.node-card footer{display:flex;justify-content:space-between;gap:14px;padding-top:14px;margin-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)}.node-card footer time{font-family:var(--mono);text-align:right}.empty-state,.loading-state{display:grid;place-items:center;text-align:center;padding:68px 24px;background:var(--panel);border:1px dashed var(--border);border-radius:18px}.empty-state h3{margin:20px 0 7px}.empty-state p{max-width:480px}.empty-state button{margin-top:20px}.empty-orbit{width:58px;height:58px;border:1px solid var(--border);border-radius:50%;display:grid;place-items:center}.empty-orbit:before,.empty-orbit span{content:'';border-radius:50%;background:var(--accent)}.empty-orbit:before{width:10px;height:10px;box-shadow:0 0 22px var(--accent)}.empty-orbit span{width:7px;height:7px;position:absolute;transform:translate(29px,-15px)}.loading-state{min-height:340px}.loader{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}.alert{display:flex;align-items:center;gap:14px;padding:16px 18px;margin-bottom:18px;background:rgba(255,102,112,.08);border:1px solid rgba(255,102,112,.3);border-radius:14px}.alert>span{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:var(--danger);color:white;font-weight:900}.alert div{flex:1}.alert p{font-size:12px;margin-top:2px}.alert button{padding:8px 12px}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:900px){.summary-grid{grid-template-columns:repeat(2,1fr)}.node-grid{grid-template-columns:1fr}}@media(max-width:600px){.dashboard-shell{padding:34px 16px 60px}.hero{align-items:flex-start;flex-direction:column}.summary-grid{grid-template-columns:1fr}.panel{padding:20px}.node-card{padding:18px}.node-topline{flex-wrap:wrap}.node-state{margin-left:54px}.panel-heading,.section-heading{align-items:flex-start}.updated{margin-top:19px}.address-pill{width:100%;overflow-wrap:anywhere}.alert{align-items:flex-start;flex-wrap:wrap}.alert button{margin-left:42px}}
 </style>

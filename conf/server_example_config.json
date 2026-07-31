@@ -8,6 +8,7 @@
     "grpc_threads": 3,
     "event_threads": 5,
     "check_interval_seconds": 5,
+    "write_logs": true,
     "dns_provider": "cloudflare",
     "cloudflare_api_token": "test",
     "cloudflare_zone_id": "",

@@ -9,6 +9,7 @@
 #include <mutex>
 #include <vector>
 
+#include "spdlog/sinks/null_sink.h"
 #include "spdlog/sinks/rotating_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
@@ -62,10 +63,9 @@ void Log(Severity severity, const char* file, int line,
 
 }  // namespace
 
-void Initialize(const std::string& program_name, const std::string& log_dir) {
+void Initialize(const std::string& program_name, const std::string& log_dir,
+                bool write_logs) {
   std::lock_guard<std::mutex> lock(g_logging_mutex);
-
-  std::filesystem::create_directories(log_dir);
 
   std::string basename =
       program_name.empty()
@@ -76,27 +76,33 @@ void Initialize(const std::string& program_name, const std::string& log_dir) {
   }
   std::vector<spdlog::sink_ptr> sinks;
 
-  auto console_sink = std::make_shared<spdlog::sinks::stderr_color_sink_mt>();
-  console_sink->set_level(spdlog::level::info);
-  sinks.push_back(console_sink);
+  if (!write_logs) {
+    sinks.push_back(std::make_shared<spdlog::sinks::null_sink_mt>());
+  }
 
-  const struct {
-    const char* suffix;
-    spdlog::level::level_enum level;
-  } file_sinks[] = {
-      {"INFO", spdlog::level::info},
-      {"WARNING", spdlog::level::warn},
-      {"ERROR", spdlog::level::err},
-      {"FATAL", spdlog::level::critical},
-  };
+  if (write_logs) {
+    auto console_sink = std::make_shared<spdlog::sinks::stderr_color_sink_mt>();
+    console_sink->set_level(spdlog::level::info);
+    sinks.push_back(console_sink);
+    std::filesystem::create_directories(log_dir);
+    const struct {
+      const char* suffix;
+      spdlog::level::level_enum level;
+    } file_sinks[] = {
+        {"INFO", spdlog::level::info},
+        {"WARNING", spdlog::level::warn},
+        {"ERROR", spdlog::level::err},
+        {"FATAL", spdlog::level::critical},
+    };
 
-  for (const auto& sink_config : file_sinks) {
-    const auto path = std::filesystem::path(log_dir) /
-                      (basename + "." + sink_config.suffix + ".log");
-    auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-        path.string(), kMaxLogFileSize, kMaxRotatedFiles);
-    sink->set_level(sink_config.level);
-    sinks.push_back(sink);
+    for (const auto& sink_config : file_sinks) {
+      const auto path = std::filesystem::path(log_dir) /
+                        (basename + "." + sink_config.suffix + ".log");
+      auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+          path.string(), kMaxLogFileSize, kMaxRotatedFiles);
+      sink->set_level(sink_config.level);
+      sinks.push_back(sink);
+    }
   }
 
   auto logger =

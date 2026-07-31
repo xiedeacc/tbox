@@ -70,6 +70,7 @@ def main() -> None:
         config["grpc_server_port"] = 443
         config["local_cert_path"] = "./conf/ca-bundle.pem"
         config["update_certs"] = args.host == "nas"
+        config["write_logs"] = False
         # Clients send monitor_domains and addresses to the server; DNS
         # provider credentials never leave the server.
         for key in CLIENT_DNS_CREDENTIAL_KEYS:
@@ -87,6 +88,7 @@ def main() -> None:
         config["ssh_private_key_path"] = f"{ssh_home}/.ssh/id_ed25519"
         config["ssh_public_key_path"] = f"{ssh_home}/.ssh/id_ed25519.pub"
     else:
+        config["write_logs"] = True
         config.pop("monitor_domains", None)
         config.pop("ddns_record_types", None)
         config["certificate_sync_client_ids"] = ["home-nas-001"]

@@ -203,6 +203,12 @@ class ConfigManager {
   bool VlmcsdEnabled() const { return base_config_.vlmcsd_enabled(); }
 
   /**
+   * @brief Get application logging enable flag.
+   * @return true when console and rotating file logs should be written.
+   */
+  bool WriteLogs() const { return base_config_.write_logs(); }
+
+  /**
    * @brief Get embedded vlmcsd listen addresses.
    * @return Configured addresses, or 127.0.0.1 when enabled and unset.
    */
