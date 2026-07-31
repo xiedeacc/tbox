@@ -251,6 +251,7 @@ cc_test(
     deps = [
         ":authentication_manager",
         "//src/common:logging",
+        "//src/common:ssh_key_auth",
         "//src/impl:config_manager",
         "//src/proto:cc_grpc_service",
         "//src/proto:cc_service",
