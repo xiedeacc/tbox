@@ -71,7 +71,7 @@ bool GrpcClient::Init() {
     // Get certificate path from configuration
     std::string ca_cert_path = config_manager->LocalCertPath();
     if (ca_cert_path.empty()) {
-      ca_cert_path = "conf/xiedeacc.com.ca.cer";  // Default fallback
+      ca_cert_path = "conf/ca-bundle.pem";  // Default fallback
     }
 
     std::string ca_cert = SSLConfigManager::LoadCACert(ca_cert_path);

@@ -111,30 +111,23 @@ print_success "Binary installed"
 # Clean up temporary binary
 rm -f ${TEMP_BINARY}
 
-# Fetch SSL certificate chain from server
-print_status "Fetching SSL certificate chain from ip.xiedeacc.com..."
-CERT_FILE="${CONF_DIR}/xiedeacc.com.ca.cer"
-if echo | openssl s_client -connect ip.xiedeacc.com:443 -servername ip.xiedeacc.com -showcerts 2>/dev/null | awk '/BEGIN CERTIFICATE/,/END CERTIFICATE/' > "${CERT_FILE}" 2>/dev/null; then
-    if [ -s "${CERT_FILE}" ]; then
-        cert_size=$(stat -c%s "${CERT_FILE}")
-        print_success "SSL certificate chain fetched and saved to ${CERT_FILE} (${cert_size} bytes)"
-        # Verify the certificate chain contains at least one valid certificate
-        if openssl x509 -in "${CERT_FILE}" -noout -text >/dev/null 2>&1; then
-            print_success "Certificate chain validated successfully"
-        else
-            print_error "Certificate chain validation failed"
-            rm -f "${CERT_FILE}"
-            exit 1
-        fi
-    else
-        print_error "Failed to fetch certificate chain - empty file"
-        rm -f "${CERT_FILE}"
-        exit 1
+# Install the operating system trust bundle before the first server connection.
+print_status "Installing the operating system CA bundle..."
+CA_BUNDLE_FILE="${CONF_DIR}/ca-bundle.pem"
+CA_BUNDLE_SOURCE=""
+for candidate in /etc/ssl/certs/ca-certificates.crt /etc/ssl/cert.pem; do
+    if [ -s "${candidate}" ]; then
+        CA_BUNDLE_SOURCE="${candidate}"
+        break
     fi
-else
-    print_error "Failed to fetch SSL certificate chain from ip.xiedeacc.com"
+done
+if [ -z "${CA_BUNDLE_SOURCE}" ]; then
+    print_error "No operating system CA bundle found"
     exit 1
 fi
+cp "${CA_BUNDLE_SOURCE}" "${CA_BUNDLE_FILE}"
+rm -f "${CONF_DIR}/xiedeacc.com.ca.cer"
+print_success "Installed CA bundle from ${CA_BUNDLE_SOURCE}"
 
 # Copy configuration file
 print_status "Installing configuration file..."
@@ -151,7 +144,7 @@ print_status "Setting ownership and permissions..."
 chown -R ${SERVICE_USER}:${SERVICE_USER} ${INSTALL_DIR}
 chmod 755 ${BIN_DIR}/${BINARY_NAME}
 chmod 644 ${CONF_DIR}/client_config.json
-chmod 644 ${CONF_DIR}/xiedeacc.com.ca.cer
+chmod 644 ${CONF_DIR}/ca-bundle.pem
 chmod 755 ${LOG_DIR}
 print_success "Permissions set"
 
@@ -237,7 +230,7 @@ print_success "Client is running and successfully reporting to server"
 echo
 print_status "Binary location: ${BIN_DIR}/${BINARY_NAME}"
 print_status "Config location: ${CONF_DIR}/client_config.json"
-print_status "Certificate location: ${CONF_DIR}/xiedeacc.com.ca.cer"
+print_status "CA bundle location: ${CONF_DIR}/ca-bundle.pem"
 print_status "Log directory: ${LOG_DIR}"
 print_status "Service name: ${SERVICE_NAME}"
 echo

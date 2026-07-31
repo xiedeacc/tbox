@@ -53,7 +53,8 @@ if ! ssh "${REMOTE}" "test -s ~/.ssh/id_ed25519 -a -s ~/.ssh/id_ed25519.pub"; th
 fi
 ssh "${REMOTE}" "chmod 755 ${BIN_DIR}/${BINARY_NAME}.new /etc/init.d/${SERVICE_NAME} && mv -f ${BIN_DIR}/${BINARY_NAME}.new ${BIN_DIR}/${BINARY_NAME} && chmod 644 ${CONF_DIR}/client_config.json"
 
-ssh "${REMOTE}" "test -s /etc/ssl/certs/ca-certificates.crt && cp -f /etc/ssl/certs/ca-certificates.crt ${CONF_DIR}/xiedeacc.com.ca.cer && chmod 644 ${CONF_DIR}/xiedeacc.com.ca.cer"
+ssh "${REMOTE}" "for ca_source in /etc/ssl/certs/ca-certificates.crt /etc/ssl/cert.pem; do if test -s \"\${ca_source}\"; then cp -f \"\${ca_source}\" ${CONF_DIR}/ca-bundle.pem && chmod 644 ${CONF_DIR}/ca-bundle.pem && exit 0; fi; done; echo 'No system CA bundle found on OpenWrt' >&2; exit 1"
+ssh "${REMOTE}" "rm -f ${CONF_DIR}/xiedeacc.com.ca.cer"
 
 ssh "${REMOTE}" "/etc/init.d/${SERVICE_NAME} enable && /etc/init.d/${SERVICE_NAME} restart"
 sleep 2

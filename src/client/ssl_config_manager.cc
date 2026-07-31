@@ -470,52 +470,11 @@ bool SSLConfigManager::SetWwwDataOwnership(const std::string& directory_path) {
 }
 
 bool SSLConfigManager::UpdateTboxCertificate() {
-#if defined(_WIN32)
-  // The Windows deployment installs a platform CA bundle for bootstrapping the
-  // gRPC connection. Do not replace that trust bundle with a certificate
-  // returned over the connection or use the Linux-only installation path.
-  LOG(INFO) << "Skipping tbox CA trust bundle update on Windows";
+  // ca-bundle.pem establishes trust for the connection itself. Updating it
+  // with data received over that connection would create circular trust and
+  // permit an active attacker to replace the client's trust anchor.
+  LOG(INFO) << "Skipping deployment-owned platform CA bundle update";
   return false;
-#endif
-
-  LOG(INFO) << "Updating tbox certificate";
-  // Get remote certificate chain
-  std::string remote_chain = GetRemoteCertificateChain();
-  if (remote_chain.empty()) {
-    LOG(WARNING) << "Failed to get remote certificate chain";
-    return false;
-  }
-  CertificateChain cert_chain = ParseCertificateChain(remote_chain);
-  if (cert_chain.root_cert.empty()) {
-    LOG(WARNING) << "No root certificate found in remote chain";
-    return false;
-  }
-
-  // Check tbox certificate location: /usr/local/tbox/conf/xiedeacc.com.ca.cer
-  std::string tbox_cert_path = "/usr/local/tbox/conf/xiedeacc.com.ca.cer";
-  std::string local_cert = ReadFileContent(tbox_cert_path);
-
-  if (!AreCertificatesEqual(local_cert, cert_chain.root_cert)) {
-    LOG(INFO) << "Tbox certificate differs from remote, updating...";
-
-    // Create directory if it doesn't exist
-    std::filesystem::create_directories("/usr/local/tbox/conf");
-
-    // Write new certificate
-    if (WriteFileContent(tbox_cert_path, cert_chain.root_cert)) {
-      LOG(INFO) << "Tbox certificate written to: " << tbox_cert_path;
-      SetFilePermissions(tbox_cert_path, 0644);
-      LOG(INFO) << "Tbox certificate updated: " << tbox_cert_path;
-      return true;
-    } else {
-      LOG(ERROR) << "Failed to write tbox certificate: " << tbox_cert_path;
-      return false;
-    }
-  }
-
-  LOG(INFO) << "Tbox certificate is up to date";
-
-  return false;  // No update needed
 }
 
 bool SSLConfigManager::UpdateNginxCertificates() {

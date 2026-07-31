@@ -25,5 +25,6 @@ logs/
 *.tmp
 *.temp
 .DS_Store
+deploy/**/__pycache__/
 data/
 deploy/init_aws.sh

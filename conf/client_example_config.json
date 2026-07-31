@@ -1,6 +1,7 @@
 {
     "server_addr": "http://ip.xiedeacc.com",
     "grpc_server_port": 80,
+    "local_cert_path": "./conf/ca-bundle.pem",
     "http_server_port": 443,
     "client_worker_thread_pool_size": 3,
     "check_interval_seconds": 5,

@@ -5,10 +5,10 @@
 
 #include "src/client/ssl_config_manager.h"
 
+#include <filesystem>
 #include <fstream>
 
 #include "gtest/gtest.h"
-#include "src/util/util.h"
 
 namespace tbox {
 namespace client {
@@ -27,12 +27,12 @@ class SSLConfigManagerTest : public ::testing::Test {
         "MIIDXTCCAkWgAwIBAgIJAKL0UG+mRKSzMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV\n"
         "-----END CERTIFICATE-----\n";
 
-    home_dir_ = tbox::util::Util::HomeDir();
-    test_cert_path_ = "/test_ca.cer";
-    full_test_path_ = home_dir_ + test_cert_path_;
+    test_cert_path_ = "test_ca.cer";
+    full_test_path_ =
+        (std::filesystem::current_path() / test_cert_path_).string();
 
     // Write test certificate
-    std::ofstream out(full_test_path_);
+    std::ofstream out(full_test_path_, std::ios::binary);
     if (out.is_open()) {
       out << test_cert_content_;
       out.close();
@@ -46,7 +46,6 @@ class SSLConfigManagerTest : public ::testing::Test {
 
   std::shared_ptr<SSLConfigManager> manager_;
   std::string test_cert_content_;
-  std::string home_dir_;
   std::string test_cert_path_;
   std::string full_test_path_;
 };
@@ -76,10 +75,11 @@ TEST_F(SSLConfigManagerTest, LoadCACert_NonExistentFile) {
 
 TEST_F(SSLConfigManagerTest, LoadCACert_EmptyFile) {
   // Create an empty file
-  std::string empty_path = "/test_empty.cer";
-  std::string full_empty_path = home_dir_ + empty_path;
+  std::string empty_path = "test_empty.cer";
+  std::string full_empty_path =
+      (std::filesystem::current_path() / empty_path).string();
 
-  std::ofstream out(full_empty_path);
+  std::ofstream out(full_empty_path, std::ios::binary);
   out.close();
 
   std::string loaded = manager_->LoadCACert(empty_path);

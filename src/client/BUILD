@@ -255,6 +255,7 @@ cc_test(
         ":grpc_client",
         "//src/common:logging",
         "//src/impl:config_manager",
+        "//src/proto:cc_grpc_service",
         "@com_google_googletest//:gtest_main",
     ],
 )

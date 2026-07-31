@@ -109,7 +109,8 @@ class SSLConfigManager {
   // Set directory ownership to www-data user
   bool SetWwwDataOwnership(const std::string& directory_path);
 
-  // Check and update tbox certificate location
+  // The platform CA bundle is deployment-owned and must not be updated over
+  // the connection that it bootstraps.
   bool UpdateTboxCertificate();
 
   // Check and update nginx SSL certificates

@@ -6,10 +6,16 @@
 #include "src/client/grpc_client.h"
 
 #include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <memory>
 #include <thread>
 
+#include "grpcpp/server.h"
+#include "grpcpp/server_builder.h"
 #include "gtest/gtest.h"
 #include "src/impl/config_manager.h"
+#include "src/proto/service.grpc.pb.h"
 
 namespace tbox {
 namespace client {
@@ -18,20 +24,46 @@ namespace {
 class GrpcClientTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    // Initialize ConfigManager with test configuration
-    // Note: This assumes a test config file exists or uses default values
+    grpc::ServerBuilder builder;
+    int selected_port = 0;
+    builder.RegisterService(&service_);
+    builder.AddListeningPort("127.0.0.1:0", grpc::InsecureServerCredentials(),
+                             &selected_port);
+    server_ = builder.BuildAndStart();
+    ASSERT_NE(server_, nullptr);
+    ASSERT_GT(selected_port, 0);
+
+    config_path_ =
+        (std::filesystem::current_path() / "grpc_client_test_config.json")
+            .string();
+    std::ofstream config(config_path_);
+    ASSERT_TRUE(config.is_open());
+    config << "{\n"
+           << "  \"server_addr\": \"http://127.0.0.1\",\n"
+           << "  \"grpc_server_port\": " << selected_port << ",\n"
+           << "  \"check_interval_seconds\": 1,\n"
+           << "  \"update_certs\": false\n"
+           << "}\n";
+    config.close();
+
     auto config_manager = util::ConfigManager::Instance();
-    // In a real test environment, you would initialize with a test config file
-    // config_manager->Init("./conf/client_config_test.json");
+    ASSERT_TRUE(config_manager->Init(config_path_));
   }
 
   void TearDown() override {
     if (client_ && client_->IsRunning()) {
       client_->Stop();
     }
+    if (server_) {
+      server_->Shutdown();
+    }
+    std::remove(config_path_.c_str());
   }
 
   std::unique_ptr<GrpcClient> client_;
+  tbox::proto::TBOXService::Service service_;
+  std::unique_ptr<grpc::Server> server_;
+  std::string config_path_;
 };
 
 TEST_F(GrpcClientTest, ConstructWithoutConfig) {

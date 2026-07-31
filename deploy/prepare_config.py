@@ -32,7 +32,7 @@ def main() -> None:
             parser.error("--host is required for client configurations")
         config["server_addr"] = "https://ip.xiedeacc.com"
         config["grpc_server_port"] = 443
-        config["local_cert_path"] = "./conf/xiedeacc.com.ca.cer"
+        config["local_cert_path"] = "./conf/ca-bundle.pem"
         config["update_certs"] = args.host == "nas"
         if args.credentials_from:
             credentials = json.loads(

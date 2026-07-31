@@ -74,6 +74,7 @@ config["client_id"] = client_id
 config["user"] = user
 config["server_addr"] = server_addr
 config["grpc_server_port"] = int(grpc_port)
+config["local_cert_path"] = "./conf/ca-bundle.pem"
 config["vlmcsd_listen_addresses"] = ["127.0.0.1", "::1"]
 password = config.get("password", "")
 if len(password) != 64 or any(char not in string.hexdigits for char in password):
@@ -86,7 +87,7 @@ with open(temporary_path, "w", encoding="utf-8") as config_file:
 os.replace(temporary_path, path)
 PY
 
-STAGED_CERT="${STAGE_DIR}/xiedeacc.com.ca.cer"
+STAGED_CERT="${STAGE_DIR}/ca-bundle.pem"
 if [[ ! -s "${MACOS_CA_BUNDLE}" ]]; then
     echo "Missing macOS CA bundle: ${MACOS_CA_BUNDLE}" >&2
     exit 1
@@ -136,7 +137,8 @@ sudo launchctl bootout "system/${SERVICE_LABEL}" 2>/dev/null || true
 sudo /usr/bin/install -m 755 "${STAGED_BINARY}" "${BIN_DIR}/${BINARY_NAME}.new"
 sudo mv -f "${BIN_DIR}/${BINARY_NAME}.new" "${BIN_DIR}/${BINARY_NAME}"
 sudo /usr/bin/install -m 600 "${STAGED_CONFIG}" "${CONF_DIR}/client_config.json"
-sudo /usr/bin/install -m 644 "${STAGED_CERT}" "${CONF_DIR}/xiedeacc.com.ca.cer"
+sudo /usr/bin/install -m 644 "${STAGED_CERT}" "${CONF_DIR}/ca-bundle.pem"
+sudo rm -f "${CONF_DIR}/xiedeacc.com.ca.cer"
 sudo /usr/bin/install -o root -g wheel -m 644 "${STAGED_PLIST}" "${PLIST_PATH}"
 sudo chown -R root:wheel "${INSTALL_DIR}"
 sudo sh -c ": > '${LOG_DIR}/launchd.stdout.log'"
