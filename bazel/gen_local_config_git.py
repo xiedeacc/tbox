@@ -102,6 +102,16 @@ def get_git_version(git_base_path):
 
         # Check if workspace is dirty (has uncommitted changes)
         try:
+            # Refresh cached stat information first. Build and package-manager
+            # commands can update mtimes without changing file contents;
+            # diff-index alone would incorrectly label that tree as dirty.
+            subprocess.run([
+                "git",
+                str("--git-dir=%s.git" % git_base_path),
+                str("--work-tree=%s" % git_base_path),
+                "update-index", "-q", "--refresh"
+            ], check=False, stdout=subprocess.DEVNULL,
+               stderr=subprocess.DEVNULL)
             subprocess.check_output([
                 "git",
                 str("--git-dir=%s.git" % git_base_path),
