@@ -302,6 +302,7 @@ cc_binary(
         "//src/impl:config_manager",
         "//src/proto:cc_grpc_service",
         "//src/server/tcp_handler",
+        "//src/util",
         "@boost//:url",
         "@folly",
         "@folly//:common",
