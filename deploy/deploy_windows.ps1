@@ -1,8 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$InstallDir = "D:\software\tbox",
-    [string]$ConfigSource =
-        "root@dev:/root/src/cpp/tbox/conf/client_local_config.json",
+    [string]$ConfigSource = "",
     [string]$TaskName = "TBox Client",
     [string]$ServerAddr = "https://ip.xiedeacc.com",
     [int]$GrpcServerPort = 443
@@ -15,14 +14,8 @@ if ($env:OS -ne "Windows_NT") {
     throw "deploy_windows.ps1 must run on Windows."
 }
 
-if ($ConfigSource -notmatch '^[^@:\s]+@[^@:\s]+:.+$') {
-    throw "ConfigSource must use the explicit user@HostAlias:path form (for example, root@dev:/path/to/config.json)."
-}
-
-foreach ($command in @("bazel", "scp")) {
-    if (-not (Get-Command $command -ErrorAction SilentlyContinue)) {
-        throw "Missing required command: $command"
-    }
+if (-not (Get-Command "bazel" -ErrorAction SilentlyContinue)) {
+    throw "Missing required command: bazel"
 }
 
 $workspaceRoot = Split-Path -Parent $PSScriptRoot
@@ -36,6 +29,27 @@ $launcher = Join-Path $binDir "run_tbox_client.cmd"
 $config = Join-Path $confDir "client_config.json"
 $caBundleFile = Join-Path $confDir "ca-bundle.pem"
 $bazelTarget = "//src/client:tbox_client"
+
+if ([string]::IsNullOrWhiteSpace($ConfigSource)) {
+    $repositoryConfig = Join-Path `
+        $workspaceRoot `
+        "conf\client_local_config.json"
+    if (Test-Path -LiteralPath $repositoryConfig -PathType Leaf) {
+        $ConfigSource = $repositoryConfig
+    } elseif (Test-Path -LiteralPath $config -PathType Leaf) {
+        $ConfigSource = $config
+    } else {
+        throw (
+            "No local client configuration found. Create " +
+            "$repositoryConfig or pass -ConfigSource with a local file path."
+        )
+    }
+}
+
+if (-not (Test-Path -LiteralPath $ConfigSource -PathType Leaf)) {
+    throw "Local client configuration does not exist: $ConfigSource"
+}
+$ConfigSource = [IO.Path]::GetFullPath($ConfigSource)
 
 Push-Location $workspaceRoot
 try {
@@ -85,14 +99,11 @@ Copy-Item -LiteralPath $sourceBinary -Destination $newBinary -Force
 Move-Item -LiteralPath $newBinary -Destination $binary -Force
 
 $newConfig = "$config.new"
-Write-Host "Copying configuration from $($ConfigSource.Split(':')[0])..."
-& scp -q $ConfigSource $newConfig
-if ($LASTEXITCODE -ne 0) {
-    throw "Failed to copy configuration from $ConfigSource."
-}
+Write-Host "Copying local configuration from $ConfigSource..."
+Copy-Item -LiteralPath $ConfigSource -Destination $newConfig -Force
 
 if ((Get-Item -LiteralPath $newConfig).Length -eq 0) {
-    throw "Downloaded client configuration is empty."
+    throw "Local client configuration is empty."
 }
 
 $clientConfig = Get-Content -LiteralPath $newConfig -Raw |
