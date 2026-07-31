@@ -1,5 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@tbox//bazel:common.bzl", "GLOBAL_COPTS", "GLOBAL_LINKOPTS", "GLOBAL_LOCAL_DEFINES")
+load("//bazel:build.bzl", "cc_test")
 load("//bazel:cpplint.bzl", "cpplint")
 
 package(
@@ -98,5 +99,18 @@ cc_library(
         "//src/util",
         "@aws-sdk-cpp//:aws-cpp-sdk-core",
         "@aws-sdk-cpp//:aws-cpp-sdk-route53",
+    ],
+)
+
+cc_test(
+    name = "handler_test",
+    srcs = ["handler_test.cc"],
+    copts = COPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        ":handler",
+        "//src/impl:user_manager",
+        "//src/proto:cc_service",
+        "//src/util",
     ],
 )

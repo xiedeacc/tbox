@@ -31,7 +31,7 @@ class UserHandler : public proxygen::RequestHandler {
       return;
     }
 
-    handler::Handler::UserOpHandle(req, &res);
+    handler::Handler::WebUserOpHandle(req, &res);
 
     res_body.clear();
     if (!util::Util::MessageToJson(res, &res_body)) {

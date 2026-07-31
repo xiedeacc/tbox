@@ -29,6 +29,25 @@ namespace handler {
 
 class Handler {
  public:
+  static void WebUserOpHandle(const proto::UserRequest& req,
+                              proto::UserResponse* res) {
+    // Browsers cannot read the client's ~/.ssh/id_ed25519. Keep the
+    // password-only flow confined to the HTTP handler; gRPC clients continue
+    // to use UserOpHandle and must complete the Ed25519 challenge.
+    if (req.op() != proto::OpCode::OP_USER_LOGIN ||
+        !req.challenge_id().empty()) {
+      UserOpHandle(req, res);
+      return;
+    }
+
+    LOG(INFO) << "Web user login, Client ID: " << req.request_id()
+              << ", User: " << req.user();
+    const int32_t ret = impl::UserManager::Instance()->UserLogin(
+        req.user(), req.password(), res->mutable_token());
+    res->set_err_code(ret == Err_Success ? proto::ErrCode::Success
+                                         : proto::ErrCode(ret));
+  }
+
   static void UserOpHandle(const proto::UserRequest& req,
                            proto::UserResponse* res) {
     // Log request_id (client_id) for login operations
