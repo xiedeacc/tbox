@@ -4,7 +4,7 @@ set -euo pipefail
 
 SERVICE_NAME="tbox_server"
 BINARY_NAME="tbox_server"
-REMOTE="root@aws"
+REMOTE="${REMOTE:-ubuntu@aws}"
 INSTALL_DIR="/usr/local/tbox"
 BIN_DIR="${INSTALL_DIR}/bin"
 CONF_DIR="${INSTALL_DIR}/conf"
@@ -22,13 +22,20 @@ if [[ ! -x "${LOCAL_BINARY}" ]]; then
     exit 1
 fi
 
-ssh "${REMOTE}" "systemctl list-unit-files ${SERVICE_NAME}.service --no-legend | grep -q '^${SERVICE_NAME}.service'"
-ssh "${REMOTE}" "test -f ${CONF_DIR}/server_config.json"
-ssh "${REMOTE}" "mkdir -p ${BIN_DIR} ${LOG_DIR}"
+ssh "${REMOTE}" "sudo systemctl list-unit-files ${SERVICE_NAME}.service --no-legend | grep -q '^${SERVICE_NAME}.service'"
+ssh "${REMOTE}" "sudo test -f ${CONF_DIR}/server_config.json"
+ssh "${REMOTE}" "sudo mkdir -p ${BIN_DIR} ${CONF_DIR} ${LOG_DIR}"
 
 TEMP_BINARY="$(mktemp /tmp/tbox_server.XXXXXX)"
 TEMP_CONFIG="$(mktemp /tmp/tbox_server_config.XXXXXX)"
-trap 'rm -f "${TEMP_BINARY}" "${TEMP_CONFIG}"' EXIT
+REMOTE_STAGE_DIR="$(ssh "${REMOTE}" "mktemp -d /tmp/tbox-server.XXXXXX")"
+cleanup() {
+    rm -f "${TEMP_BINARY}" "${TEMP_CONFIG}"
+    ssh "${REMOTE}" \
+        "rm -f '${REMOTE_STAGE_DIR}/${BINARY_NAME}' '${REMOTE_STAGE_DIR}/server_config.json'; rmdir '${REMOTE_STAGE_DIR}' 2>/dev/null || true" \
+        >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
 cp "${LOCAL_BINARY}" "${TEMP_BINARY}"
 if command -v llvm-strip >/dev/null 2>&1; then
     llvm-strip --strip-unneeded "${TEMP_BINARY}"
@@ -41,18 +48,19 @@ fi
 
 python3 "${WORKSPACE_ROOT}/deploy/prepare_config.py" server \
     "${WORKSPACE_ROOT}/conf/server_config.json" "${TEMP_CONFIG}"
-scp "${TEMP_BINARY}" "${REMOTE}:${BIN_DIR}/${BINARY_NAME}.new"
-scp "${TEMP_CONFIG}" "${REMOTE}:${CONF_DIR}/server_config.json.new"
+scp "${TEMP_BINARY}" "${REMOTE}:${REMOTE_STAGE_DIR}/${BINARY_NAME}"
+scp "${TEMP_CONFIG}" "${REMOTE}:${REMOTE_STAGE_DIR}/server_config.json"
+ssh "${REMOTE}" "chmod 755 '${REMOTE_STAGE_DIR}/${BINARY_NAME}' && chmod 600 '${REMOTE_STAGE_DIR}/server_config.json'"
+ssh "${REMOTE}" "sudo install -m 755 '${REMOTE_STAGE_DIR}/${BINARY_NAME}' '${BIN_DIR}/${BINARY_NAME}.new' && sudo install -m 600 '${REMOTE_STAGE_DIR}/server_config.json' '${CONF_DIR}/server_config.json.new'"
 
-SERVICE_USER="$(ssh "${REMOTE}" "systemctl show -p User --value ${SERVICE_NAME}")"
+SERVICE_USER="$(ssh "${REMOTE}" "sudo systemctl show -p User --value ${SERVICE_NAME}")"
 if [[ -n "${SERVICE_USER}" ]]; then
-    ssh "${REMOTE}" "chown ${SERVICE_USER}:${SERVICE_USER} ${BIN_DIR}/${BINARY_NAME}.new ${CONF_DIR}/server_config.json.new ${LOG_DIR}"
+    ssh "${REMOTE}" "sudo chown ${SERVICE_USER}:${SERVICE_USER} ${BIN_DIR}/${BINARY_NAME}.new ${CONF_DIR}/server_config.json.new ${LOG_DIR}"
 fi
 
-ssh "${REMOTE}" "chmod 755 ${BIN_DIR}/${BINARY_NAME}.new && chmod 600 ${CONF_DIR}/server_config.json.new"
-ssh "${REMOTE}" "systemctl stop ${SERVICE_NAME}"
-ssh "${REMOTE}" "mv -f ${BIN_DIR}/${BINARY_NAME}.new ${BIN_DIR}/${BINARY_NAME}"
-ssh "${REMOTE}" "mv -f ${CONF_DIR}/server_config.json.new ${CONF_DIR}/server_config.json"
-ssh "${REMOTE}" "systemctl restart ${SERVICE_NAME}"
-ssh "${REMOTE}" "systemctl is-active --quiet ${SERVICE_NAME}"
+ssh "${REMOTE}" "sudo systemctl stop ${SERVICE_NAME}"
+ssh "${REMOTE}" "sudo mv -f ${BIN_DIR}/${BINARY_NAME}.new ${BIN_DIR}/${BINARY_NAME}"
+ssh "${REMOTE}" "sudo mv -f ${CONF_DIR}/server_config.json.new ${CONF_DIR}/server_config.json"
+ssh "${REMOTE}" "sudo systemctl restart ${SERVICE_NAME}"
+ssh "${REMOTE}" "sudo systemctl is-active --quiet ${SERVICE_NAME}"
 echo "Deployed ${BINARY_NAME} to ${REMOTE}:${BIN_DIR}/${BINARY_NAME}"

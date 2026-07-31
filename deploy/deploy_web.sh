@@ -16,7 +16,7 @@ BUILD_DIR="${WEB_DIR}/dist"
 # Remote deployment configuration
 REMOTE_HOST="${REMOTE_HOST:-aws}"
 SSH_KEY="${SSH_KEY:-}"
-REMOTE_USER="${REMOTE_USER:-root}"
+REMOTE_USER="${REMOTE_USER:-ubuntu}"
 REMOTE_WEB_DIR="${REMOTE_WEB_DIR:-/data/www/admin}"
 
 echo -e "${GREEN}Starting web UI deployment to ${REMOTE_HOST}...${NC}"
