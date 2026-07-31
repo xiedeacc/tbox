@@ -114,7 +114,7 @@ cc_library(
         "@com_github_grpc_grpc//:grpc++",
         "@folly",
         "@folly//:common",
-        "@openssl//:crypto",
+        "@openssl",
     ],
 )
 

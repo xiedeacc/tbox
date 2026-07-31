@@ -49,7 +49,7 @@ cc_library(
     local_defines = LOCAL_DEFINES,
     deps = [
         "//src/util",
-        "@openssl//:crypto",
+        "@openssl",
     ],
 )
 
