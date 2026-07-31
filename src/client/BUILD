@@ -119,6 +119,21 @@ cc_library(
 )
 
 cc_library(
+    name = "platform_ca_bundle",
+    srcs = ["platform_ca_bundle.cc"],
+    hdrs = ["platform_ca_bundle.h"],
+    copts = COPTS,
+    linkopts = LINKOPTS + select({
+        "@platforms//os:windows": ["Crypt32.lib"],
+        "//conditions:default": [],
+    }),
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        "//src/common:logging",
+    ],
+)
+
+cc_library(
     name = "report_manager",
     srcs = ["report_manager.cc"],
     hdrs = ["report_manager.h"],
@@ -173,6 +188,7 @@ cc_library(
     local_defines = LOCAL_DEFINES,
     deps = [
         ":authentication_manager",
+        ":platform_ca_bundle",
         ":report_manager",
         ":ssl_config_manager",
         "//src/common:logging",
@@ -211,6 +227,18 @@ cc_test(
         ":ssl_config_manager",
         "//src/common:logging",
         "//src/util",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "platform_ca_bundle_test",
+    srcs = ["platform_ca_bundle_test.cc"],
+    copts = COPTS,
+    linkopts = LINKOPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        ":platform_ca_bundle",
         "@com_google_googletest//:gtest_main",
     ],
 )

@@ -285,72 +285,6 @@ bool SSLConfigManager::SetFilePermissions(const std::string& file_path,
   return true;
 }
 
-std::string SSLConfigManager::GetRemoteCertificateChain() {
-  // Additional safety check for channel
-  if (!channel_) {
-    LOG(WARNING) << "gRPC channel not available for SSL config manager";
-    return "";
-  }
-
-  auto auth_manager = client::AuthenticationManager::Instance();
-  if (!auth_manager) {
-    LOG(ERROR) << "Authentication manager not available";
-    return "";
-  }
-
-  if (!auth_manager->IsAuthenticated()) {
-    LOG(WARNING) << "Not authenticated, cannot get remote certificate chain";
-    return "";
-  }
-
-  try {
-    async_grpc::Client<server::grpc_handler::CertOpMethod> client(channel_);
-    LOG(INFO) << "Successfully created async_grpc client";
-    tbox::proto::CertRequest request;
-    request.set_request_id(util::Util::UUID());
-    request.set_op(tbox::proto::OpCode::OP_GET_FULLCHAIN_CERT);
-    request.set_token(auth_manager->GetToken());
-
-    // Use async_grpc client like report_manager does
-    grpc::Status status;
-    bool success = client.Write(request, &status);
-    LOG(INFO)
-        << "Successfully retrieved fullchain certificate chain from server";
-    if (success && status.ok()) {
-      const auto& response = client.response();
-      if (response.err_code() == tbox::proto::ErrCode::Success) {
-        // Fullchain certificate content should be in certificate field
-        std::string cert_content = response.certificate();
-
-        if (!cert_content.empty()) {
-          LOG(INFO) << "Successfully retrieved fullchain certificate chain "
-                       "from server";
-          return cert_content;
-        } else {
-          LOG(ERROR)
-              << "Empty fullchain certificate content received from server";
-        }
-      } else {
-        LOG(WARNING) << "Failed to fetch fullchain certificate chain from "
-                        "server - gRPC status: "
-                     << (status.ok() ? "OK" : "FAILED")
-                     << ", error: " << status.error_message()
-                     << ", response error code: "
-                     << static_cast<int>(response.err_code());
-      }
-    } else {
-      LOG(WARNING) << "Failed to fetch fullchain certificate chain from server "
-                      "- gRPC status: "
-                   << (status.ok() ? "OK" : "FAILED")
-                   << ", error: " << status.error_message();
-    }
-  } catch (const std::exception& e) {
-    LOG(ERROR) << "Exception fetching remote certificate chain: " << e.what();
-  }
-  LOG(INFO) << "Failed to get remote certificate chain";
-  return "";
-}
-
 SSLConfigManager::CertificateChain SSLConfigManager::ParseCertificateChain(
     const std::string& chain) {
   CertificateChain cert_chain;
@@ -398,33 +332,6 @@ SSLConfigManager::CertificateChain SSLConfigManager::ParseCertificateChain(
   return cert_chain;
 }
 
-bool SSLConfigManager::AreCertificatesEqual(const std::string& cert1,
-                                            const std::string& cert2) {
-  if (cert1.empty() || cert2.empty()) {
-    return cert1.empty() && cert2.empty();
-  }
-
-  // Normalize whitespace and compare certificate content
-  auto normalize = [](const std::string& cert) {
-    std::string normalized;
-    std::istringstream iss(cert);
-    std::string line;
-
-    while (std::getline(iss, line)) {
-      // Trim whitespace
-      line.erase(0, line.find_first_not_of(" \t\r\n"));
-      line.erase(line.find_last_not_of(" \t\r\n") + 1);
-
-      if (!line.empty()) {
-        normalized += line + "\n";
-      }
-    }
-    return normalized;
-  };
-
-  return normalize(cert1) == normalize(cert2);
-}
-
 bool SSLConfigManager::SetWwwDataOwnership(const std::string& directory_path) {
 #if defined(_WIN32)
   LOG(INFO) << "Skipping www-data ownership on Windows for: "
@@ -467,14 +374,6 @@ bool SSLConfigManager::SetWwwDataOwnership(const std::string& directory_path) {
 
   return true;
 #endif
-}
-
-bool SSLConfigManager::UpdateTboxCertificate() {
-  // ca-bundle.pem establishes trust for the connection itself. Updating it
-  // with data received over that connection would create circular trust and
-  // permit an active attacker to replace the client's trust anchor.
-  LOG(INFO) << "Skipping deployment-owned platform CA bundle update";
-  return false;
 }
 
 bool SSLConfigManager::UpdateNginxCertificates() {

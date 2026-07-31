@@ -35,14 +35,17 @@ bool ReportManager::Init(std::shared_ptr<grpc::Channel> channel,
                          int report_interval_seconds, int login_retry_seconds) {
   std::lock_guard<std::mutex> lock(init_mutex_);
 
-  if (initialized_) {
-    LOG(WARNING) << "ReportManager already initialized";
-    return true;
+  if (running_.load() || reporting_thread_.joinable()) {
+    LOG(ERROR) << "Cannot reinitialize ReportManager while it is running";
+    return false;
   }
 
   channel_ = channel;
+  ipv4_stub_.reset();
+  ipv6_stub_.reset();
   report_interval_seconds_ = report_interval_seconds;
   login_retry_seconds_ = login_retry_seconds;
+  connection_healthy_.store(false);
 
   initialized_ = true;
   return true;

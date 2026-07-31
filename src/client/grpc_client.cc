@@ -11,6 +11,7 @@
 
 #include "src/common/logging.h"
 #include "src/client/authentication_manager.h"
+#include "src/client/platform_ca_bundle.h"
 #include "src/client/report_manager.h"
 #include "src/client/ssl_config_manager.h"
 #include "src/impl/config_manager.h"
@@ -43,6 +44,10 @@ GrpcClient::GrpcClient() {
   auto [hostname, use_http] = ParseHostname(config_manager->ServerAddr());
   target_address_ =
       hostname + ":" + std::to_string(config_manager->GrpcServerPort());
+
+  if (!use_http) {
+    PlatformCABundle::Refresh(config_manager->LocalCertPath());
+  }
 
   if (!Init()) {
     LOG(ERROR) << "Failed to initialize gRPC channel";
@@ -149,6 +154,21 @@ bool GrpcClient::Init() {
 }
 
 void GrpcClient::Start() {
+  std::lock_guard<std::mutex> lock(lifecycle_mutex_);
+  StartManagers();
+
+  auto config_manager = util::ConfigManager::Instance();
+  auto [hostname, use_http] = ParseHostname(config_manager->ServerAddr());
+  (void)hostname;
+  if (!use_http && !ca_monitor_thread_.joinable()) {
+    ca_monitor_stop_.store(false);
+    ca_monitor_thread_ =
+        std::thread(&GrpcClient::MonitorPlatformCABundle, this);
+    LOG(INFO) << "Platform CA bundle monitor started";
+  }
+}
+
+void GrpcClient::StartManagers() {
   // Start SSL config manager (if certificate updates are enabled)
   auto ssl_config_manager = SSLConfigManager::Instance();
   if (!ssl_config_manager->IsRunning()) {
@@ -166,7 +186,14 @@ void GrpcClient::Start() {
 
 void GrpcClient::Stop() {
   LOG(INFO) << "Stopping GrpcClient...";
+  StopPlatformCAMonitor();
 
+  std::lock_guard<std::mutex> lock(lifecycle_mutex_);
+  StopManagers();
+  LOG(INFO) << "GrpcClient stopped";
+}
+
+void GrpcClient::StopManagers() {
   // Stop SSL config manager
   auto ssl_config_manager = SSLConfigManager::Instance();
   ssl_config_manager->Stop();
@@ -176,13 +203,60 @@ void GrpcClient::Stop() {
   auto report_manager = ReportManager::Instance();
   report_manager->Stop();
   LOG(INFO) << "Report manager stopped";
-
-  LOG(INFO) << "GrpcClient stopped";
 }
 
 bool GrpcClient::IsRunning() const {
   auto report_manager = ReportManager::Instance();
   return report_manager->IsRunning();
+}
+
+void GrpcClient::MonitorPlatformCABundle() {
+  auto config_manager = util::ConfigManager::Instance();
+  const std::string ca_bundle_path = config_manager->LocalCertPath();
+
+  std::unique_lock<std::mutex> wait_lock(ca_monitor_mutex_);
+  while (!ca_monitor_stop_.load()) {
+    if (ca_monitor_cv_.wait_for(
+            wait_lock, kCARefreshInterval,
+            [this]() { return ca_monitor_stop_.load(); })) {
+      break;
+    }
+
+    wait_lock.unlock();
+    const auto result = PlatformCABundle::Refresh(ca_bundle_path);
+    if (result == PlatformCABundle::UpdateResult::kUpdated) {
+      LOG(INFO) << "Platform roots changed; reloading gRPC TLS credentials";
+      if (!ReloadTLSChannel()) {
+        LOG(ERROR) << "Failed to reload gRPC TLS credentials";
+      }
+    }
+    wait_lock.lock();
+  }
+}
+
+void GrpcClient::StopPlatformCAMonitor() {
+  ca_monitor_stop_.store(true);
+  ca_monitor_cv_.notify_all();
+  if (ca_monitor_thread_.joinable() &&
+      ca_monitor_thread_.get_id() != std::this_thread::get_id()) {
+    ca_monitor_thread_.join();
+    LOG(INFO) << "Platform CA bundle monitor stopped";
+  }
+}
+
+bool GrpcClient::ReloadTLSChannel() {
+  std::lock_guard<std::mutex> lock(lifecycle_mutex_);
+  if (ca_monitor_stop_.load()) {
+    return false;
+  }
+
+  StopManagers();
+  AuthenticationManager::Instance()->ClearToken();
+  if (!Init()) {
+    return false;
+  }
+  StartManagers();
+  return true;
 }
 
 }  // namespace client

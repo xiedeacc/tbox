@@ -3,7 +3,6 @@ param(
     [string]$InstallDir = "D:\software\tbox",
     [string]$ConfigSource =
         "dev:/root/src/cpp/tbox/conf/client_local_config.json",
-    [string]$CaBundle = "",
     [string]$TaskName = "TBox Client",
     [string]$ServerAddr = "https://ip.xiedeacc.com",
     [int]$GrpcServerPort = 443
@@ -77,122 +76,14 @@ Copy-Item -LiteralPath $sourceBinary -Destination $newBinary -Force
 Move-Item -LiteralPath $newBinary -Destination $binary -Force
 
 $newConfig = "$config.new"
-$newCaBundle = "$caBundleFile.new"
 Write-Host "Copying configuration from $($ConfigSource.Split(':')[0])..."
 & scp -q $ConfigSource $newConfig
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to copy configuration from $ConfigSource."
 }
 
-function Export-WindowsTrustedRoots {
-    param(
-        [Parameter(Mandatory)]
-        [string]$Destination
-    )
-
-    $certificates = @{}
-    foreach ($storeLocation in @(
-        [Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine,
-        [Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser
-    )) {
-        $store = [Security.Cryptography.X509Certificates.X509Store]::new(
-            [Security.Cryptography.X509Certificates.StoreName]::Root,
-            $storeLocation
-        )
-        try {
-            $store.Open(
-                [Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly
-            )
-            foreach ($certificate in $store.Certificates) {
-                if ($certificate.RawData.Length -gt 0) {
-                    $certificates[$certificate.Thumbprint] =
-                        $certificate.RawData
-                }
-            }
-        } catch {
-            Write-Warning (
-                "Unable to read the Windows $storeLocation Root store: " +
-                $_.Exception.Message
-            )
-        } finally {
-            $store.Close()
-        }
-    }
-
-    if ($certificates.Count -eq 0) {
-        return 0
-    }
-
-    $pem = [Text.StringBuilder]::new()
-    foreach ($thumbprint in ($certificates.Keys | Sort-Object)) {
-        $base64 = [Convert]::ToBase64String(
-            $certificates[$thumbprint],
-            [Base64FormattingOptions]::InsertLineBreaks
-        )
-        [void]$pem.AppendLine("-----BEGIN CERTIFICATE-----")
-        [void]$pem.AppendLine($base64)
-        [void]$pem.AppendLine("-----END CERTIFICATE-----")
-    }
-    [IO.File]::WriteAllText(
-        $Destination,
-        $pem.ToString(),
-        [Text.Encoding]::ASCII
-    )
-    return $certificates.Count
-}
-
-if ($CaBundle) {
-    if (-not (Test-Path -LiteralPath $CaBundle -PathType Leaf)) {
-        throw "CA bundle does not exist: $CaBundle"
-    }
-    Write-Host "Copying explicitly configured trusted CA bundle..."
-    Copy-Item `
-        -LiteralPath $CaBundle `
-        -Destination $newCaBundle `
-        -Force
-} else {
-    Write-Host "Exporting trusted roots from Windows Certificate Store..."
-    $exportedCertificateCount = Export-WindowsTrustedRoots $newCaBundle
-
-    if ($exportedCertificateCount -gt 0) {
-        Write-Host (
-            "Exported $exportedCertificateCount trusted roots from " +
-            "Windows Certificate Store."
-        )
-    } else {
-        $gitCaBundle = @(
-            (Join-Path $env:ProgramFiles `
-                "Git\mingw64\etc\ssl\certs\ca-bundle.crt"),
-            (Join-Path $env:ProgramFiles `
-                "Git\usr\ssl\certs\ca-bundle.crt")
-        ) |
-            Where-Object {
-                Test-Path -LiteralPath $_ -PathType Leaf
-            } |
-            Select-Object -First 1
-
-        if (-not $gitCaBundle) {
-            throw (
-                "Windows Certificate Store contained no exportable roots " +
-                "and the Git for Windows CA bundle fallback was not found."
-            )
-        }
-        Write-Warning (
-            "Windows Certificate Store export failed; using the Git for " +
-            "Windows CA bundle fallback: $gitCaBundle"
-        )
-        Copy-Item `
-            -LiteralPath $gitCaBundle `
-            -Destination $newCaBundle `
-            -Force
-    }
-}
-
 if ((Get-Item -LiteralPath $newConfig).Length -eq 0) {
     throw "Downloaded client configuration is empty."
-}
-if ((Get-Item -LiteralPath $newCaBundle).Length -eq 0) {
-    throw "CA bundle is empty."
 }
 
 $clientConfig = Get-Content -LiteralPath $newConfig -Raw |
@@ -248,10 +139,6 @@ $json = $clientConfig | ConvertTo-Json -Depth 32
 )
 
 Move-Item -LiteralPath $newConfig -Destination $config -Force
-Move-Item `
-    -LiteralPath $newCaBundle `
-    -Destination $caBundleFile `
-    -Force
 Remove-Item `
     -LiteralPath (Join-Path $confDir "xiedeacc.com.ca.cer") `
     -Force `
@@ -422,6 +309,7 @@ if (-not (Wait-ForLogText -Text "Successfully reported client IP")) {
 
 Write-Host "Deployed client: $binary"
 Write-Host "Configuration: $config"
+Write-Host "Platform CA bundle: $caBundleFile"
 Write-Host "Data directory: $dataDir"
 Write-Host "Log directory: $logDir"
 Write-Host "Autostart mode: $autostartMode"

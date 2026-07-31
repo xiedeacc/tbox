@@ -91,9 +91,6 @@ class SSLConfigManager {
   // Set file permissions
   bool SetFilePermissions(const std::string& file_path, FileMode permissions);
 
-  // Get complete certificate chain from remote server using openssl s_client
-  std::string GetRemoteCertificateChain();
-
   // Get individual certificates from chain (server, intermediate, root)
   struct CertificateChain {
     std::string server_cert;
@@ -103,15 +100,8 @@ class SSLConfigManager {
   };
   CertificateChain ParseCertificateChain(const std::string& chain);
 
-  // Compare certificate contents (not just fingerprints)
-  bool AreCertificatesEqual(const std::string& cert1, const std::string& cert2);
-
   // Set directory ownership to www-data user
   bool SetWwwDataOwnership(const std::string& directory_path);
-
-  // The platform CA bundle is deployment-owned and must not be updated over
-  // the connection that it bootstraps.
-  bool UpdateTboxCertificate();
 
   // Check and update nginx SSL certificates
   bool UpdateNginxCertificates();

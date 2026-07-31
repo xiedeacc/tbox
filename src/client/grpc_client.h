@@ -62,6 +62,21 @@ class GrpcClient {
   /// @return True on success, false on failure.
   bool Init();
 
+  /// @brief Start managers that use the current channel.
+  void StartManagers();
+
+  /// @brief Stop managers that use the current channel.
+  void StopManagers();
+
+  /// @brief Monitor platform roots and reload TLS credentials on change.
+  void MonitorPlatformCABundle();
+
+  /// @brief Stop the platform CA monitor thread.
+  void StopPlatformCAMonitor();
+
+  /// @brief Recreate the channel after the platform CA bundle changes.
+  bool ReloadTLSChannel();
+
   /// @brief Parse hostname by removing protocol prefix.
   /// @param hostname Hostname possibly with http:// or https:// prefix.
   /// @return Pair of (cleaned_hostname, use_http).
@@ -72,6 +87,14 @@ class GrpcClient {
   std::string target_address_;
   std::shared_ptr<grpc::Channel> channel_;
   std::shared_ptr<tbox::proto::TBOXService::Stub> stub_;
+  std::atomic<bool> ca_monitor_stop_{false};
+  std::thread ca_monitor_thread_;
+  std::mutex ca_monitor_mutex_;
+  std::condition_variable ca_monitor_cv_;
+  std::mutex lifecycle_mutex_;
+
+  static constexpr std::chrono::hours kCARefreshInterval =
+      std::chrono::hours(24);
 };
 
 }  // namespace client
