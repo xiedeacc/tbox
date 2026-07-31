@@ -66,9 +66,15 @@ if ! ssh_exec "echo 'SSH connection successful'"; then
 fi
 print_success "SSH connection verified"
 
-# Check if pnpm is installed
-print_status "Checking for pnpm..."
-if ! command -v pnpm &> /dev/null; then
+# Select the package manager that owns the checked-in lockfile.
+if [[ -f "${WEB_DIR}/package-lock.json" ]]; then
+    if ! command -v npm &> /dev/null; then
+        print_error "package-lock.json exists but npm is not installed."
+        exit 1
+    fi
+    print_status "Using npm with package-lock.json"
+    BUILD_CMD="npm"
+elif ! command -v pnpm &> /dev/null; then
     print_status "pnpm not found, checking for npm..."
     if ! command -v npm &> /dev/null; then
         print_error "Neither pnpm nor npm is installed. Please install Node.js and pnpm."
@@ -90,7 +96,7 @@ if [[ "$BUILD_CMD" == "pnpm" ]]; then
         exit 1
     fi
 else
-    if ! npm install; then
+    if ! npm ci; then
         print_error "Failed to install dependencies"
         exit 1
     fi
