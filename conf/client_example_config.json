@@ -8,6 +8,8 @@
     "user": "tiger",
     "password": "test",
     "client_id": "test-client-001",
+    "monitor_domains": [],
+    "ddns_record_types": [],
     "update_certs": false,
     "certificate_files": [
         "xiedeacc.com.ca.cer",

@@ -98,6 +98,8 @@ message ReportRequest {
   string client_info = 5;         // Additional client information (optional)
   string token = 6;               // Authentication token
   string client_id = 7;           // Client identifier from configuration
+  repeated string monitor_domains = 8;  // Domains for server-side DDNS
+  repeated string ddns_record_types = 9;  // A/AAAA; empty means both
 }
 
 // Response message for client IP reporting

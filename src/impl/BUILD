@@ -180,7 +180,6 @@ cc_test(
     deps = [
         ":ddns_manager",
         "//src/common:logging",
-        "//src/impl/dns:route53_provider",
         "@com_google_googletest//:gtest_main",
     ],
 )

@@ -20,7 +20,7 @@ class VlmcsdHandler {
  public:
   explicit VlmcsdHandler(uint16_t port = 1688);
   VlmcsdHandler(std::vector<std::string> listen_addresses,
-                uint16_t port = 1688);
+                uint16_t port = 1688, bool allow_ipv6_wildcard = false);
   VlmcsdHandler(const VlmcsdHandler&) = delete;
   VlmcsdHandler& operator=(const VlmcsdHandler&) = delete;
   ~VlmcsdHandler();
@@ -31,6 +31,7 @@ class VlmcsdHandler {
  private:
   std::vector<std::string> listen_addresses_;
   uint16_t port_;
+  bool allow_ipv6_wildcard_ = false;
   std::atomic_bool running_{false};
   std::thread server_thread_;
 };

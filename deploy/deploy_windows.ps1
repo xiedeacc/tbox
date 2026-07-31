@@ -126,9 +126,7 @@ foreach ($dnsKey in @(
     "aws_region",
     "dns_provider",
     "cloudflare_api_token",
-    "cloudflare_zone_id",
-    "monitor_domains",
-    "ddns_record_types"
+    "cloudflare_zone_id"
 )) {
     Remove-ConfigValue $clientConfig $dnsKey
 }
@@ -153,8 +151,34 @@ Set-ConfigValue $clientConfig "client_id" `
     ("windows-" + $env:COMPUTERNAME.ToLowerInvariant())
 Set-ConfigValue $clientConfig "server_addr" $ServerAddr
 Set-ConfigValue $clientConfig "grpc_server_port" $GrpcServerPort
+$vlmcsdAddresses = [Collections.Generic.HashSet[string]]::new(
+    [StringComparer]::OrdinalIgnoreCase
+)
+[void]$vlmcsdAddresses.Add("127.0.0.1")
+[void]$vlmcsdAddresses.Add("::1")
+Get-NetIPAddress -AddressState Preferred -ErrorAction SilentlyContinue |
+    ForEach-Object {
+        $value = $_.IPAddress
+        $parsed = $null
+        if (-not [Net.IPAddress]::TryParse($value, [ref]$parsed)) {
+            return
+        }
+        $bytes = $parsed.GetAddressBytes()
+        $isPrivate = if ($parsed.AddressFamily -eq
+            [Net.Sockets.AddressFamily]::InterNetwork) {
+            $bytes[0] -eq 10 -or
+            ($bytes[0] -eq 172 -and $bytes[1] -ge 16 -and
+                $bytes[1] -le 31) -or
+            ($bytes[0] -eq 192 -and $bytes[1] -eq 168)
+        } else {
+            ($bytes[0] -band 0xFE) -eq 0xFC
+        }
+        if ($isPrivate) {
+            [void]$vlmcsdAddresses.Add($parsed.ToString())
+        }
+    }
 Set-ConfigValue $clientConfig "vlmcsd_listen_addresses" `
-    @("127.0.0.1", "::1")
+    @($vlmcsdAddresses | Sort-Object)
 
 $json = $clientConfig | ConvertTo-Json -Depth 32
 [IO.File]::WriteAllText(

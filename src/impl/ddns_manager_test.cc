@@ -5,92 +5,98 @@
 
 #include "src/impl/ddns_manager.h"
 
-#include <chrono>
-#include <thread>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "gtest/gtest.h"
-#include "src/impl/dns/route53_provider.h"
 
 namespace tbox {
 namespace impl {
 namespace {
 
-class DDNSManagerTest : public ::testing::Test {
- protected:
-  void SetUp() override { manager_ = DDNSManager::Instance(); }
-
-  void TearDown() override {
-    if (manager_->IsRunning()) {
-      manager_->Stop();
+class FakeDnsProvider final : public dns::DnsProvider {
+ public:
+  bool Init() override { return true; }
+  std::string Name() const override { return "fake"; }
+  std::string GetZoneId(const std::string&) override {
+    ++zone_calls;
+    return "test-zone";
+  }
+  bool ListRecords(const std::string&, const std::string&,
+                   dns::RecordType type,
+                   std::vector<dns::Record>* records) override {
+    ++list_calls;
+    records->clear();
+    if (!stored_value.empty()) {
+      records->push_back({"", "", stored_value, type, 60});
     }
+    return true;
+  }
+  bool UpsertRecord(const std::string&, const std::string&, dns::RecordType,
+                    const std::string& value, int) override {
+    ++upsert_calls;
+    stored_value = value;
+    return true;
+  }
+  bool DeleteRecord(const std::string&, const std::string&, dns::RecordType,
+                    const std::string&) override {
+    return true;
   }
 
-  std::shared_ptr<DDNSManager> manager_;
+  int zone_calls = 0;
+  int list_calls = 0;
+  int upsert_calls = 0;
+  std::string stored_value;
 };
 
-TEST_F(DDNSManagerTest, InstanceNotNull) {
-  EXPECT_NE(manager_, nullptr);
+class DDNSManagerTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    auto provider = std::make_unique<FakeDnsProvider>();
+    provider_ = provider.get();
+    DDNSManager::Instance()->SetProviderForTesting(std::move(provider));
+  }
+
+  FakeDnsProvider* provider_ = nullptr;
+};
+
+TEST_F(DDNSManagerTest, CachesSuccessfulRecordValue) {
+  ASSERT_TRUE(DDNSManager::Instance()->UpdateDomains(
+      {"Home.Example.com."}, {"198.51.100.10"}, {"A"}));
+  EXPECT_EQ(provider_->zone_calls, 1);
+  EXPECT_EQ(provider_->list_calls, 1);
+  EXPECT_EQ(provider_->upsert_calls, 1);
+
+  ASSERT_TRUE(DDNSManager::Instance()->UpdateDomains(
+      {"home.example.com"}, {"198.51.100.10"}, {"A"}));
+  EXPECT_EQ(provider_->zone_calls, 1);
+  EXPECT_EQ(provider_->list_calls, 1);
+  EXPECT_EQ(provider_->upsert_calls, 1);
+
+  ASSERT_TRUE(DDNSManager::Instance()->UpdateDomains(
+      {"home.example.com"}, {"198.51.100.11"}, {"A"}));
+  EXPECT_EQ(provider_->list_calls, 2);
+  EXPECT_EQ(provider_->upsert_calls, 2);
 }
 
-TEST_F(DDNSManagerTest, InitWithConfig) {
-  // Note: Init will fail without actual AWS credentials or ConfigManager
-  // This test is expected to fail, but we verify it doesn't crash unexpectedly
-  // Skipping this test in CI environments without AWS credentials
-  // manager_->Init();
-  // Just verify manager exists
-  EXPECT_NE(manager_, nullptr);
+TEST_F(DDNSManagerTest, IgnoresPrivateAddresses) {
+  EXPECT_TRUE(DDNSManager::Instance()->UpdateDomains(
+      {"home.example.com"}, {"192.168.1.10", "fd00::10"}, {}));
+  EXPECT_EQ(provider_->list_calls, 0);
+  EXPECT_EQ(provider_->upsert_calls, 0);
 }
 
-TEST_F(DDNSManagerTest, IsRunningInitiallyFalse) {
-  EXPECT_FALSE(manager_->IsRunning());
+TEST_F(DDNSManagerTest, RejectsInvalidDomains) {
+  EXPECT_FALSE(DDNSManager::Instance()->UpdateDomains(
+      {"not a domain"}, {"198.51.100.10"}, {"A"}));
+  EXPECT_EQ(provider_->zone_calls, 0);
 }
 
-TEST_F(DDNSManagerTest, StartStop) {
-  // Note: Cannot test Start/Stop without AWS credentials
-  // These methods require Init() which needs AWS setup
-  // Just verify initial state
-  EXPECT_FALSE(manager_->IsRunning());
-}
-
-TEST_F(DDNSManagerTest, MultipleStartCalls) {
-  // Cannot test without AWS credentials
-  // Just verify manager exists
-  EXPECT_NE(manager_, nullptr);
-}
-
-TEST_F(DDNSManagerTest, MultipleStopCalls) {
-  // Cannot test without AWS credentials
-  // Verify stop on uninitialized manager doesn't crash
-  manager_->Stop();
-  EXPECT_FALSE(manager_->IsRunning());
-
-  // Stopping again should be safe
-  manager_->Stop();
-  EXPECT_FALSE(manager_->IsRunning());
-}
-
-// Note: IsIPv6InList is a private method, so we test it indirectly through
-// UpdateDNS
-
-TEST_F(DDNSManagerTest, UpdateDNSWithoutInit) {
-  // Calling UpdateDNS without initialization should fail gracefully
-  bool result = manager_->UpdateDNS();
-  EXPECT_FALSE(result);
-}
-
-TEST_F(DDNSManagerTest, ConfigurationValues) {
-  // Verify hardcoded configuration constants
+TEST(DDNSManagerConfigurationTest, ConfigurationValues) {
   EXPECT_EQ(DDNSManager::kDnsTtl, 60);
-  EXPECT_EQ(DDNSManager::kMaxBackoffSeconds, 3600);
-  EXPECT_EQ(DDNSManager::kMinBackoffSeconds, 60);
-  EXPECT_STREQ(dns::Route53Provider::kDefaultRegion, "us-east-1");
-}
-
-TEST_F(DDNSManagerTest, BackoffConfiguration) {
-  // Test backoff configuration values
-  EXPECT_EQ(DDNSManager::kMaxBackoffSeconds, 3600);
-  EXPECT_EQ(DDNSManager::kMinBackoffSeconds, 60);
-  EXPECT_GT(DDNSManager::kMaxBackoffSeconds, DDNSManager::kMinBackoffSeconds);
+  EXPECT_EQ(DDNSManager::kMaxDomainsPerReport, 32);
 }
 
 }  // namespace

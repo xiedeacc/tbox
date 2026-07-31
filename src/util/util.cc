@@ -1111,6 +1111,19 @@ std::vector<std::string> Util::GetAllLocalIPAddresses() {
   return all_ips;
 }
 
+std::vector<std::string> Util::GetLoopbackAndPrivateIPAddresses() {
+  std::set<std::string> addresses = {"127.0.0.1", "::1"};
+  std::vector<folly::IPAddress> local_addresses;
+  ListAllIPAddresses(&local_addresses);
+  for (const auto& address : local_addresses) {
+    if (address.isPrivate() && !address.isLinkLocal() &&
+        !address.isMulticast()) {
+      addresses.insert(address.str());
+    }
+  }
+  return std::vector<std::string>(addresses.begin(), addresses.end());
+}
+
 std::vector<std::string> Util::GetPublicIPv6Addresses() {
 #if defined(_WIN32)
   std::map<std::string, int> address_prefix_map;

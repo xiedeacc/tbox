@@ -8,7 +8,6 @@
     "grpc_threads": 3,
     "event_threads": 5,
     "check_interval_seconds": 5,
-    "monitor_domains": [],
     "dns_provider": "cloudflare",
     "cloudflare_api_token": "test",
     "cloudflare_zone_id": "",
@@ -28,5 +27,5 @@
     "ssh_private_key_path": "~/.ssh/id_ed25519",
     "ssh_public_key_path": "~/.ssh/id_ed25519.pub",
     "vlmcsd_enabled": false,
-    "vlmcsd_listen_addresses": ["0.0.0.0"]
+    "vlmcsd_listen_addresses": ["::"]
 }

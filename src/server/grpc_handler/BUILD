@@ -106,6 +106,8 @@ cc_library(
     deps = [
         "//src/async_grpc",
         "//src/common:logging",
+        "//src/impl:ddns_manager",
+        "//src/impl:session_manager",
         "//src/proto:cc_grpc_service",
         "//src/proto:cc_service",
         "//src/server/handler",

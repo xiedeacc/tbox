@@ -165,6 +165,21 @@ TEST(Util, GetAllLocalIPAddresses) {
   LOG(INFO) << "  IPv6: " << ipv6_addresses.size();
 }
 
+TEST(Util, GetLoopbackAndPrivateIPAddresses) {
+  const auto addresses = Util::GetLoopbackAndPrivateIPAddresses();
+  EXPECT_NE(std::find(addresses.begin(), addresses.end(), "127.0.0.1"),
+            addresses.end());
+  EXPECT_NE(std::find(addresses.begin(), addresses.end(), "::1"),
+            addresses.end());
+
+  for (const auto& value : addresses) {
+    const folly::IPAddress address(value);
+    EXPECT_TRUE(address.isLoopback() || address.isPrivate());
+    EXPECT_FALSE(address.isLinkLocal());
+    EXPECT_FALSE(address.isMulticast());
+  }
+}
+
 TEST(Util, GetPublicIPv6Addresses) {
   auto addresses = Util::GetPublicIPv6Addresses();
 

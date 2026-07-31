@@ -26,7 +26,6 @@
 tbox::server::HttpServer* http_server_ptr = nullptr;
 tbox::server::GrpcServer* grpc_server_ptr = nullptr;
 tbox::server::tcp_handler::VlmcsdHandler* vlmcsd_handler_ptr = nullptr;
-tbox::impl::DDNSManager* ddns_manager_ptr = nullptr;
 tbox::impl::CertManager* cert_manager_ptr = nullptr;
 bool shutdown_required = false;
 std::mutex mutex;
@@ -53,12 +52,6 @@ const char* SignalName(int sig) {
 void ShutdownCheckingThread(void) {
   std::unique_lock<std::mutex> lock(mutex);
   cv.wait(lock, []() { return shutdown_required; });
-
-  // Stop DDNS manager first
-  if (ddns_manager_ptr && ddns_manager_ptr->IsRunning()) {
-    ddns_manager_ptr->Stop();
-    LOG(INFO) << "DDNS manager stopped";
-  }
 
   // Stop certificate manager
   if (cert_manager_ptr && cert_manager_ptr->IsRunning()) {
@@ -115,19 +108,11 @@ int main(int argc, char** argv) {
   }
   LOG(INFO) << "UserManager initialized successfully";
 
-  // Initialize DDNS manager singleton
-  auto ddns_manager = tbox::impl::DDNSManager::Instance();
-  if (ddns_manager->Init()) {
-    LOG(INFO) << "DDNS manager initialized";
-    ddns_manager_ptr = ddns_manager.get();
-
-    // Start DDNS manager
-    if (!ddns_manager->IsRunning()) {
-      ddns_manager->Start();
-      LOG(INFO) << "DDNS manager started";
-    }
+  if (tbox::impl::DDNSManager::Instance()->Init()) {
+    LOG(INFO) << "Server-side DDNS manager initialized";
   } else {
-    LOG(WARNING) << "Failed to initialize DDNS manager, continuing without it";
+    LOG(WARNING)
+        << "Failed to initialize server-side DDNS, continuing without it";
   }
 
   // Initialize certificate manager singleton
@@ -171,7 +156,7 @@ int main(int argc, char** argv) {
   std::unique_ptr<tbox::server::tcp_handler::VlmcsdHandler> vlmcsd_handler;
   if (config_manager->VlmcsdEnabled()) {
     vlmcsd_handler = std::make_unique<tbox::server::tcp_handler::VlmcsdHandler>(
-        config_manager->VlmcsdListenAddresses(), 1688);
+        config_manager->VlmcsdListenAddresses(), 1688, true);
     ::vlmcsd_handler_ptr = vlmcsd_handler.get();
     if (vlmcsd_handler->Start()) {
       LOG(INFO) << "vlmcsd TCP handler started successfully";

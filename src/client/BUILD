@@ -300,7 +300,6 @@ cc_binary(
         ":websocket_client",
         "//src/common:logging",
         "//src/impl:config_manager",
-        "//src/impl:ddns_manager",
         "//src/proto:cc_grpc_service",
         "//src/server/tcp_handler",
         "@boost//:url",

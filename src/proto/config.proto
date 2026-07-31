@@ -24,7 +24,7 @@ message BaseConfig {
   // Client identification
   string client_id = 14;
 
-  // Monitor domains list for DDNS management
+  // Client-requested domains for server-side DDNS management.
   repeated string monitor_domains = 15;
 
   // AWS credentials for Route53 access
@@ -50,8 +50,7 @@ message BaseConfig {
   string cloudflare_api_token = 23;
   string cloudflare_zone_id = 24;
 
-  // DNS record types to maintain for monitor_domains. Empty means both A and
-  // AAAA. Supported values are "A" and "AAAA".
+  // Client-requested DNS record types. Empty means both A and AAAA.
   repeated string ddns_record_types = 25;
 
   // Embedded vlmcsd TCP server settings.

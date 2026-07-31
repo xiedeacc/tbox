@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import ipaddress
 import json
 from pathlib import Path
 
@@ -20,13 +21,23 @@ AWS_DNS_KEYS = (
     "aws_region",
 )
 
-CLIENT_DNS_KEYS = AWS_DNS_KEYS + (
+CLIENT_DNS_CREDENTIAL_KEYS = AWS_DNS_KEYS + (
     "dns_provider",
     "cloudflare_api_token",
     "cloudflare_zone_id",
-    "monitor_domains",
-    "ddns_record_types",
 )
+
+
+def local_vlmcsd_addresses(values: list[str]) -> list[str]:
+    addresses = {"127.0.0.1", "::1"}
+    for value in values:
+        try:
+            address = ipaddress.ip_address(value)
+        except ValueError:
+            continue
+        if address.is_private and not address.is_link_local:
+            addresses.add(address.compressed)
+    return sorted(addresses)
 
 
 def main() -> None:
@@ -49,18 +60,13 @@ def main() -> None:
         config["grpc_server_port"] = 443
         config["local_cert_path"] = "./conf/ca-bundle.pem"
         config["update_certs"] = args.host == "nas"
-        # Only NAS performs client-side DDNS for the home network. Other
-        # clients report their addresses to the server and must not receive
-        # DNS provider credentials.
-        keys_to_remove = AWS_DNS_KEYS if args.host == "nas" else CLIENT_DNS_KEYS
-        for key in keys_to_remove:
+        # Clients send monitor_domains and addresses to the server; DNS
+        # provider credentials never leave the server.
+        for key in CLIENT_DNS_CREDENTIAL_KEYS:
             config.pop(key, None)
-        if args.host == "nas" and config.get("monitor_domains"):
-            config["dns_provider"] = "cloudflare"
-            if not config.get("cloudflare_api_token"):
-                parser.error(
-                    "NAS DDNS requires cloudflare_api_token in its source config"
-                )
+        config["vlmcsd_listen_addresses"] = local_vlmcsd_addresses(
+            config.get("vlmcsd_listen_addresses", [])
+        )
         if args.credentials_from:
             credentials = json.loads(
                 args.credentials_from.read_text(encoding="utf-8")
@@ -71,6 +77,8 @@ def main() -> None:
         config["ssh_private_key_path"] = f"{ssh_home}/.ssh/id_ed25519"
         config["ssh_public_key_path"] = f"{ssh_home}/.ssh/id_ed25519.pub"
     else:
+        config.pop("monitor_domains", None)
+        config.pop("ddns_record_types", None)
         config["certificate_sync_client_ids"] = ["home-nas-001"]
         config["ssh_private_key_path"] = "/home/ubuntu/.ssh/id_ed25519"
         config["ssh_public_key_path"] = "/home/ubuntu/.ssh/id_ed25519.pub"

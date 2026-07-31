@@ -61,9 +61,12 @@ scp -q "${OPENWRT_REMOTE}:${OPENWRT_CONFIG}" "${STAGED_CONFIG}"
 python3 - "${STAGED_CONFIG}" "${TBOX_CLIENT_ID}" "${TBOX_USER}" \
     "${TBOX_SERVER_ADDR}" "${TBOX_GRPC_PORT}" <<'PY'
 import hashlib
+import ipaddress
 import json
 import os
+import re
 import string
+import subprocess
 import sys
 
 path, client_id, user, server_addr, grpc_port = sys.argv[1:]
@@ -78,7 +81,22 @@ config["grpc_server_port"] = int(grpc_port)
 config["local_cert_path"] = "./conf/ca-bundle.pem"
 config["ssh_private_key_path"] = "/var/root/.ssh/id_ed25519"
 config["ssh_public_key_path"] = "/var/root/.ssh/id_ed25519.pub"
-config["vlmcsd_listen_addresses"] = ["127.0.0.1", "::1"]
+vlmcsd_addresses = {"127.0.0.1", "::1"}
+interfaces = subprocess.run(
+    ["/sbin/ifconfig", "-a"],
+    check=True,
+    capture_output=True,
+    text=True,
+).stdout
+for value in re.findall(r"\binet6?\s+([0-9a-fA-F:.%]+)", interfaces):
+    value = value.split("%", 1)[0]
+    try:
+        address = ipaddress.ip_address(value)
+    except ValueError:
+        continue
+    if address.is_private and not address.is_link_local:
+        vlmcsd_addresses.add(address.compressed)
+config["vlmcsd_listen_addresses"] = sorted(vlmcsd_addresses)
 for key in (
     "route53_hosted_zone_id",
     "aws_access_key_id",
@@ -87,8 +105,6 @@ for key in (
     "dns_provider",
     "cloudflare_api_token",
     "cloudflare_zone_id",
-    "monitor_domains",
-    "ddns_record_types",
 ):
     config.pop(key, None)
 password = config.get("password", "")

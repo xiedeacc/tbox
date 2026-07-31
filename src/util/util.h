@@ -232,6 +232,9 @@ class Util final {
   // Get all local IP addresses (both IPv4 and IPv6)
   static std::vector<std::string> GetAllLocalIPAddresses();
 
+  // Get loopback and private LAN addresses suitable for local-only listeners.
+  static std::vector<std::string> GetLoopbackAndPrivateIPAddresses();
+
   // Get public IPv6 addresses (excludes link-local, loopback, private, and ULA)
   static std::vector<std::string> GetPublicIPv6Addresses();
 

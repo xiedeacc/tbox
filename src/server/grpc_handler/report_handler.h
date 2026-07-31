@@ -20,6 +20,8 @@
 
 #include "src/common/logging.h"
 #include "src/async_grpc/rpc_handler.h"
+#include "src/impl/ddns_manager.h"
+#include "src/impl/session_manager.h"
 #include "src/server/grpc_handler/meta.h"
 #include "src/util/util.h"
 
@@ -91,6 +93,15 @@ class ReportOpHandler : public async_grpc::RpcHandler<ReportOpMethod> {
 
   void OnRequest(const proto::ReportRequest& req) override {
     auto res = std::make_unique<proto::ReportResponse>();
+
+    std::string session_user;
+    if (!impl::SessionManager::Instance()->ValidateSession(req.token(),
+                                                           &session_user)) {
+      res->set_err_code(proto::ErrCode::User_session_error);
+      res->set_message("Invalid or expired session");
+      Send(std::move(res));
+      return;
+    }
 
     // Copy all client IPs to response
     for (const auto& ip : req.client_ip()) {
@@ -221,6 +232,18 @@ class ReportOpHandler : public async_grpc::RpcHandler<ReportOpMethod> {
       client.client_info = req.client_info();
       client.last_report_time_millis = now_millis;
       client.client_timestamp = req.timestamp();
+    }
+
+    const std::vector<std::string> monitor_domains(
+        req.monitor_domains().begin(), req.monitor_domains().end());
+    const std::vector<std::string> record_types(
+        req.ddns_record_types().begin(), req.ddns_record_types().end());
+    const std::vector<std::string> reported_ips(req.client_ip().begin(),
+                                                req.client_ip().end());
+    if (!impl::DDNSManager::Instance()->UpdateDomains(
+            monitor_domains, reported_ips, record_types)) {
+      LOG(ERROR) << "Failed to reconcile server-side DDNS for client "
+                 << client_id;
     }
 
     // Create JSON representation of IP addresses

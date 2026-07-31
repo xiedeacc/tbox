@@ -33,7 +33,7 @@ class AuthenticationManager;
 /// @brief Manages gRPC connection and client lifecycle.
 /// @details Handles connection setup (HTTP/HTTPS), authentication,
 ///          and integrates with ReportManager for IP reporting and
-///          DDNSManager for dynamic DNS updates.
+///          periodic IP and server-side DDNS requests.
 ///          Configuration is loaded from ConfigManager singleton.
 class GrpcClient {
  public:
@@ -47,10 +47,10 @@ class GrpcClient {
   /// @brief Deleted copy assignment operator.
   GrpcClient& operator=(const GrpcClient&) = delete;
 
-  /// @brief Start ReportManager and DDNSManager.
+  /// @brief Start client managers.
   void Start();
 
-  /// @brief Stop ReportManager and DDNSManager.
+  /// @brief Stop client managers.
   void Stop();
 
   /// @brief Check if the client is running.

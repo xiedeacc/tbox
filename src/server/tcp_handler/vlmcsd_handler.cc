@@ -15,6 +15,9 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#else
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #endif
 
 #include "src/common/logging.h"
@@ -58,8 +61,11 @@ uint32_t ToLittleEndian32(uint32_t value) {
 #endif
 }
 
-bool IsLocalAddress(const std::string& address) {
+bool IsLocalAddress(const std::string& address, bool allow_ipv6_wildcard) {
   if (address == "127.0.0.1" || address == "::1") {
+    return true;
+  }
+  if (address == "::" && allow_ipv6_wildcard) {
     return true;
   }
   if (address == "0.0.0.0" || address == "::") {
@@ -97,6 +103,18 @@ bool IsLocalAddress(const std::string& address) {
   freeifaddrs(interfaces);
   return found;
 #else
+  in_addr ipv4{};
+  if (InetPtonA(AF_INET, address.c_str(), &ipv4) == 1) {
+    const uint32_t value = ntohl(ipv4.s_addr);
+    const uint8_t first = static_cast<uint8_t>(value >> 24);
+    const uint8_t second = static_cast<uint8_t>(value >> 16);
+    return first == 10 || (first == 172 && second >= 16 && second <= 31) ||
+           (first == 192 && second == 168);
+  }
+  in6_addr ipv6{};
+  if (InetPtonA(AF_INET6, address.c_str(), &ipv6) == 1) {
+    return (ipv6.u.Byte[0] & 0xfe) == 0xfc;
+  }
   return false;
 #endif
 }
@@ -169,8 +187,10 @@ VlmcsdHandler::VlmcsdHandler(uint16_t port)
     : listen_addresses_({"127.0.0.1"}), port_(port) {}
 
 VlmcsdHandler::VlmcsdHandler(std::vector<std::string> listen_addresses,
-                             uint16_t port)
-    : listen_addresses_(std::move(listen_addresses)), port_(port) {}
+                             uint16_t port, bool allow_ipv6_wildcard)
+    : listen_addresses_(std::move(listen_addresses)),
+      port_(port),
+      allow_ipv6_wildcard_(allow_ipv6_wildcard) {}
 
 VlmcsdHandler::~VlmcsdHandler() { Shutdown(); }
 
@@ -185,7 +205,7 @@ bool VlmcsdHandler::Start() {
     return false;
   }
   for (const auto& address : listen_addresses_) {
-    if (!IsLocalAddress(address)) {
+    if (!IsLocalAddress(address, allow_ipv6_wildcard_)) {
       LOG(ERROR) << "Refusing to start vlmcsd on non-local or wildcard "
                  << "address: " << address;
       running_.store(false);
@@ -216,7 +236,7 @@ void VlmcsdHandler::Shutdown() {
   if (was_running) {
     LOG(INFO) << "Stopping vlmcsd TCP server";
     for (const auto& address : listen_addresses_) {
-      WakeKmsServer(address, port_);
+      WakeKmsServer(address == "::" ? "::1" : address, port_);
     }
     DWORD result = StopKmsServer();
     if (result != 0) {

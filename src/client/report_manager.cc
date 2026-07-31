@@ -170,10 +170,22 @@ bool ReportManager::ReportClientIP() {
   // Smart IP filtering logic for different network scenarios
   std::vector<std::string> client_ips;
 
+  // The server-observed addresses are authoritative for clients behind NAT.
+  if (!public_ipv4.empty()) {
+    client_ips.push_back(public_ipv4);
+  }
+  if (!public_ipv6.empty() && public_ipv6 != public_ipv4) {
+    client_ips.push_back(public_ipv6);
+  }
+
   // First, try to find local IPs that match public IPs (direct connection case)
   for (const auto& local_ip : all_local_ips) {
     if ((!public_ipv4.empty() && local_ip == public_ipv4) ||
         (!public_ipv6.empty() && local_ip == public_ipv6)) {
+      if (std::find(client_ips.begin(), client_ips.end(), local_ip) !=
+          client_ips.end()) {
+        continue;
+      }
       client_ips.push_back(local_ip);
       log_buffer.push_back("Local IP " + local_ip + " matches public IP");
     }
@@ -266,7 +278,14 @@ bool ReportManager::ReportClientIP() {
     request.set_request_id(util::Util::UUID());
     request.set_op(tbox::proto::OpCode::OP_REPORT);
     request.set_token(auth_manager->GetToken());
-    request.set_client_id(util::ConfigManager::Instance()->ClientId());
+    auto config = util::ConfigManager::Instance();
+    request.set_client_id(config->ClientId());
+    for (const auto& domain : config->MonitorDomains()) {
+      request.add_monitor_domains(domain);
+    }
+    for (const auto& type : config->DdnsRecordTypes()) {
+      request.add_ddns_record_types(type);
+    }
 
     // Add filtered client IP addresses
     for (const auto& ip : client_ips) {
