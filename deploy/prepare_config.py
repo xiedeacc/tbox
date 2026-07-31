@@ -13,6 +13,21 @@ CERTIFICATE_FILES = [
     "xiedeacc.com.ocsp.der",
 ]
 
+AWS_DNS_KEYS = (
+    "route53_hosted_zone_id",
+    "aws_access_key_id",
+    "aws_secret_access_key",
+    "aws_region",
+)
+
+CLIENT_DNS_KEYS = AWS_DNS_KEYS + (
+    "dns_provider",
+    "cloudflare_api_token",
+    "cloudflare_zone_id",
+    "monitor_domains",
+    "ddns_record_types",
+)
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -34,6 +49,18 @@ def main() -> None:
         config["grpc_server_port"] = 443
         config["local_cert_path"] = "./conf/ca-bundle.pem"
         config["update_certs"] = args.host == "nas"
+        # Only NAS performs client-side DDNS for the home network. Other
+        # clients report their addresses to the server and must not receive
+        # DNS provider credentials.
+        keys_to_remove = AWS_DNS_KEYS if args.host == "nas" else CLIENT_DNS_KEYS
+        for key in keys_to_remove:
+            config.pop(key, None)
+        if args.host == "nas" and config.get("monitor_domains"):
+            config["dns_provider"] = "cloudflare"
+            if not config.get("cloudflare_api_token"):
+                parser.error(
+                    "NAS DDNS requires cloudflare_api_token in its source config"
+                )
         if args.credentials_from:
             credentials = json.loads(
                 args.credentials_from.read_text(encoding="utf-8")

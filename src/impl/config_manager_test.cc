@@ -5,15 +5,36 @@
 
 #include "src/impl/config_manager.h"
 
-#include "src/common/logging.h"
+#include <filesystem>
+#include <fstream>
+
 #include "gtest/gtest.h"
+#include "src/common/logging.h"
 
 namespace tbox {
 namespace util {
 
 TEST(ConfigManager, Init) {
+  const auto config_path =
+      std::filesystem::temp_directory_path() /
+      "tbox_config_manager_test.json";
+  {
+    std::ofstream config(config_path, std::ios::binary);
+    config << R"({
+      "server_addr": "127.0.0.1",
+      "grpc_server_port": 10001,
+      "dns_provider": "cloudflare",
+      "cloudflare_api_token": "cloudflare-secret",
+      "route53_hosted_zone_id": "route53-zone",
+      "aws_access_key_id": "aws-access-key",
+      "aws_secret_access_key": "aws-secret-key"
+    })";
+  }
+
   auto config_manager = ConfigManager::Instance();
-  EXPECT_TRUE(config_manager->Init("./conf/server_example_config.json"));
+  ASSERT_TRUE(config_manager->Init(config_path.string()));
+  std::error_code error;
+  std::filesystem::remove(config_path, error);
 
   const std::string redacted_config = config_manager->ToRedactedString();
   tbox::proto::BaseConfig parsed_config;

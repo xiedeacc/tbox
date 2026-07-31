@@ -123,10 +123,10 @@ class SqliteManager final {
       return false;
     }
 
-    // Use the same preset admin credentials as oceanfile (hex strings)
-    const std::string salt_hex = "452c0306730b0f3ac3086d4f62effc20";
+    // Store the preset credential as PBKDF2-HMAC-SHA256 salt/hash hex strings.
+    const std::string salt_hex = "810de46c00f85f9a438d67425a6193f3";
     const std::string password_hex =
-        "e64de2fcaef0b98d035c3c241e4f8fda32f3b09067ef0f1b1706869a54f9d3b7";
+        "3db910ae7ac218f526dbb1fda889461421608c827134778243d5f68bb0b69fc0";
 
     sqlite3_bind_text(stmt, 1, "admin", -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 2, salt_hex.c_str(), -1, SQLITE_STATIC);

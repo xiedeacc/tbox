@@ -108,6 +108,31 @@ function Set-ConfigValue {
     }
 }
 
+function Remove-ConfigValue {
+    param(
+        [Parameter(Mandatory)]
+        [psobject]$InputObject,
+        [Parameter(Mandatory)]
+        [string]$Name
+    )
+
+    $InputObject.PSObject.Properties.Remove($Name)
+}
+
+foreach ($dnsKey in @(
+    "route53_hosted_zone_id",
+    "aws_access_key_id",
+    "aws_secret_access_key",
+    "aws_region",
+    "dns_provider",
+    "cloudflare_api_token",
+    "cloudflare_zone_id",
+    "monitor_domains",
+    "ddns_record_types"
+)) {
+    Remove-ConfigValue $clientConfig $dnsKey
+}
+
 Set-ConfigValue $clientConfig "local_cert_path" `
     "./conf/ca-bundle.pem"
 Set-ConfigValue $clientConfig "nginx_ssl_path" $sslDir

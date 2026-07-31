@@ -44,7 +44,7 @@ TEST(UserManager, UserExists) {
 
   EXPECT_EQ(UserManager::Instance()->Init(), true);
   std::string user = "admin";
-  std::string plain_passwd = "admin";
+  std::string plain_passwd = "qh6288QHW";
   std::string token;
   EXPECT_EQ(UserManager::Instance()->UserExists(user), Err_User_exists);
 
@@ -59,7 +59,7 @@ TEST(UserManager, UserExists) {
             Err_Success);
   EXPECT_EQ(UserManager::Instance()->UserExists(user), Err_User_exists);
 
-  plain_passwd = "admin";
+  plain_passwd = "qh6288QHW";
   EXPECT_EQ(UserManager::Instance()->UserLogin(
                 user, util::Util::SHA256(plain_passwd), &token),
             Err_User_invalid_passwd);

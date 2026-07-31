@@ -98,7 +98,6 @@ cc_test(
         "config_manager_test.cc",
     ],
     copts = COPTS,
-    data = ["//conf:server_example_config.json"],
     local_defines = LOCAL_DEFINES,
     deps = [":config_manager"],
 )

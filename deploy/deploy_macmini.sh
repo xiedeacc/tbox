@@ -79,6 +79,18 @@ config["local_cert_path"] = "./conf/ca-bundle.pem"
 config["ssh_private_key_path"] = "/var/root/.ssh/id_ed25519"
 config["ssh_public_key_path"] = "/var/root/.ssh/id_ed25519.pub"
 config["vlmcsd_listen_addresses"] = ["127.0.0.1", "::1"]
+for key in (
+    "route53_hosted_zone_id",
+    "aws_access_key_id",
+    "aws_secret_access_key",
+    "aws_region",
+    "dns_provider",
+    "cloudflare_api_token",
+    "cloudflare_zone_id",
+    "monitor_domains",
+    "ddns_record_types",
+):
+    config.pop(key, None)
 password = config.get("password", "")
 if len(password) != 64 or any(char not in string.hexdigits for char in password):
     config["password"] = hashlib.sha256(password.encode("utf-8")).hexdigest()
