@@ -75,6 +75,8 @@ config["user"] = user
 config["server_addr"] = server_addr
 config["grpc_server_port"] = int(grpc_port)
 config["local_cert_path"] = "./conf/ca-bundle.pem"
+config["ssh_private_key_path"] = "/var/root/.ssh/id_ed25519"
+config["ssh_public_key_path"] = "/var/root/.ssh/id_ed25519.pub"
 config["vlmcsd_listen_addresses"] = ["127.0.0.1", "::1"]
 password = config.get("password", "")
 if len(password) != 64 or any(char not in string.hexdigits for char in password):
@@ -93,6 +95,11 @@ if [[ ! -s "${MACOS_CA_BUNDLE}" ]]; then
     exit 1
 fi
 cp "${MACOS_CA_BUNDLE}" "${STAGED_CERT}"
+
+STAGED_PRIVATE_KEY="${STAGE_DIR}/id_ed25519"
+STAGED_PUBLIC_KEY="${STAGE_DIR}/id_ed25519.pub"
+scp -q "${OPENWRT_REMOTE}:/root/.ssh/id_ed25519" "${STAGED_PRIVATE_KEY}"
+scp -q "${OPENWRT_REMOTE}:/root/.ssh/id_ed25519.pub" "${STAGED_PUBLIC_KEY}"
 
 echo "[4/7] Preparing launchd service"
 STAGED_PLIST="${STAGE_DIR}/${SERVICE_LABEL}.plist"
@@ -139,6 +146,12 @@ sudo mv -f "${BIN_DIR}/${BINARY_NAME}.new" "${BIN_DIR}/${BINARY_NAME}"
 sudo /usr/bin/install -m 600 "${STAGED_CONFIG}" "${CONF_DIR}/client_config.json"
 sudo /usr/bin/install -m 644 "${STAGED_CERT}" "${CONF_DIR}/ca-bundle.pem"
 sudo rm -f "${CONF_DIR}/xiedeacc.com.ca.cer"
+sudo mkdir -p /var/root/.ssh
+sudo chmod 700 /var/root/.ssh
+sudo /usr/bin/install -o root -g wheel -m 600 \
+    "${STAGED_PRIVATE_KEY}" /var/root/.ssh/id_ed25519
+sudo /usr/bin/install -o root -g wheel -m 644 \
+    "${STAGED_PUBLIC_KEY}" /var/root/.ssh/id_ed25519.pub
 sudo /usr/bin/install -o root -g wheel -m 644 "${STAGED_PLIST}" "${PLIST_PATH}"
 sudo chown -R root:wheel "${INSTALL_DIR}"
 sudo sh -c ": > '${LOG_DIR}/launchd.stdout.log'"
