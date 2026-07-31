@@ -8,12 +8,18 @@
 
 #include <atomic>
 #include <cctype>
+#include <chrono>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <unordered_map>
 
+#include "openssl/rand.h"
 #include "sqlite3.h"
+#include "src/common/ssh_key_auth.h"
 #include "src/common/logging.h"
 #include "src/common/error.h"
+#include "src/impl/config_manager.h"
 #include "src/impl/session_manager.h"
 #include "src/impl/sqlite_manager.h"
 #include "src/util/util.h"
@@ -59,6 +65,102 @@ class UserManager final {
    * @brief Stop user manager.
    */
   void Stop() { stop_.store(true); }
+
+  int32_t CreateLoginChallenge(const std::string& user,
+                               const std::string& client_id,
+                               const std::string& client_nonce,
+                               std::string* challenge_id,
+                               std::string* server_nonce,
+                               std::string* server_signature,
+                               int64_t* expires_at) {
+    if (user.empty() || user.size() > 64 || client_id.empty() ||
+        client_id.size() > 128 || client_nonce.size() != 32) {
+      return Err_User_invalid_passwd;
+    }
+
+    std::string nonce(32, '\0');
+    if (RAND_bytes(reinterpret_cast<unsigned char*>(nonce.data()),
+                   static_cast<int>(nonce.size())) != 1) {
+      return Err_User_login_error;
+    }
+    const std::string id = util::Util::UUID();
+    const int64_t expiry = CurrentUnixSeconds() + kChallengeLifetimeSeconds;
+    const std::string message = common::SshKeyAuth::BuildLoginMessage(
+        id, client_nonce, nonce, user, client_id);
+
+    auto config = util::ConfigManager::Instance();
+    std::string signature;
+    if (!common::SshKeyAuth::CreateServerProof(
+            config->SshPrivateKeyPath(), config->SshPublicKeyPath(), message,
+            &signature)) {
+      LOG(ERROR) << "Failed to create login proof with the server SSH key";
+      return Err_User_login_error;
+    }
+    if (!common::SshKeyAuth::VerifyServerProof(
+            config->SshPrivateKeyPath(), config->SshPublicKeyPath(), message,
+            signature)) {
+      LOG(ERROR) << "Server could not verify its own login challenge";
+      return Err_User_login_error;
+    }
+    LOG(INFO) << "Issued login challenge transcript "
+              << util::Util::SHA256(message).substr(0, 16)
+              << ", signature "
+              << util::Util::SHA256(signature).substr(0, 16);
+
+    {
+      std::lock_guard<std::mutex> lock(challenges_mutex_);
+      PruneChallengesLocked();
+      if (challenges_.size() >= kMaxChallenges) {
+        challenges_.erase(challenges_.begin());
+      }
+      challenges_[id] =
+          LoginChallenge{user, client_id, client_nonce, nonce, expiry};
+    }
+
+    *challenge_id = id;
+    *server_nonce = nonce;
+    *server_signature = signature;
+    *expires_at = expiry;
+    return Err_Success;
+  }
+
+  int32_t UserLoginWithChallenge(const std::string& user,
+                                 const std::string& password,
+                                 const std::string& client_id,
+                                 const std::string& challenge_id,
+                                 const std::string& signature,
+                                 std::string* token) {
+    LoginChallenge challenge;
+    {
+      std::lock_guard<std::mutex> lock(challenges_mutex_);
+      PruneChallengesLocked();
+      const auto it = challenges_.find(challenge_id);
+      if (it == challenges_.end()) {
+        return Err_User_invalid_passwd;
+      }
+      challenge = it->second;
+      challenges_.erase(it);
+    }
+
+    if (challenge.expires_at < CurrentUnixSeconds() ||
+        challenge.user != user || challenge.client_id != client_id) {
+      return Err_User_invalid_passwd;
+    }
+
+    const std::string message = common::SshKeyAuth::BuildLoginMessage(
+        challenge_id, challenge.client_nonce, challenge.server_nonce, user,
+        client_id);
+    auto config = util::ConfigManager::Instance();
+    if (!common::SshKeyAuth::VerifyClientProof(
+            config->SshPrivateKeyPath(), config->SshPublicKeyPath(), message,
+            signature)) {
+      LOG(WARNING) << "Invalid SSH key login proof for client "
+                   << client_id;
+      return Err_User_invalid_passwd;
+    }
+
+    return UserLogin(user, password, token);
+  }
 
   /**
    * @brief Register new user account.
@@ -295,6 +397,31 @@ class UserManager final {
   }
 
  private:
+  struct LoginChallenge {
+    std::string user;
+    std::string client_id;
+    std::string client_nonce;
+    std::string server_nonce;
+    int64_t expires_at = 0;
+  };
+
+  static int64_t CurrentUnixSeconds() {
+    return std::chrono::duration_cast<std::chrono::seconds>(
+               std::chrono::system_clock::now().time_since_epoch())
+        .count();
+  }
+
+  void PruneChallengesLocked() {
+    const int64_t now = CurrentUnixSeconds();
+    for (auto it = challenges_.begin(); it != challenges_.end();) {
+      if (it->second.expires_at < now) {
+        it = challenges_.erase(it);
+      } else {
+        ++it;
+      }
+    }
+  }
+
   /**
    * @brief Validate a SHA-256 hex digest (64 hex characters).
    */
@@ -310,6 +437,10 @@ class UserManager final {
     return true;
   }
   std::atomic<bool> stop_ = false;
+  static constexpr int64_t kChallengeLifetimeSeconds = 60;
+  static constexpr size_t kMaxChallenges = 4096;
+  std::mutex challenges_mutex_;
+  std::unordered_map<std::string, LoginChallenge> challenges_;
 };
 
 }  // namespace impl

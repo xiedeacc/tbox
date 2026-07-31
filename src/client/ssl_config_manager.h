@@ -154,6 +154,11 @@ class SSLConfigManager {
   // Check and update CA certificate if needed
   bool UpdateCACertificate(const std::string& cert_path);
 
+  bool UpdateConfiguredCertificateFiles();
+  std::string GetRemoteCertificateFileHash(const std::string& filename);
+  bool FetchAndStoreCertificateFile(const std::string& filename,
+                                    const std::string& path);
+
   std::atomic<bool> running_;
   std::unique_ptr<std::thread> monitor_thread_;
   std::shared_ptr<grpc::Channel> channel_;

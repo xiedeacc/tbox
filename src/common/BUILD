@@ -41,6 +41,18 @@ cc_library(
     hdrs = ["socket_compat.h"],
 )
 
+cc_library(
+    name = "ssh_key_auth",
+    srcs = ["ssh_key_auth.cc"],
+    hdrs = ["ssh_key_auth.h"],
+    copts = COPTS,
+    local_defines = LOCAL_DEFINES,
+    deps = [
+        "//src/util",
+        "@openssl//:crypto",
+    ],
+)
+
 cc_proto_plugin(
     name = "error_code",
     src = "//src/proto:error.proto",

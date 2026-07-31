@@ -39,25 +39,20 @@ class CertHandler : public proxygen::RequestHandler {
     try {
       switch (req.op()) {
         case proto::OpCode::OP_CERT_GET:
-          handler::Handler::HandleGetCertificate(req, &res);
-          break;
         case proto::OpCode::OP_GET_PRIVATE_KEY_HASH:
-          handler::Handler::HandleGetPrivateKeyHash(req, &res);
-          break;
         case proto::OpCode::OP_GET_PRIVATE_KEY:
-          handler::Handler::HandleGetPrivateKey(req, &res);
-          break;
         case proto::OpCode::OP_GET_FULLCHAIN_CERT_HASH:
-          handler::Handler::HandleGetFullchainCertHash(req, &res);
-          break;
         case proto::OpCode::OP_GET_CA_CERT_HASH:
-          handler::Handler::HandleGetCACertHash(req, &res);
-          break;
         case proto::OpCode::OP_GET_FULLCHAIN_CERT:
-          handler::Handler::HandleGetFullchainCert(req, &res);
-          break;
         case proto::OpCode::OP_GET_CA_CERT:
-          handler::Handler::HandleGetCACert(req, &res);
+          res.set_err_code(proto::ErrCode::Unsupported_op);
+          res.set_message("Legacy certificate operations are disabled");
+          break;
+        case proto::OpCode::OP_GET_CERT_FILE_HASH:
+          handler::Handler::HandleGetCertFileHash(req, &res);
+          break;
+        case proto::OpCode::OP_GET_CERT_FILE:
+          handler::Handler::HandleGetCertFile(req, &res);
           break;
         default:
           res.set_err_code(proto::ErrCode::Fail);

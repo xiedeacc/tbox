@@ -107,12 +107,14 @@ cc_library(
     local_defines = LOCAL_DEFINES,
     deps = [
         "//src/common:logging",
+        "//src/common:ssh_key_auth",
         "//src/impl:config_manager",
         "//src/proto:cc_grpc_service",
         "//src/util",
         "@com_github_grpc_grpc//:grpc++",
         "@folly",
         "@folly//:common",
+        "@openssl//:crypto",
     ],
 )
 

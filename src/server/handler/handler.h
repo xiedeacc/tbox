@@ -33,6 +33,7 @@ class Handler {
                            proto::UserResponse* res) {
     // Log request_id (client_id) for login operations
     if (req.op() == proto::OpCode::OP_USER_LOGIN ||
+        req.op() == proto::OpCode::OP_USER_LOGIN_CHALLENGE ||
         req.op() == proto::OpCode::OP_USER_CREATE) {
       LOG(INFO) << "User operation: " << req.op()
                 << ", Client ID: " << req.request_id()
@@ -41,7 +42,8 @@ class Handler {
 
     std::string session_user;
     if (req.token().empty() && req.op() != proto::OpCode::OP_USER_CREATE &&
-        req.op() != proto::OpCode::OP_USER_LOGIN) {
+        req.op() != proto::OpCode::OP_USER_LOGIN &&
+        req.op() != proto::OpCode::OP_USER_LOGIN_CHALLENGE) {
       res->set_err_code(proto::ErrCode(Err_User_session_error));
     }
     if (!req.token().empty() &&
@@ -66,9 +68,19 @@ class Handler {
             session_user, req.to_delete_user(), req.token());
         break;
       case proto::OpCode::OP_USER_LOGIN:
-        ret = impl::UserManager::Instance()->UserLogin(
-            req.user(), req.password(), res->mutable_token());
+        ret = impl::UserManager::Instance()->UserLoginWithChallenge(
+            req.user(), req.password(), req.request_id(), req.challenge_id(),
+            req.signature(), res->mutable_token());
         break;
+      case proto::OpCode::OP_USER_LOGIN_CHALLENGE: {
+        int64_t expires_at = 0;
+        ret = impl::UserManager::Instance()->CreateLoginChallenge(
+            req.user(), req.request_id(), req.client_nonce(),
+            res->mutable_challenge_id(), res->mutable_server_nonce(),
+            res->mutable_server_signature(), &expires_at);
+        res->set_challenge_expires_at(expires_at);
+        break;
+      }
       case proto::OpCode::OP_USER_CHANGE_PASSWORD:
         ret = impl::UserManager::Instance()->ChangePassword(
             req.user(), req.password(), res->mutable_token());
@@ -204,6 +216,12 @@ class Handler {
    */
   static void HandleGetPrivateKey(const proto::CertRequest& req,
                                   proto::CertResponse* res);
+
+  static void HandleGetCertFileHash(const proto::CertRequest& req,
+                                    proto::CertResponse* res);
+
+  static void HandleGetCertFile(const proto::CertRequest& req,
+                                proto::CertResponse* res);
 
   /**
    * @brief Read content from a file.

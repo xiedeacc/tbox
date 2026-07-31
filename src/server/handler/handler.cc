@@ -6,14 +6,47 @@
 #include "src/server/handler/handler.h"
 
 #include <fstream>
+#include <algorithm>
+#include <filesystem>
+#include <sstream>
 #include <string>
 
 #include "src/common/logging.h"
+#include "src/impl/config_manager.h"
+#include "src/impl/session_manager.h"
 #include "src/util/util.h"
 
 namespace tbox {
 namespace server {
 namespace handler {
+namespace {
+
+bool IsConfiguredCertificateRequest(const proto::CertRequest& req) {
+  std::string session_user;
+  if (req.token().empty() ||
+      !impl::SessionManager::Instance()->ValidateSession(req.token(),
+                                                         &session_user)) {
+    return false;
+  }
+
+  auto config = util::ConfigManager::Instance();
+  const auto clients = config->CertificateSyncClientIds();
+  const auto files = config->CertificateFiles();
+  return std::find(clients.begin(), clients.end(), req.client_id()) !=
+             clients.end() &&
+         std::find(files.begin(), files.end(), req.filename()) != files.end() &&
+         std::filesystem::path(req.filename()).filename().string() ==
+             req.filename();
+}
+
+std::string ConfiguredCertificatePath(const std::string& filename) {
+  return (std::filesystem::path(
+              util::ConfigManager::Instance()->CertificatePath()) /
+          filename)
+      .string();
+}
+
+}  // namespace
 
 void Handler::HandleGetCertificate(const proto::CertRequest& req,
                                    proto::CertResponse* res) {
@@ -275,21 +308,54 @@ void Handler::HandleGetPrivateKey(const proto::CertRequest&,
   }
 }
 
+void Handler::HandleGetCertFileHash(const proto::CertRequest& req,
+                                    proto::CertResponse* res) {
+  if (!IsConfiguredCertificateRequest(req)) {
+    res->set_err_code(proto::ErrCode::User_session_error);
+    res->set_message("Certificate synchronization is not authorized");
+    return;
+  }
+
+  std::string hash;
+  const std::string path = ConfiguredCertificatePath(req.filename());
+  if (!util::Util::FileSHA256(path, &hash) || hash.empty()) {
+    res->set_err_code(proto::ErrCode::Fail);
+    res->set_message("Certificate file is unavailable");
+    return;
+  }
+  res->set_err_code(proto::ErrCode::Success);
+  res->set_message(hash);
+}
+
+void Handler::HandleGetCertFile(const proto::CertRequest& req,
+                                proto::CertResponse* res) {
+  if (!IsConfiguredCertificateRequest(req)) {
+    res->set_err_code(proto::ErrCode::User_session_error);
+    res->set_message("Certificate synchronization is not authorized");
+    return;
+  }
+
+  const std::string content =
+      ReadFileContent(ConfiguredCertificatePath(req.filename()));
+  if (content.empty()) {
+    res->set_err_code(proto::ErrCode::Fail);
+    res->set_message("Certificate file is unavailable");
+    return;
+  }
+  res->set_err_code(proto::ErrCode::Success);
+  res->set_file_content(content);
+}
+
 std::string Handler::ReadFileContent(const std::string& file_path) {
-  std::ifstream file(file_path);
+  std::ifstream file(file_path, std::ios::binary);
   if (!file.is_open()) {
     LOG(ERROR) << "Failed to open file: " << file_path;
     return "";
   }
 
-  std::string content;
-  std::string line;
-  while (std::getline(file, line)) {
-    content += line + "\n";
-  }
-  file.close();
-
-  return content;
+  std::ostringstream content;
+  content << file.rdbuf();
+  return content.str();
 }
 
 }  // namespace handler

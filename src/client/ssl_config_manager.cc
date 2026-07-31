@@ -101,17 +101,9 @@ void SSLConfigManager::MonitorCertificate() {
         continue;
       }
 
-      LOG(INFO) << "Checking and updating tbox certificate";
-      // Check and update tbox certificate
-      bool tbox_updated = UpdateTboxCertificate();
-
-      // Check and update nginx certificates
-      bool nginx_updated = UpdateNginxCertificates();
-
-      if (tbox_updated || nginx_updated) {
-        LOG(INFO) << "Certificate update completed - tbox: "
-                  << (tbox_updated ? "updated" : "unchanged")
-                  << ", nginx: " << (nginx_updated ? "updated" : "unchanged");
+      bool certificates_updated = UpdateConfiguredCertificateFiles();
+      if (certificates_updated) {
+        LOG(INFO) << "Configured certificate files were updated";
       }
     } catch (const std::exception& e) {
       LOG(ERROR) << "Error in certificate monitoring: " << e.what();
@@ -196,7 +188,7 @@ void SSLConfigManager::WriteCertificateFiles(const std::string& cert_content,
 }
 
 std::string SSLConfigManager::ReadFileContent(const std::string& file_path) {
-  std::ifstream file(file_path);
+  std::ifstream file(file_path, std::ios::binary);
   if (!file.is_open()) {
     return "";
   }
@@ -222,7 +214,7 @@ bool SSLConfigManager::WriteFileContent(const std::string& file_path,
     }
   }
 
-  std::ofstream file(file_path);
+  std::ofstream file(file_path, std::ios::binary);
   if (!file.is_open()) {
     LOG(ERROR) << "Failed to open file for writing: " << file_path
                << " (errno: " << errno << " - " << strerror(errno) << ")";
@@ -478,6 +470,14 @@ bool SSLConfigManager::SetWwwDataOwnership(const std::string& directory_path) {
 }
 
 bool SSLConfigManager::UpdateTboxCertificate() {
+#if defined(_WIN32)
+  // The Windows deployment installs a platform CA bundle for bootstrapping the
+  // gRPC connection. Do not replace that trust bundle with a certificate
+  // returned over the connection or use the Linux-only installation path.
+  LOG(INFO) << "Skipping tbox CA trust bundle update on Windows";
+  return false;
+#endif
+
   LOG(INFO) << "Updating tbox certificate";
   // Get remote certificate chain
   std::string remote_chain = GetRemoteCertificateChain();
@@ -1145,6 +1145,95 @@ bool SSLConfigManager::UpdateCACertificate(const std::string& cert_path) {
     LOG(INFO) << "CA certificate is up to date";
     return false;  // No update needed
   }
+}
+
+std::string SSLConfigManager::GetRemoteCertificateFileHash(
+    const std::string& filename) {
+  auto auth_manager = client::AuthenticationManager::Instance();
+  if (!channel_ || !auth_manager || !auth_manager->IsAuthenticated()) {
+    return "";
+  }
+
+  async_grpc::Client<server::grpc_handler::CertOpMethod> client(channel_);
+  tbox::proto::CertRequest request;
+  request.set_request_id(util::Util::UUID());
+  request.set_op(tbox::proto::OpCode::OP_GET_CERT_FILE_HASH);
+  request.set_token(auth_manager->GetToken());
+  request.set_client_id(util::ConfigManager::Instance()->ClientId());
+  request.set_filename(filename);
+
+  grpc::Status status;
+  if (!client.Write(request, &status) || !status.ok() ||
+      client.response().err_code() != tbox::proto::ErrCode::Success) {
+    return "";
+  }
+  return client.response().message();
+}
+
+bool SSLConfigManager::FetchAndStoreCertificateFile(
+    const std::string& filename, const std::string& path) {
+  auto auth_manager = client::AuthenticationManager::Instance();
+  if (!channel_ || !auth_manager || !auth_manager->IsAuthenticated()) {
+    return false;
+  }
+
+  async_grpc::Client<server::grpc_handler::CertOpMethod> client(channel_);
+  tbox::proto::CertRequest request;
+  request.set_request_id(util::Util::UUID());
+  request.set_op(tbox::proto::OpCode::OP_GET_CERT_FILE);
+  request.set_token(auth_manager->GetToken());
+  request.set_client_id(util::ConfigManager::Instance()->ClientId());
+  request.set_filename(filename);
+
+  grpc::Status status;
+  if (!client.Write(request, &status) || !status.ok() ||
+      client.response().err_code() != tbox::proto::ErrCode::Success ||
+      client.response().file_content().empty()) {
+    return false;
+  }
+
+  if (!WriteFileContent(path, client.response().file_content())) {
+    return false;
+  }
+  SetFilePermissions(path, filename.ends_with(".key") ? 0600 : 0644);
+  return true;
+}
+
+bool SSLConfigManager::UpdateConfiguredCertificateFiles() {
+  auto config = util::ConfigManager::Instance();
+  const auto files = config->CertificateFiles();
+  if (files.empty()) {
+    LOG(INFO) << "No certificate files configured for synchronization";
+    return false;
+  }
+
+  const std::filesystem::path directory(config->CertificatePath());
+  std::filesystem::create_directories(directory);
+  bool updated = false;
+  for (const auto& filename : files) {
+    if (filename.empty() ||
+        std::filesystem::path(filename).filename().string() != filename) {
+      LOG(ERROR) << "Ignoring unsafe certificate filename: " << filename;
+      continue;
+    }
+
+    const std::string remote_hash = GetRemoteCertificateFileHash(filename);
+    if (remote_hash.empty()) {
+      LOG(WARNING) << "Certificate file unavailable or unauthorized: "
+                   << filename;
+      continue;
+    }
+
+    const std::string path = (directory / filename).string();
+    std::string local_hash;
+    util::Util::FileSHA256(path, &local_hash);
+    if (local_hash != remote_hash &&
+        FetchAndStoreCertificateFile(filename, path)) {
+      LOG(INFO) << "Updated certificate file: " << path;
+      updated = true;
+    }
+  }
+  return updated;
 }
 
 }  // namespace client

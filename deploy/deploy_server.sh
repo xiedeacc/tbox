@@ -27,7 +27,8 @@ ssh "${REMOTE}" "test -f ${CONF_DIR}/server_config.json"
 ssh "${REMOTE}" "mkdir -p ${BIN_DIR} ${LOG_DIR}"
 
 TEMP_BINARY="$(mktemp /tmp/tbox_server.XXXXXX)"
-trap 'rm -f "${TEMP_BINARY}"' EXIT
+TEMP_CONFIG="$(mktemp /tmp/tbox_server_config.XXXXXX)"
+trap 'rm -f "${TEMP_BINARY}" "${TEMP_CONFIG}"' EXIT
 cp "${LOCAL_BINARY}" "${TEMP_BINARY}"
 if command -v llvm-strip >/dev/null 2>&1; then
     llvm-strip --strip-unneeded "${TEMP_BINARY}"
@@ -38,16 +39,20 @@ else
     exit 1
 fi
 
+python3 "${WORKSPACE_ROOT}/deploy/prepare_config.py" server \
+    "${WORKSPACE_ROOT}/conf/server_config.json" "${TEMP_CONFIG}"
 scp "${TEMP_BINARY}" "${REMOTE}:${BIN_DIR}/${BINARY_NAME}.new"
+scp "${TEMP_CONFIG}" "${REMOTE}:${CONF_DIR}/server_config.json.new"
 
 SERVICE_USER="$(ssh "${REMOTE}" "systemctl show -p User --value ${SERVICE_NAME}")"
 if [[ -n "${SERVICE_USER}" ]]; then
-    ssh "${REMOTE}" "chown ${SERVICE_USER}:${SERVICE_USER} ${BIN_DIR}/${BINARY_NAME}.new ${LOG_DIR}"
+    ssh "${REMOTE}" "chown ${SERVICE_USER}:${SERVICE_USER} ${BIN_DIR}/${BINARY_NAME}.new ${CONF_DIR}/server_config.json.new ${LOG_DIR}"
 fi
 
-ssh "${REMOTE}" "chmod 755 ${BIN_DIR}/${BINARY_NAME}.new"
+ssh "${REMOTE}" "chmod 755 ${BIN_DIR}/${BINARY_NAME}.new && chmod 600 ${CONF_DIR}/server_config.json.new"
 ssh "${REMOTE}" "systemctl stop ${SERVICE_NAME}"
 ssh "${REMOTE}" "mv -f ${BIN_DIR}/${BINARY_NAME}.new ${BIN_DIR}/${BINARY_NAME}"
+ssh "${REMOTE}" "mv -f ${CONF_DIR}/server_config.json.new ${CONF_DIR}/server_config.json"
 ssh "${REMOTE}" "systemctl restart ${SERVICE_NAME}"
 ssh "${REMOTE}" "systemctl is-active --quiet ${SERVICE_NAME}"
 echo "Deployed ${BINARY_NAME} to ${REMOTE}:${BIN_DIR}/${BINARY_NAME}"

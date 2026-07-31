@@ -138,7 +138,12 @@ fi
 
 # Copy configuration file
 print_status "Installing configuration file..."
-cp conf/client_local_config.json ${CONF_DIR}/client_config.json
+TEMP_CONFIG="$(mktemp /tmp/tbox_client_config.XXXXXX)"
+python3 "${WORKSPACE_ROOT}/deploy/prepare_config.py" client \
+    "${WORKSPACE_ROOT}/conf/client_local_config.json" "${TEMP_CONFIG}" \
+    --host other
+cp "${TEMP_CONFIG}" ${CONF_DIR}/client_config.json
+rm -f "${TEMP_CONFIG}"
 print_success "Configuration file installed"
 
 # Set ownership and permissions

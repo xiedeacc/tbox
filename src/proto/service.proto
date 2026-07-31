@@ -63,6 +63,13 @@ enum OpCode {
 
   // Server information operations
   OP_SERVER_INFO = 23;
+
+  // Begin the password + Ed25519 challenge-response login flow.
+  OP_USER_LOGIN_CHALLENGE = 24;
+
+  // Generic allowlisted certificate file synchronization.
+  OP_GET_CERT_FILE_HASH = 25;
+  OP_GET_CERT_FILE = 26;
 }
 
 
@@ -108,11 +115,18 @@ message UserRequest {
   string password = 4;
   string token = 5;
   string to_delete_user = 6;
+  bytes client_nonce = 7;
+  string challenge_id = 8;
+  bytes signature = 9;
 }
 
 message UserResponse {
   ErrCode err_code = 1;
+  string challenge_id = 2;
+  bytes server_nonce = 3;
+  bytes server_signature = 4;
   string token = 5;
+  int64 challenge_expires_at = 6;
 }
 
 // Request message for certificate operations
@@ -121,6 +135,8 @@ message CertRequest {
   OpCode op = 2;
   string token = 3;
   string domain = 4;  // Domain name for certificate
+  string filename = 5;
+  string client_id = 6;
 }
 
 // Response message for certificate operations
@@ -130,6 +146,7 @@ message CertResponse {
   string private_key = 3;     // PEM encoded private key
   string ca_certificate = 4;  // PEM encoded CA certificate
   string message = 5;         // Additional information or error message
+  bytes file_content = 6;
 }
 
 // Request message for server operations

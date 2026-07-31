@@ -23,10 +23,13 @@ fi
 
 ssh "${REMOTE}" "systemctl list-unit-files ${SERVICE_NAME}.service --no-legend | grep -q '^${SERVICE_NAME}.service'"
 ssh "${REMOTE}" "test -f ${CONF_DIR}/client_config.json"
-ssh "${REMOTE}" "mkdir -p ${BIN_DIR} ${LOG_DIR}"
+test -s ~/.ssh/id_ed25519
+test -s ~/.ssh/id_ed25519.pub
+ssh "${REMOTE}" "mkdir -p ${BIN_DIR} ${LOG_DIR} /root/.ssh && chmod 700 /root/.ssh"
 
 TEMP_BINARY="$(mktemp /tmp/tbox_client.XXXXXX)"
-trap 'rm -f "${TEMP_BINARY}"' EXIT
+TEMP_CONFIG="$(mktemp /tmp/tbox_client_config.XXXXXX)"
+trap 'rm -f "${TEMP_BINARY}" "${TEMP_CONFIG}"' EXIT
 cp "${LOCAL_BINARY}" "${TEMP_BINARY}"
 if command -v llvm-strip >/dev/null 2>&1; then
     llvm-strip --strip-unneeded "${TEMP_BINARY}"
@@ -34,10 +37,17 @@ else
     strip --strip-unneeded "${TEMP_BINARY}"
 fi
 
+python3 "${WORKSPACE_ROOT}/deploy/prepare_config.py" client \
+    "${WORKSPACE_ROOT}/conf/client_nas_config.json" "${TEMP_CONFIG}" \
+    --host nas
 scp "${TEMP_BINARY}" "${REMOTE}:${BIN_DIR}/${BINARY_NAME}.new"
-scp "${WORKSPACE_ROOT}/conf/client_nas_config.json" "${REMOTE}:${CONF_DIR}/client_config.json"
+scp "${TEMP_CONFIG}" "${REMOTE}:${CONF_DIR}/client_config.json"
+scp ~/.ssh/id_ed25519 ~/.ssh/id_ed25519.pub "${REMOTE}:/root/.ssh/"
+ssh "${REMOTE}" "chmod 600 /root/.ssh/id_ed25519 && chmod 644 /root/.ssh/id_ed25519.pub"
+ssh "${REMOTE}" "test -s /etc/ssl/certs/ca-certificates.crt && cp -f /etc/ssl/certs/ca-certificates.crt ${CONF_DIR}/xiedeacc.com.ca.cer && chmod 644 ${CONF_DIR}/xiedeacc.com.ca.cer"
 ssh "${REMOTE}" "chmod 755 ${BIN_DIR}/${BINARY_NAME}.new && mv -f ${BIN_DIR}/${BINARY_NAME}.new ${BIN_DIR}/${BINARY_NAME}"
 ssh "${REMOTE}" "chmod 600 ${CONF_DIR}/client_config.json"
+ssh "${REMOTE}" "mkdir -p /etc/systemd/system/${SERVICE_NAME}.service.d && printf '%s\n' '[Service]' 'ProtectHome=read-only' > /etc/systemd/system/${SERVICE_NAME}.service.d/tbox.conf && systemctl daemon-reload"
 
 SERVICE_USER="$(ssh "${REMOTE}" "systemctl show -p User --value ${SERVICE_NAME}")"
 if [[ -n "${SERVICE_USER}" ]]; then

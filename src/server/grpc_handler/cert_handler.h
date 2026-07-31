@@ -29,28 +29,22 @@ class CertOpHandler : public async_grpc::RpcHandler<CertOpMethod> {
     try {
       switch (req.op()) {
         case proto::OpCode::OP_CERT_GET:
-          handler::Handler::HandleGetCertificate(req, res.get());
-          break;
         case proto::OpCode::OP_GET_PRIVATE_KEY_HASH:
-          handler::Handler::HandleGetPrivateKeyHash(req, res.get());
-          break;
         case proto::OpCode::OP_GET_PRIVATE_KEY:
-          handler::Handler::HandleGetPrivateKey(req, res.get());
-          break;
         case proto::OpCode::OP_GET_FULLCHAIN_CERT_HASH:
-          handler::Handler::HandleGetFullchainCertHash(req, res.get());
-          break;
         case proto::OpCode::OP_GET_CA_CERT_HASH:
-          LOG(INFO) << "Handling OP_GET_CA_CERT_HASH request";
-          handler::Handler::HandleGetCACertHash(req, res.get());
-          LOG(INFO) << "OP_GET_CA_CERT_HASH handled, err_code: "
-                    << static_cast<int>(res->err_code());
-          break;
         case proto::OpCode::OP_GET_FULLCHAIN_CERT:
-          handler::Handler::HandleGetFullchainCert(req, res.get());
-          break;
         case proto::OpCode::OP_GET_CA_CERT:
-          handler::Handler::HandleGetCACert(req, res.get());
+          res->set_err_code(proto::ErrCode::Unsupported_op);
+          res->set_message(
+              "Legacy certificate operations are disabled; use the "
+              "allowlisted certificate file API");
+          break;
+        case proto::OpCode::OP_GET_CERT_FILE_HASH:
+          handler::Handler::HandleGetCertFileHash(req, res.get());
+          break;
+        case proto::OpCode::OP_GET_CERT_FILE:
+          handler::Handler::HandleGetCertFile(req, res.get());
           break;
         default:
           res->set_err_code(proto::ErrCode::Fail);

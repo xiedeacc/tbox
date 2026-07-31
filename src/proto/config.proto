@@ -57,4 +57,17 @@ message BaseConfig {
   // Embedded vlmcsd TCP server settings.
   bool vlmcsd_enabled = 26;
   repeated string vlmcsd_listen_addresses = 27;
+
+  // Certificate files synchronized from the server when update_certs is true.
+  repeated string certificate_files = 28;
+
+  // Shared Ed25519 SSH identity used for mutual login proof.
+  string ssh_private_key_path = 29;
+  string ssh_public_key_path = 30;
+
+  // Client IDs authorized to retrieve certificate files.
+  repeated string certificate_sync_client_ids = 31;
+
+  // Certificate source (server) or destination (client) directory.
+  string certificate_path = 32;
 }

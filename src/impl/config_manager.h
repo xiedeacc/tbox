@@ -236,6 +236,55 @@ class ConfigManager {
   std::string NginxSslPath() const { return base_config_.nginx_ssl_path(); }
 
   /**
+   * @brief Get certificate filenames synchronized from the server.
+   */
+  std::vector<std::string> CertificateFiles() const {
+    std::vector<std::string> files;
+    for (const auto& file : base_config_.certificate_files()) {
+      files.push_back(file);
+    }
+    return files;
+  }
+
+  std::vector<std::string> CertificateSyncClientIds() const {
+    std::vector<std::string> ids;
+    for (const auto& id : base_config_.certificate_sync_client_ids()) {
+      ids.push_back(id);
+    }
+    return ids;
+  }
+
+  std::string CertificatePath() const {
+    if (!base_config_.certificate_path().empty()) {
+      return base_config_.certificate_path();
+    }
+    if (!base_config_.nginx_ssl_path().empty()) {
+      return base_config_.nginx_ssl_path();
+    }
+#if defined(_WIN32)
+    return "D:\\software\\tbox\\conf\\ssl";
+#else
+    return "/etc/nginx/ssl";
+#endif
+  }
+
+  /**
+   * @brief Get the Ed25519 SSH private key path.
+   */
+  std::string SshPrivateKeyPath() const {
+    const auto& path = base_config_.ssh_private_key_path();
+    return path.empty() ? "~/.ssh/id_ed25519" : path;
+  }
+
+  /**
+   * @brief Get the Ed25519 SSH public key path.
+   */
+  std::string SshPublicKeyPath() const {
+    const auto& path = base_config_.ssh_public_key_path();
+    return path.empty() ? "~/.ssh/id_ed25519.pub" : path;
+  }
+
+  /**
    * @brief Get base configuration object.
    * @return Reference to base configuration.
    */

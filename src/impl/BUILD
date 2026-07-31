@@ -128,15 +128,18 @@ cc_library(
     copts = COPTS,
     local_defines = LOCAL_DEFINES,
     deps = [
+        ":config_manager",
         ":session_manager",
         ":sqlite_manager",
         "//src/common:defs",
         "//src/common:error_code",
         "//src/common:logging",
+        "//src/common:ssh_key_auth",
         "//src/proto:cc_grpc_service",
         "//src/util",
         "@folly",
         "@folly//:common",
+        "@openssl//:crypto",
         "@sqlite",
     ],
 )
