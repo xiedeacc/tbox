@@ -13,7 +13,7 @@ PLIST_PATH="/Library/LaunchDaemons/${SERVICE_LABEL}.plist"
 OPENWRT_REMOTE="${OPENWRT_REMOTE:-root@openwrt}"
 OPENWRT_CONFIG="${OPENWRT_CONFIG:-/usr/local/tbox/conf/client_config.json}"
 TBOX_CLIENT_ID="${TBOX_CLIENT_ID:-home-macmini-001}"
-TBOX_USER="${TBOX_USER:-tiger-macmini}"
+TBOX_USER="${TBOX_USER:-}"
 TBOX_SERVER_ADDR="${TBOX_SERVER_ADDR:-https://ip.xiedeacc.com}"
 TBOX_GRPC_PORT="${TBOX_GRPC_PORT:-443}"
 MACOS_CA_BUNDLE="${MACOS_CA_BUNDLE:-/etc/ssl/cert.pem}"
@@ -71,7 +71,8 @@ with open(path, encoding="utf-8") as config_file:
     config = json.load(config_file)
 
 config["client_id"] = client_id
-config["user"] = user
+if user:
+    config["user"] = user
 config["server_addr"] = server_addr
 config["grpc_server_port"] = int(grpc_port)
 config["local_cert_path"] = "./conf/ca-bundle.pem"
