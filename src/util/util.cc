@@ -1111,13 +1111,28 @@ std::vector<std::string> Util::GetAllLocalIPAddresses() {
   return all_ips;
 }
 
+bool Util::IsLanIPAddress(const std::string& value) {
+  try {
+    const folly::IPAddress address(value);
+    if (address.isV4()) {
+      const auto ipv4 = address.asV4();
+      return ipv4.inSubnet(folly::IPAddressV4("10.0.0.0"), 8) ||
+             ipv4.inSubnet(folly::IPAddressV4("172.16.0.0"), 12) ||
+             ipv4.inSubnet(folly::IPAddressV4("192.168.0.0"), 16);
+    }
+    const auto ipv6 = address.asV6();
+    return ipv6.inSubnet(folly::IPAddressV6("fc00::"), 7);
+  } catch (const std::exception&) {
+    return false;
+  }
+}
+
 std::vector<std::string> Util::GetLoopbackAndPrivateIPAddresses() {
   std::set<std::string> addresses = {"127.0.0.1", "::1"};
   std::vector<folly::IPAddress> local_addresses;
   ListAllIPAddresses(&local_addresses);
   for (const auto& address : local_addresses) {
-    if (address.isPrivate() && !address.isLinkLocal() &&
-        !address.isMulticast()) {
+    if (IsLanIPAddress(address.str())) {
       addresses.insert(address.str());
     }
   }

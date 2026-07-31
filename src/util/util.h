@@ -232,6 +232,9 @@ class Util final {
   // Get all local IP addresses (both IPv4 and IPv6)
   static std::vector<std::string> GetAllLocalIPAddresses();
 
+  // Return true only for RFC1918 IPv4 or RFC4193 ULA IPv6 addresses.
+  static bool IsLanIPAddress(const std::string& address);
+
   // Get loopback and private LAN addresses suitable for local-only listeners.
   static std::vector<std::string> GetLoopbackAndPrivateIPAddresses();
 

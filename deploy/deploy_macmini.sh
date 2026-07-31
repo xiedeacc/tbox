@@ -82,6 +82,12 @@ config["local_cert_path"] = "./conf/ca-bundle.pem"
 config["ssh_private_key_path"] = "/var/root/.ssh/id_ed25519"
 config["ssh_public_key_path"] = "/var/root/.ssh/id_ed25519.pub"
 vlmcsd_addresses = {"127.0.0.1", "::1"}
+ipv4_lan_networks = (
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+)
+ipv6_ula_network = ipaddress.ip_network("fc00::/7")
 interfaces = subprocess.run(
     ["/sbin/ifconfig", "-a"],
     check=True,
@@ -94,7 +100,11 @@ for value in re.findall(r"\binet6?\s+([0-9a-fA-F:.%]+)", interfaces):
         address = ipaddress.ip_address(value)
     except ValueError:
         continue
-    if address.is_private and not address.is_link_local:
+    is_lan = (
+        address.version == 4
+        and any(address in network for network in ipv4_lan_networks)
+    ) or (address.version == 6 and address in ipv6_ula_network)
+    if is_lan:
         vlmcsd_addresses.add(address.compressed)
 config["vlmcsd_listen_addresses"] = sorted(vlmcsd_addresses)
 for key in (

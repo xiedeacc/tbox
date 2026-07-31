@@ -174,10 +174,27 @@ TEST(Util, GetLoopbackAndPrivateIPAddresses) {
 
   for (const auto& value : addresses) {
     const folly::IPAddress address(value);
-    EXPECT_TRUE(address.isLoopback() || address.isPrivate());
+    EXPECT_TRUE(address.isLoopback() || Util::IsLanIPAddress(value));
     EXPECT_FALSE(address.isLinkLocal());
     EXPECT_FALSE(address.isMulticast());
   }
+}
+
+TEST(Util, IsLanIPAddressUsesOnlyRfc1918AndUla) {
+  EXPECT_TRUE(Util::IsLanIPAddress("10.0.0.1"));
+  EXPECT_TRUE(Util::IsLanIPAddress("172.16.0.1"));
+  EXPECT_TRUE(Util::IsLanIPAddress("172.31.255.254"));
+  EXPECT_TRUE(Util::IsLanIPAddress("192.168.1.1"));
+  EXPECT_TRUE(Util::IsLanIPAddress("fc00::1"));
+  EXPECT_TRUE(Util::IsLanIPAddress("fd00::1"));
+
+  EXPECT_FALSE(Util::IsLanIPAddress("127.0.0.1"));
+  EXPECT_FALSE(Util::IsLanIPAddress("172.15.255.255"));
+  EXPECT_FALSE(Util::IsLanIPAddress("172.32.0.1"));
+  EXPECT_FALSE(Util::IsLanIPAddress("198.18.0.2"));
+  EXPECT_FALSE(Util::IsLanIPAddress("169.254.1.1"));
+  EXPECT_FALSE(Util::IsLanIPAddress("fe80::1"));
+  EXPECT_FALSE(Util::IsLanIPAddress("2001:db8::1"));
 }
 
 TEST(Util, GetPublicIPv6Addresses) {

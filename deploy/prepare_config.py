@@ -30,12 +30,22 @@ CLIENT_DNS_CREDENTIAL_KEYS = AWS_DNS_KEYS + (
 
 def local_vlmcsd_addresses(values: list[str]) -> list[str]:
     addresses = {"127.0.0.1", "::1"}
+    ipv4_lan_networks = (
+        ipaddress.ip_network("10.0.0.0/8"),
+        ipaddress.ip_network("172.16.0.0/12"),
+        ipaddress.ip_network("192.168.0.0/16"),
+    )
+    ipv6_ula_network = ipaddress.ip_network("fc00::/7")
     for value in values:
         try:
             address = ipaddress.ip_address(value)
         except ValueError:
             continue
-        if address.is_private and not address.is_link_local:
+        is_lan = (
+            address.version == 4
+            and any(address in network for network in ipv4_lan_networks)
+        ) or (address.version == 6 and address in ipv6_ula_network)
+        if is_lan:
             addresses.add(address.compressed)
     return sorted(addresses)
 
