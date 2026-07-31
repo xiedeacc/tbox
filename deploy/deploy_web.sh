@@ -14,12 +14,18 @@ WEB_DIR="${WORKSPACE_ROOT}/src/web"
 BUILD_DIR="${WEB_DIR}/dist"
 
 # Remote deployment configuration
-REMOTE_HOST="${REMOTE_HOST:-aws}"
+REMOTE="${REMOTE:-ubuntu@aws}"
 SSH_KEY="${SSH_KEY:-}"
-REMOTE_USER="${REMOTE_USER:-ubuntu}"
 REMOTE_WEB_DIR="${REMOTE_WEB_DIR:-/data/www/admin}"
 
-echo -e "${GREEN}Starting web UI deployment to ${REMOTE_HOST}...${NC}"
+if [[ "${REMOTE}" != *@* ]]; then
+    echo "REMOTE must use the explicit user@HostAlias form (for example, ubuntu@aws)." >&2
+    exit 1
+fi
+REMOTE_USER="${REMOTE%%@*}"
+REMOTE_HOST="${REMOTE#*@}"
+
+echo -e "${GREEN}Starting web UI deployment to ${REMOTE}...${NC}"
 
 # Function to print status
 print_status() {
@@ -50,16 +56,11 @@ fi
 
 # SSH helper function
 ssh_exec() {
-    ssh "${SSH_OPTS[@]}" "${REMOTE_USER}@${REMOTE_HOST}" "$@"
-}
-
-# SCP helper function
-scp_copy() {
-    scp "${SSH_OPTS[@]}" "$@" "${REMOTE_USER}@${REMOTE_HOST}:$1"
+    ssh "${SSH_OPTS[@]}" "${REMOTE}" "$@"
 }
 
 # Test SSH connection
-print_status "Testing SSH connection to ${REMOTE_HOST}..."
+print_status "Testing SSH connection to ${REMOTE}..."
 if ! ssh_exec "echo 'SSH connection successful'"; then
     print_error "Failed to connect to remote host"
     exit 1
@@ -147,13 +148,13 @@ print_status "Deploying built files to remote host..."
 if command -v rsync &> /dev/null; then
     print_status "Using rsync for deployment..."
     if [[ -f "${SSH_KEY}" ]]; then
-        rsync -avz --delete -e "ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no" "${BUILD_DIR}/" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_WEB_DIR}/"
+        rsync -avz --delete -e "ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no" "${BUILD_DIR}/" "${REMOTE}:${REMOTE_WEB_DIR}/"
     else
-        rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" "${BUILD_DIR}/" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_WEB_DIR}/"
+        rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" "${BUILD_DIR}/" "${REMOTE}:${REMOTE_WEB_DIR}/"
     fi
 else
     print_status "Using scp for deployment..."
-    scp "${SSH_OPTS[@]}" -r "${BUILD_DIR}"/* "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_WEB_DIR}/"
+    scp "${SSH_OPTS[@]}" -r "${BUILD_DIR}"/* "${REMOTE}:${REMOTE_WEB_DIR}/"
 fi
 print_success "Files deployed successfully"
 
@@ -176,11 +177,11 @@ fi
 
 echo
 print_success "Web UI deployment completed successfully!"
-print_status "Remote host: ${REMOTE_HOST}"
+print_status "Remote host: ${REMOTE}"
 print_status "Web directory: ${REMOTE_WEB_DIR}"
 print_status "The web UI should now be accessible at: http://${REMOTE_HOST}/admin/"
 echo
 print_status "Useful commands:"
-echo "  - View nginx logs: ssh ${SSH_OPTS[*]} ${REMOTE_USER}@${REMOTE_HOST} 'sudo tail -f /var/log/nginx/access.log'"
-echo "  - Check nginx status: ssh ${SSH_OPTS[*]} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl status nginx'"
-echo "  - Reload nginx: ssh ${SSH_OPTS[*]} ${REMOTE_USER}@${REMOTE_HOST} 'sudo systemctl reload nginx'"
+echo "  - View nginx logs: ssh ${SSH_OPTS[*]} ${REMOTE} 'sudo tail -f /var/log/nginx/access.log'"
+echo "  - Check nginx status: ssh ${SSH_OPTS[*]} ${REMOTE} 'sudo systemctl status nginx'"
+echo "  - Reload nginx: ssh ${SSH_OPTS[*]} ${REMOTE} 'sudo systemctl reload nginx'"

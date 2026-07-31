@@ -2,7 +2,7 @@
 param(
     [string]$InstallDir = "D:\software\tbox",
     [string]$ConfigSource =
-        "dev:/root/src/cpp/tbox/conf/client_local_config.json",
+        "root@dev:/root/src/cpp/tbox/conf/client_local_config.json",
     [string]$TaskName = "TBox Client",
     [string]$ServerAddr = "https://ip.xiedeacc.com",
     [int]$GrpcServerPort = 443
@@ -13,6 +13,10 @@ $ErrorActionPreference = "Stop"
 
 if ($env:OS -ne "Windows_NT") {
     throw "deploy_windows.ps1 must run on Windows."
+}
+
+if ($ConfigSource -notmatch '^[^@:\s]+@[^@:\s]+:.+$') {
+    throw "ConfigSource must use the explicit user@HostAlias:path form (for example, root@dev:/path/to/config.json)."
 }
 
 foreach ($command in @("bazel", "scp")) {

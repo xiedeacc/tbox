@@ -4,7 +4,11 @@ set -euo pipefail
 
 SERVICE_NAME="tbox_client"
 BINARY_NAME="tbox_client"
-REMOTE="root@openwrt"
+REMOTE="${REMOTE:-root@openwrt}"
+if [[ "${REMOTE}" != *@* ]]; then
+    echo "REMOTE must use the explicit user@HostAlias form (for example, root@openwrt)." >&2
+    exit 1
+fi
 INSTALL_DIR="/usr/local/tbox"
 BIN_DIR="${INSTALL_DIR}/bin"
 CONF_DIR="${INSTALL_DIR}/conf"

@@ -11,6 +11,10 @@ DATA_DIR="${INSTALL_DIR}/data"
 LOG_DIR="${INSTALL_DIR}/logs"
 PLIST_PATH="/Library/LaunchDaemons/${SERVICE_LABEL}.plist"
 OPENWRT_REMOTE="${OPENWRT_REMOTE:-root@openwrt}"
+if [[ "${OPENWRT_REMOTE}" != *@* ]]; then
+    echo "OPENWRT_REMOTE must use the explicit user@HostAlias form (for example, root@openwrt)." >&2
+    exit 1
+fi
 OPENWRT_CONFIG="${OPENWRT_CONFIG:-/usr/local/tbox/conf/client_config.json}"
 TBOX_CLIENT_ID="${TBOX_CLIENT_ID:-home-macmini-001}"
 TBOX_USER="${TBOX_USER:-}"

@@ -4,7 +4,11 @@ set -euo pipefail
 
 SERVICE_NAME="tbox_client"
 BINARY_NAME="tbox_client"
-REMOTE="root@nas"
+REMOTE="${REMOTE:-root@nas}"
+if [[ "${REMOTE}" != *@* ]]; then
+    echo "REMOTE must use the explicit user@HostAlias form (for example, root@nas)." >&2
+    exit 1
+fi
 INSTALL_DIR="/opt/usr/local/tbox"
 BIN_DIR="${INSTALL_DIR}/bin"
 CONF_DIR="${INSTALL_DIR}/conf"
