@@ -26,5 +26,6 @@ logs/
 *.temp
 .DS_Store
 deploy/**/__pycache__/
+bazel/**/__pycache__/
 data/
 deploy/init_aws.sh
