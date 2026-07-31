@@ -14,10 +14,10 @@ WEB_DIR="${WORKSPACE_ROOT}/src/web"
 BUILD_DIR="${WEB_DIR}/dist"
 
 # Remote deployment configuration
-REMOTE_HOST="13.215.176.217"
-SSH_KEY="/home/ubuntu/.ssh/id_ed25519"
-REMOTE_USER="ubuntu"
-REMOTE_WEB_DIR="/data/www/admin"
+REMOTE_HOST="${REMOTE_HOST:-aws}"
+SSH_KEY="${SSH_KEY:-}"
+REMOTE_USER="${REMOTE_USER:-root}"
+REMOTE_WEB_DIR="${REMOTE_WEB_DIR:-/data/www/admin}"
 
 echo -e "${GREEN}Starting web UI deployment to ${REMOTE_HOST}...${NC}"
 
@@ -45,7 +45,7 @@ if [[ -f "${SSH_KEY}" ]]; then
     fi
 else
     SSH_OPTS=( -o StrictHostKeyChecking=no )
-    print_status "SSH key ${SSH_KEY} not found; using default SSH identities"
+    print_status "Using SSH configuration and default identities"
 fi
 
 # SSH helper function
