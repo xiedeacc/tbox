@@ -10,6 +10,7 @@
 
 #if !defined(_WIN32)
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <sys/socket.h>
@@ -113,12 +114,21 @@ void WakeKmsServer(const std::string& address, uint16_t port) {
   }
 
   for (addrinfo* result = results; result; result = result->ai_next) {
-    const int fd = socket(result->ai_family,
-                          result->ai_socktype | SOCK_CLOEXEC,
-                          result->ai_protocol);
+    int socket_type = result->ai_socktype;
+#if defined(SOCK_CLOEXEC)
+    socket_type |= SOCK_CLOEXEC;
+#endif
+    const int fd =
+        socket(result->ai_family, socket_type, result->ai_protocol);
     if (fd < 0) {
       continue;
     }
+#if !defined(SOCK_CLOEXEC)
+    const int descriptor_flags = fcntl(fd, F_GETFD);
+    if (descriptor_flags >= 0) {
+      fcntl(fd, F_SETFD, descriptor_flags | FD_CLOEXEC);
+    }
+#endif
     connect(fd, result->ai_addr, result->ai_addrlen);
     close(fd);
   }
